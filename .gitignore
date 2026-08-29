@@ -33,3 +33,5 @@ mlruns/
 
 # --- keep the directory skeleton itself -------------------------------------
 !**/.gitkeep
+.venv-labelstudio/
+labeling/tasks/

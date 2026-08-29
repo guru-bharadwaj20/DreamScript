@@ -1,0 +1,85 @@
+<!--
+  Phase 2.2.1 - the DreamScript labelling interface for Label Studio.
+
+  Every control here exists because a field of the IR needs filling, and nothing here exists
+  that the IR cannot store. The mapping is one-to-one on purpose: `src/ir/labelstudio.py`
+  converts an export of this config straight into `schemas/ir.schema.json` with no guesswork.
+
+    shape      -> RectangleLabels "shape"     -> node.shape + node.bbox
+    role       -> Choices "role" (per region) -> node.semantic_role
+    text       -> TextArea "transcription"    -> node.text
+    flags      -> Choices "flags" (per region)-> crossed_out[] / low_conf_text[]
+    edges      -> Relations                   -> edge.src, edge.dst, edge.directed
+    edge label -> Relation labels             -> edge.label
+
+  The shape list is generated from src.ir.vocab.SHAPES and the role list from ROLES; running
+  `python -m src.ir.labelstudio` with the check flag fails if this file and those tuples
+  disagree.
+-->
+<View>
+  <Header value="Draw a box around every shape, then link the boxes that are connected."/>
+
+  <Image name="image" value="$image" zoom="true" zoomControl="true" rotateControl="true"/>
+
+  <RectangleLabels name="shape" toName="image" strokeWidth="3" opacity="0.15">
+    <Label value="rectangle" background="#4C78A8"/>
+    <Label value="rounded-rect" background="#5B8FF9"/>
+    <Label value="diamond" background="#F58518"/>
+    <Label value="ellipse" background="#54A24B"/>
+    <Label value="circle" background="#72B7B2"/>
+    <Label value="double-circle" background="#2E7D6F"/>
+    <Label value="parallelogram" background="#B279A2"/>
+    <Label value="octagon" background="#9D755D"/>
+    <Label value="arrow" background="#E45756"/>
+    <Label value="line" background="#EECA3B"/>
+    <Label value="text-block" background="#7F7F7F"/>
+    <Label value="freeform" background="#BAB0AC"/>
+  </RectangleLabels>
+
+  <Choices name="role" toName="image" perRegion="true" required="true" showInLine="false">
+    <Choice value="start"/>
+    <Choice value="end"/>
+    <Choice value="process"/>
+    <Choice value="decision"/>
+    <Choice value="io"/>
+    <Choice value="fork"/>
+    <Choice value="join"/>
+    <Choice value="event"/>
+    <Choice value="state"/>
+    <Choice value="initial-state"/>
+    <Choice value="final-state"/>
+    <Choice value="transition"/>
+    <Choice value="entity"/>
+    <Choice value="attribute"/>
+    <Choice value="relationship"/>
+    <Choice value="container"/>
+    <Choice value="ui-input"/>
+    <Choice value="ui-button"/>
+    <Choice value="ui-label"/>
+    <Choice value="ui-image"/>
+    <Choice value="component"/>
+    <Choice value="wire"/>
+    <Choice value="unknown"/>
+  </Choices>
+
+  <TextArea name="transcription" toName="image" perRegion="true" editable="true"
+            rows="2" maxSubmissions="1"
+            placeholder="What the shape says. Leave empty if it has no text."/>
+
+  <!-- Ambiguity, Phase 2.1.6. An annotator who is unsure must have somewhere to say so;
+       without these two boxes the only options are to guess or to skip the image. -->
+  <Choices name="flags" toName="image" perRegion="true" choice="multiple" showInLine="true">
+    <Choice value="crossed-out"/>
+    <Choice value="text-uncertain"/>
+    <Choice value="shape-uncertain"/>
+  </Choices>
+
+  <Relations>
+    <Relation value="flow"/>
+    <Relation value="flow-yes"/>
+    <Relation value="flow-no"/>
+    <Relation value="undirected"/>
+    <Relation value="contains"/>
+    <Relation value="uncertain"/>
+  </Relations>
+</View>
