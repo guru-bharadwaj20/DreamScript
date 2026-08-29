@@ -418,9 +418,11 @@ def assignments() -> list[dict]:
         for i in range(target):
             s = scen[i % len(scen)]
             scribe = f"scribe{(i % MIN_SCRIBES) + 1:02d}"
-            # A quarter of every type is captured adversely (Phase 1.2.7), cycling through
-            # the adverse conditions so no single condition dominates.
-            adverse = (i % 4) == 3
+            # At least a quarter of every type is captured adversely (Phase 1.2.7), cycling
+            # through the adverse conditions so no single condition dominates. The offset is
+            # 0 rather than 3 so that types whose target is not a multiple of 4 (50, 40)
+            # round *up* to 26%/25% instead of down to 24%.
+            adverse = (i % 4) == 0
             condition = (
                 ADVERSE_CONDITIONS[(i // 4) % len(ADVERSE_CONDITIONS)] if adverse else "clean"
             )
@@ -454,6 +456,11 @@ def parse_filename(path: Path) -> dict | None:
         return None
     if dtype not in DIAGRAM_TYPES:
         return None
+    # Repo-relative when the file is inside the tree, absolute otherwise (tests use tmp dirs).
+    try:
+        rel = path.relative_to(ROOT)
+    except ValueError:
+        rel = path
     return {
         "diagram_type": dtype,
         "scribe_id": scribe,
@@ -461,7 +468,7 @@ def parse_filename(path: Path) -> dict | None:
         "medium": m["medium"],
         "condition": m["condition"],
         "adverse": m["condition"] in ADVERSE_CONDITIONS,
-        "path": str(path.relative_to(ROOT)),
+        "path": str(rel),
     }
 
 

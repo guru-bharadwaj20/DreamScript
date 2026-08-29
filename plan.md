@@ -110,9 +110,9 @@ that reflects real human messiness.
 | 1.2.3 | Draw state machines | 50 sketches over 10 scenarios; brief in `docs/collection/state_machine.md` | Stored — **tooling ✅, drawing pending** | ❌ |
 | 1.2.4 | Draw ER diagrams | 50 sketches over 10 scenarios; brief in `docs/collection/er_diagram.md` | Stored — **tooling ✅, drawing pending** | ❌ |
 | 1.2.5 | Draw circuits | 40 sketches over 10 scenarios; brief in `docs/collection/circuit.md` | Stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.6 | Multi-scribe collection | ≥8 different people to capture style variance | ≥8 `scribe_id` values present | ❌ |
-| 1.2.7 | Adverse capture conditions | Phone/webcam, shadows, angles, ruled paper, whiteboard glare, coffee stain, crossed-out elements | ≥25% of images tagged `adverse=true` | ❌ |
-| 1.2.8 | Media variety | Pencil, ballpoint, marker, whiteboard, tablet stylus | `medium` field populated | ❌ |
+| 1.2.6 | Multi-scribe collection | ≥8 people, style mix 2 neat / 4 average / 2 messy, consent recorded | ≥8 `scribe_id` values present — **registry + validation ✅, people pending** | ❌ |
+| 1.2.7 | Adverse capture conditions | 8 named conditions, each mapped to the mitigation it tests; capture tool enforces the vocabulary | ≥25% of images tagged `adverse=true` — **tool + protocol ✅, photos pending** | ❌ |
+| 1.2.8 | Media variety | Pencil, ballpoint, marker, whiteboard, stylus — each mapped to the failure it induces | `medium` field populated — **vocabulary enforced ✅, drawing pending** | ❌ |
 
 ### 1.3 Corpus Engineering
 
