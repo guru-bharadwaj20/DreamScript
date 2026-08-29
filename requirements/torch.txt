@@ -1,0 +1,5 @@
+# Phase 0.1.2 — PyTorch on CUDA 12.x (RTX 4500 Ada, sm_89, bf16-capable).
+# Install with the CUDA wheel index:
+#   uv pip install -r requirements/torch.txt --index-url https://download.pytorch.org/whl/cu124
+torch==2.5.1
+torchvision==0.20.1
