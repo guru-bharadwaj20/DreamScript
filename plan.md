@@ -118,7 +118,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1.3.1 | Unified manifest | `data/manifest.parquet`: id, path, type, scribe, medium, adverse, split | Manifest builds from raw dirs | ❌ |
+| 1.3.1 | Unified manifest | `data/processed/manifest.parquet`: id, source, path, type, scribe, medium, condition, adverse, has_structure, has_text, native_split, split | Manifest builds from raw dirs — **35,414 rows** | ✅ |
 | 1.3.2 | Deduplication | Perceptual hash (pHash) near-duplicate removal | Duplicate report generated | ❌ |
 | 1.3.3 | **Scribe-disjoint splits** | Train/val/test split *by person*, not by image | No scribe appears in two splits | ❌ |
 | 1.3.4 | Class balance report | Counts per diagram type per split | Histogram in `reports/` | ❌ |
