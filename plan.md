@@ -185,7 +185,7 @@ that reflects real human messiness.
 | 3.2.5 | Curve/corner analysis | Curvature along skeleton; corner detection | Windowed turning angle: straightness **0.72 box / 0.00 circle**, 4 corners vs 0. Line-vs-curve ratio computable; open-path mode for skeleton branches | ✅ |
 | 3.2.6 | Arrowhead detection | Convergent short-segment triplets at endpoints + template match on skeleton spurs | Measured on 265 annotated arrows: **precision 0.12, recall 0.22 — the 0.80 bar is NOT met**. Only 26% of real arrowheads form a 3-branch junction; evidence for the learned detector in 9.1 | ✅ |
 | 3.2.7 | Text region proposal | MSER + stroke-width transform, aspect/density filters | `primitives/text.py`: MSER + stroke-width transform, plus the two filters that carry it — height/stroke ratio and grouping into words. On synthetic pages with exact layers **text F1 0.94, shape layer keeps 100% of shape ink**; on 20 real photos writing is claimed 0.46 against connector ink 0.16 | ✅ |
-| 3.2.8 | Shape/text separation | Two-layer output: `shape_layer.png`, `text_layer.png` | Both emitted per image | ❌ |
+| 3.2.8 | Shape/text separation | Two-layer output: `shape_layer.png`, `text_layer.png` | `src/preprocess/layers.py`: both layers written per page (40/40) to `data/interim/layers/`; the split is a **partition** — disjoint, union equals the input — asserted per page and pinned by tests. Median text share 33% of pixels but 55% of components | ✅ |
 | 3.2.9 | Primitive cache | Serialize primitives to `data/interim/<id>.pkl` | Cache hit path tested | ❌ |
 
 ### 3.3 Preprocessing Evaluation
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 16 | ❌ |
+| 3 — Preprocessing | 21 | 17 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **67** | ❌ |
+| **Total** | **302** | **68** | ❌ |
