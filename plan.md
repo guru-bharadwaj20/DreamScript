@@ -168,7 +168,7 @@ that reflects real human messiness.
 | 3.1.2 | Page/board detection | Largest quadrilateral contour | 97% handled correctly on 200 hdBPMN photos (criterion: the quad keeps every annotated shape); precision when it crops 0.54 | ✅ |
 | 3.1.3 | Perspective rectification | Homography warp to top-down | `src/preprocess/rectify.py`; QA grid `reports/figures/p3_rectification.png`; coordinates move with the pixels via `map_points` | ✅ |
 | 3.1.4 | Illumination correction | CLAHE + background estimate via large-kernel morphological opening | Quadrant-brightness spread on the 33 corpus shadow images: median **39.2 → 14.1**; 31 of 33 drop below Phase 1's own shadow threshold | ✅ |
-| 3.1.5 | Binarization | Sauvola / adaptive threshold; compare against Otsu | Chosen method logged with F1 on stroke masks | ❌ |
+| 3.1.5 | Binarization | Sauvola / adaptive threshold; compare against Otsu | Measured on 30 items with exact stroke GT: **otsu F1 0.912** > sauvola 0.897 > adaptive 0.860 *after* illumination correction; logged in `configs/preprocess.yaml` | ✅ |
 | 3.1.6 | Denoise | Median filter + small-component removal | Speckle count reduced ≥80% | ❌ |
 | 3.1.7 | Deskew | Hough-based dominant-angle correction | Skew < 1° after correction | ❌ |
 | 3.1.8 | Ruled-paper line suppression | Directional morphology removes notebook rules, keeps strokes | Ruled samples cleaned | ❌ |
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 4 | ❌ |
+| 3 — Preprocessing | 21 | 5 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **55** | ❌ |
+| **Total** | **302** | **56** | ❌ |

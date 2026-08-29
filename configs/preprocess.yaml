@@ -15,9 +15,15 @@ preprocess:
     background_kernel: 51
 
   binarization:
-    method: sauvola      # sauvola | adaptive | otsu
-    window_size: 25
-    k: 0.2
+    # Measured, not assumed (Phase 3.1.5). On 30 items with exact stroke ground truth:
+    #   after illumination correction   otsu 0.912  sauvola 0.897  adaptive 0.860  (mean F1)
+    #   without it                      otsu 0.766  sauvola 0.907  adaptive 0.899
+    # Correcting the lighting first removes the very thing Sauvola exists to handle, and the
+    # cheap global threshold then wins. Sauvola stays selectable: it has the better *worst*
+    # case, and this was measured on rendered strokes rather than photographs.
+    method: otsu         # otsu | sauvola | adaptive
+    window_size: 25      # sauvola / adaptive only
+    k: 0.2               # sauvola only
 
   denoise:
     median_kernel: 3
