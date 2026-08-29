@@ -57,6 +57,27 @@ does not restrict it, so it is on the annotator not to put a `wire` in a flowcha
 `semantic_role: decision` is a legitimate, common labelling of a writer who could not be
 bothered to draw a diamond.
 
+## 2b. Which relation type to draw
+
+Six relation types are offered. Choosing between them is not a matter of taste:
+
+| Relation | Draw it when | It becomes |
+| :--- | :--- | :--- |
+| `flow` | An arrowhead, no branch label | `directed: true`, empty label |
+| `flow-yes` | The branch is labelled yes / y / true / ✓ | `directed: true`, `label: "yes"` |
+| `flow-no` | The branch is labelled no / n / false / ✗ | `directed: true`, `label: "no"` |
+| `undirected` | A connecting stroke with **no** arrowhead - a circuit wire, a UML association | `directed: false` |
+| `contains` | Meaningful containment (see 3.2), not a drawn stroke at all | `directed: true`, `kind: contains` |
+| `uncertain` | You connected it, but you are not confident which shape it belongs to | the edge, **plus** an entry in `unresolved_edges[]` |
+
+`flow-yes` and `flow-no` exist as their own types rather than as free text because the yes/no
+branch of a decision is what becomes the `if` and the `else` in Phase 12, and it is the one
+edge label that must never be a transcription error. Any other branch text - `a,b`, `retry`,
+`> 100` - is a plain `flow` and the words go in the transcription instead.
+
+**Only draw `uncertain` when you actually connected something.** An arrow you could not place
+at all gets no relation; rule 3.1 covers that case.
+
 ---
 
 ## 3. The hard cases
