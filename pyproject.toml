@@ -1,0 +1,18 @@
+[project]
+name = "dreamscript"
+version = "0.1.0"
+description = "Converting rough hand-drawn diagrams into executable, runnable code"
+authors = [{ name = "Guru Bharadwaj", email = "gururb20@gmail.com" }]
+requires-python = "==3.11.*"
+readme = "README.md"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
