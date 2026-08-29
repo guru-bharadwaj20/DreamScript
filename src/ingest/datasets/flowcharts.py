@@ -7,10 +7,18 @@ downloadable.** The dataset pages are still up at
 Internet Archive. This module records that verified fact rather than pretending otherwise,
 and acquires a substitute that serves the same purpose.
 
-**Substitute: `MananSuri27/flowchartseg`** — 1,319 hand-drawn flowchart images with per-node
-segmentation masks. FC-A/FC-B offered component bounding boxes; masks are strictly richer,
-and boxes are recovered from them by connected-component analysis
-(`masks_to_boxes`), which is what Phase 9.1 actually consumes.
+**Substitute: `MananSuri27/flowchartseg`** — 1,319 flowchart images with per-node segmentation
+masks. FC-A/FC-B offered component bounding boxes; masks are strictly richer, and boxes are
+recovered from them by connected-component analysis, which is what Phase 9.1 consumes.
+
+**Correction (Phase 2.2.2).** This module originally described these images as *hand-drawn*.
+They are not. Inspecting the pixels while writing `src.ir.convert.flowchartseg` showed every
+sampled image to be a **computer-rendered** flowchart with typeset lorem-ipsum labels - 16
+random samples across both shards, no exceptions. The claim was made from the dataset card
+without looking at the data, and it was wrong. What this substitutes for is therefore narrower
+than Part 1 of the data card first said: it is synthetic localization data, comparable to the
+generator in Phase 1.3.7, and it carries none of FC-A/FC-B's hand-drawn character. See
+`docs/data_cards/flowchart_fc.md`.
 
     python -m src.ingest.datasets.flowcharts          # fetch the substitute
     python -m src.ingest.datasets.flowcharts --probe  # re-verify FC-A/FC-B availability

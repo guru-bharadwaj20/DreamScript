@@ -148,7 +148,7 @@ that reflects real human messiness.
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 2.2.1 | Tool selection | Label Studio / CVAT configured with custom shape + relation labeling | Project loads images | ❌ |
-| 2.2.2 | Converters | hdBPMN / FC / DIDI / Sketch2Code → DreamScript IR | Round-trip test passes | ❌ |
+| 2.2.2 | Converters | hdBPMN / FC / DIDI / Sketch2Code → DreamScript IR | 5 converters (hdBPMN, FA, DIDI, Sketch2Code, flowchartseg); round-trip test per source in `tests/test_ir_convert.py` | ✅ |
 | 2.2.3 | Annotation guidelines | Written rules for ambiguous cases (broken arrow, overlapping boxes) | `docs/annotation_guide.md` | ❌ |
 | 2.2.4 | Inter-annotator agreement | Double-label 50 images, report Cohen's κ on shape and role | κ ≥ 0.75 reported | ❌ |
 | 2.2.5 | Label QA pass | Automated validator: dangling edges, missing roles, bbox out of frame | Validator green on corpus | ❌ |
@@ -707,7 +707,7 @@ becomes the code structure.
 | :--- | :---: | :---: | :---: |
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
-| 2 — Annotation Schema | 12 | 6 | ❌ |
+| 2 — Annotation Schema | 12 | 7 | ❌ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **45** | ❌ |
+| **Total** | **302** | **46** | ❌ |

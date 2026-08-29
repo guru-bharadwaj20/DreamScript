@@ -62,12 +62,31 @@ authors restore the archive the project finds out instead of assuming.
 | Field | Value |
 | :--- | :--- |
 | Number of items | **1,319** (1,187 train / 132 validation) |
-| Modality | hand-drawn flowchart images |
+| Modality | **computer-rendered** flowchart images (see the correction below) |
 | File formats | two parquet shards, images embedded |
 | Total size on disk | 109,635,873 bytes (~105 MB) |
 | Annotation types | **per-node semantic segmentation masks** (`background`, `node`) |
 | Columns | `image`, `annotation`, `semantic_class_to_id` |
 | Splits provided by the source | train / validation (no test split) |
+
+### Correction — these images are not hand-drawn
+
+**Recorded 2026-08-29, while writing `src.ir.convert.flowchartseg`.** This card first said the
+images were hand-drawn. They are not. Sixteen images sampled at random across both shards are
+all computer-rendered flowcharts with typeset lorem-ipsum labels: flat fills, exactly straight
+connectors, no pen texture. The original claim came from the dataset card rather than from
+looking at the pixels, and repeating it was a mistake.
+
+| What changes | Detail |
+| :--- | :--- |
+| Its purpose | Synthetic **localization** data, in the same category as the generator in Phase 1.3.7 - not a hand-drawn corpus |
+| The FC-A/FC-B substitution | Weaker than claimed. FC-A/FC-B were pen-stroke drawings by 30+ writers; nothing here replaces that. The only real hand-drawn flowcharts in the project are hdBPMN's 704 |
+| Domain gap | A detector trained on these alone will not transfer to photographs of paper. It is pretraining data, and Phase 9.1 must fine-tune on hdBPMN before any number from it is believed |
+| Handwriting / privacy | There is none. The "handwriting present" note below was also wrong and is struck |
+| Adverse capture | None, and none possible: these were never photographed |
+
+The 1,319 rows stay in the manifest, tagged `source = flowchartseg`, so any phase can exclude
+them with one predicate. Nothing downstream has consumed them yet.
 
 ### Why this substitutes acceptably
 
@@ -109,10 +128,13 @@ hdBPMN or the chaos corpus, not here.
 
 ### Ethical and privacy notes
 
-Handwriting is present; images stay local. No personal content observed.
+~~Handwriting is present~~ — **incorrect, see the correction above**: the images are rendered,
+so no handwriting and no personal content is present at all. Images stay local anyway, because
+the licence is undeclared.
 
 ## Changelog
 
 | Date | Change |
 | :--- | :--- |
 | 2026-08-29 | FC-A/FC-B probed and recorded unavailable (download 404); flowchartseg acquired and verified — 1,319 images |
+| 2026-08-29 | **Correction:** flowchartseg images inspected while writing the Phase 2.2.2 converter and found to be computer-rendered, not hand-drawn. Modality, purpose and privacy notes revised |
