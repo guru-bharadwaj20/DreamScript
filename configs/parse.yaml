@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: parse-default
+  run_name: p10-parse-baseline-s42
 
 parse: {}

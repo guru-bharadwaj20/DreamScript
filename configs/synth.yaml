@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: synth-default
+  run_name: p12-qwen7b-lora32-s42
 
 synth: {}

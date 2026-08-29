@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: rl-default
+  run_name: p11-qlearn-baseline-s42
 
 rl: {}

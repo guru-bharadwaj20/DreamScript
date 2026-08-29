@@ -4,7 +4,7 @@ defaults:
   - base
 
 logging:
-  run_name: p5-classical-baseline
+  run_name: p5-logreg-baseline-s42
 
 data:
   feature_table: data/features/handcrafted.parquet

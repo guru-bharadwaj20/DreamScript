@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: detect-default
+  run_name: p9-yolov8-baseline-s42
 
 detect: {}

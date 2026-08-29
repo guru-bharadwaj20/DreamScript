@@ -69,10 +69,10 @@ def test_config_and_env_are_captured(tmp_path: Path):
 
 
 def test_run_name_comes_from_config(tmp_path: Path):
-    cfg = load_config("classify")  # run_name: p5-classical-baseline
+    cfg = load_config("classify")  # run_name: p5-logreg-baseline-s42
     run = start_run(cfg, root=tmp_path)
     try:
-        assert run.dir.name.endswith("_p5-classical-baseline")
+        assert run.dir.name.endswith("_p5-logreg-baseline-s42")
     finally:
         run.finish()
 

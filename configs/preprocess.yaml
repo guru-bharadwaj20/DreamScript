@@ -3,7 +3,7 @@ defaults:
   - base
 
 logging:
-  run_name: p3-preprocess-default
+  run_name: p3-preprocess-baseline-s42
 
 preprocess:
   page_detection: true

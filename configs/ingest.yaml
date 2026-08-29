@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: ingest-default
+  run_name: p1-manifest-baseline-s42
 
 ingest: {}

@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: eval-default
+  run_name: p14-eval-full-s42
 
 eval: {}

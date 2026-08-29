@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: ocr-default
+  run_name: p9.3-crnn-baseline-s42
 
 ocr: {}

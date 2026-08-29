@@ -3,6 +3,6 @@ defaults:
   - base
 
 logging:
-  run_name: features-default
+  run_name: p4-features-baseline-s42
 
 features: {}
