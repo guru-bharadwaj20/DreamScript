@@ -96,3 +96,62 @@ def test_corpus_evaluation_runs_and_reports_honestly():
         pytest.skip("hdBPMN not present")
     assert 0.0 <= result["precision"] <= 1.0
     assert result["annotated_arrows"] > 0
+
+
+def test_scoring_counts_each_detection_once_and_each_target_once():
+    """Two detections on one arrow are two hits but one covered target."""
+    targets = [(100.0, 100.0), (500.0, 500.0)]
+    heads = [
+        ah.Arrowhead(
+            y=100, x=100, shaft_angle=0.0, barb_angles=(0, 0), barb_lengths=(5, 5), shaft_length=9
+        ),
+        ah.Arrowhead(
+            y=104, x=104, shaft_angle=0.0, barb_angles=(0, 0), barb_lengths=(5, 5), shaft_length=9
+        ),
+        ah.Arrowhead(
+            y=900, x=900, shaft_angle=0.0, barb_angles=(0, 0), barb_lengths=(5, 5), shaft_length=9
+        ),
+    ]
+    scored = ah._score(heads, targets, 20.0)
+    assert scored["detected"] == 3
+    assert scored["true_positives"] == 2
+    assert scored["targets_found"] == 1
+    assert scored["targets"] == 2
+
+
+def test_totals_are_pooled_over_pages_not_averaged():
+    rows = [
+        {"detected": 10, "true_positives": 1, "targets": 5, "targets_found": 1},
+        {"detected": 90, "true_positives": 9, "targets": 5, "targets_found": 4},
+    ]
+    totals = ah._totals(rows)
+    assert totals["precision"] == 0.1
+    assert totals["recall"] == 0.5
+
+
+def test_the_variant_report_is_written(tmp_path, monkeypatch):
+    monkeypatch.setattr(ah, "REPORT", tmp_path / "arrowheads.md")
+    results = {
+        "as_built": {"detected": 770, "precision": 0.106, "recall": 0.215},
+        "double_match_radius": {"detected": 770, "precision": 0.261, "recall": 0.385},
+    }
+    text = ah.report(results).read_text(encoding="utf-8")
+    assert "as_built" in text and "0.106" in text
+    assert "0.80" in text, "the report must say which bar was not met"
+
+
+def test_the_variants_study_measures_every_variant():
+    results = ah.variants(3)
+    if not results:
+        pytest.skip("hdBPMN not present")
+    assert set(results) == {
+        "as_built",
+        "on_the_shape_layer",
+        "symmetric_barbs_only",
+        "terminating_barbs_only",
+        "double_match_radius",
+    }
+    for row in results.values():
+        assert 0.0 <= row["precision"] <= 1.0 and 0.0 <= row["recall"] <= 1.0
+    # A wider match radius can only find more, never fewer, of the same detections.
+    assert results["double_match_radius"]["recall"] >= results["as_built"]["recall"]
