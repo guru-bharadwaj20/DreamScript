@@ -1,0 +1,6 @@
+outs:
+- md5: 3ccfd84dcd305e44967cc2c208b38c45.dir
+  size: 265576145
+  nfiles: 12
+  hash: md5
+  path: iam_line

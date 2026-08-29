@@ -1,0 +1,6 @@
+outs:
+- md5: 0584e29d767798ea97f806de0882ff3f.dir
+  size: 593802464
+  nfiles: 2119
+  hash: md5
+  path: hdbpmn

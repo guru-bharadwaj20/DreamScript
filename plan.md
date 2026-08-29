@@ -122,7 +122,7 @@ that reflects real human messiness.
 | 1.3.2 | Deduplication | 64-bit dHash + prefix-bucketed Hamming search; groups kept whole by the splitter | Duplicate report generated — **16 groups / 50 images over 1,435 on-disk files** | ✅ |
 | 1.3.3 | **Scribe-disjoint splits** | Scribes and duplicate groups unified into connected components, then assigned whole; source writer-splits adopted where published | No scribe appears in two splits — **verified, 0 leaks, 0 straddling duplicate groups** | ✅ |
 | 1.3.4 | Class balance report | Counts per type per split and per source; imbalance ratio and its downstream consequences | Histogram in `reports/` — **487:1 imbalance documented, every type present in every split** | ✅ |
-| 1.3.5 | DVC / Git-LFS tracking | Data versioned, not committed raw | `dvc status` clean | ❌ |
+| 1.3.5 | DVC tracking | 7 datasets tracked by content hash, hardlink cache, local remote (licence audit forbids a public one) | `dvc status` clean | ✅ |
 | 1.3.6 | Augmentation policy | 10 transforms, each tied to a named risk: rotate, perspective, shadow, glare, brightness, blur, JPEG, ink-thickness, paper texture, stain | `src/ingest/augment.py` + visual grid | ✅ |
 | 1.3.7 | Synthetic diagram generator | Programmatic diagrams rendered then "hand-ified" (jitter, wobbly lines) for cheap volume | 5K synthetic images generated | ❌ |
 

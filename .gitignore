@@ -7,10 +7,16 @@ __pycache__/
 .ipynb_checkpoints/
 
 # --- data: tracked by DVC, never committed raw ------------------------------
+# The contents stay out of git; the .dvc pointer files are exactly what git *should*
+# carry, so they are re-included below.
 data/raw/*
 data/interim/*
 data/processed/*
 data/features/*
+!data/raw/*.dvc
+!data/interim/*.dvc
+!data/processed/*.dvc
+!data/features/*.dvc
 
 # --- experiment outputs -----------------------------------------------------
 experiments/*

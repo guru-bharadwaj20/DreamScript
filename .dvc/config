@@ -1,0 +1,6 @@
+[cache]
+    type = "hardlink,symlink,copy"
+[core]
+    remote = local
+['remote "local"']
+    url = C:/Users/Temp/dreamscript-dvc-store

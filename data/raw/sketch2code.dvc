@@ -1,0 +1,6 @@
+outs:
+- md5: c35896427e16a0bd849610f3272a79b5.dir
+  size: 125584980
+  nfiles: 3406
+  hash: md5
+  path: sketch2code

@@ -1,0 +1,6 @@
+outs:
+- md5: 7c55329e4e9e94e3782b555883c75da4.dir
+  size: 35377914
+  nfiles: 305
+  hash: md5
+  path: fa_bresler

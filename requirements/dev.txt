@@ -3,3 +3,4 @@ black==24.10.0
 isort==5.13.2
 ruff==0.8.4
 nbstripout==0.8.1
+dvc==3.67.1
