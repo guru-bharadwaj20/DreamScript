@@ -1,0 +1,9 @@
+scribe_id,style,handedness,media_used,consent,notes
+scribe01,neat,right,pencil;ballpoint,,placeholder - fill in on collection
+scribe02,neat,left,ballpoint;stylus,,placeholder - fill in on collection
+scribe03,average,right,pencil;marker,,placeholder - fill in on collection
+scribe04,average,right,whiteboard;marker,,placeholder - fill in on collection
+scribe05,average,left,ballpoint;pencil,,placeholder - fill in on collection
+scribe06,average,right,stylus;pencil,,placeholder - fill in on collection
+scribe07,messy,right,marker;whiteboard,,placeholder - fill in on collection
+scribe08,messy,right,ballpoint;pencil,,placeholder - fill in on collection
