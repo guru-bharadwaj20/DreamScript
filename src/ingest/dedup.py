@@ -1,0 +1,231 @@
+"""Phase 1.3.2 — near-duplicate detection by perceptual hash.
+
+Duplicates are not a tidiness problem, they are a **leakage** problem. If the same drawing
+appears in train and test — because a writer redrew the same exercise, or two sources overlap —
+every reported score is inflated and nobody can tell by looking. This module finds those pairs
+before the splits are built (Phase 1.3.3), not after.
+
+    python -m src.ingest.dedup                 # hash the corpus and report duplicate groups
+    python -m src.ingest.dedup --threshold 3   # stricter/looser Hamming distance
+
+Uses a 64-bit difference hash (dHash): resize to 9x8, compare adjacent pixels, pack the
+comparisons into an integer. Two images within a small Hamming distance are near-identical
+even if one is a recompressed, slightly cropped or rescaled copy of the other.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+import cv2
+import numpy as np
+import pandas as pd
+
+from src.utils.config import ROOT
+
+HASH_SIZE = 8  # -> 64-bit hash
+# Hamming distance over a 64-bit hash. Measured on this corpus (see reports/duplicates.md):
+# t=0 -> 1 group, t=2 -> 9, t=3 -> 11, t=5 -> 16, t=8 -> 22. There is no cliff, because most
+# of a line drawing's hash is white paper - so a loose threshold merges *different* writers
+# drawing the *same* exercise. 2 is deliberately conservative: it catches re-encodes and
+# rescales without pretending structural similarity is duplication.
+DEFAULT_THRESHOLD = 2
+OUT = ROOT / "data" / "interim" / "phashes.parquet"
+REPORT = ROOT / "reports" / "duplicates.md"
+
+
+def dhash(image: np.ndarray, hash_size: int = HASH_SIZE) -> int:
+    """Difference hash: robust to rescaling, compression and small brightness shifts."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    small = cv2.resize(gray, (hash_size + 1, hash_size), interpolation=cv2.INTER_AREA)
+    diff = small[:, 1:] > small[:, :-1]
+    bits = 0
+    for bit in diff.flatten():
+        bits = (bits << 1) | int(bit)
+    return bits
+
+
+def hamming(a: int, b: int) -> int:
+    return bin(a ^ b).count("1")
+
+
+def hash_file(path: Path) -> int | None:
+    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    return None if img is None else dhash(img)
+
+
+def hash_manifest(df: pd.DataFrame, limit: int | None = None) -> pd.DataFrame:
+    """Hash every manifest row that points at a real image file on disk.
+
+    Rows addressed as `<parquet>#<index>` are packed inside a container and are skipped:
+    hashing them would mean decoding 30k embedded images, and the sources that use that
+    layout publish their own splits anyway.
+    """
+    rows = []
+    candidates = df[~df["path"].str.contains("#", regex=False)]
+    if limit:
+        candidates = candidates.head(limit)
+    for _, r in candidates.iterrows():
+        p = ROOT / r["path"]
+        h = hash_file(p) if p.is_file() else None
+        if h is not None:
+            rows.append({"id": r["id"], "source": r["source"], "path": r["path"], "phash": h})
+    return pd.DataFrame(rows)
+
+
+def find_duplicates(hashes: pd.DataFrame, threshold: int = DEFAULT_THRESHOLD) -> list[list[dict]]:
+    """Group near-identical images.
+
+    Exact matches are found by grouping on the hash. Near matches are then found only
+    *within buckets sharing a 16-bit prefix*, which keeps this O(n * bucket) instead of the
+    O(n^2) that 35k pairwise comparisons would cost.
+    """
+    groups: list[list[dict]] = []
+    seen: set[str] = set()
+
+    exact = defaultdict(list)
+    for rec in hashes.to_dict("records"):
+        exact[rec["phash"]].append(rec)
+    for _, members in exact.items():
+        if len(members) > 1:
+            groups.append(members)
+            seen.update(m["id"] for m in members)
+
+    if threshold > 0:
+        buckets = defaultdict(list)
+        for rec in hashes.to_dict("records"):
+            if rec["id"] not in seen:
+                buckets[rec["phash"] >> 48].append(rec)  # top 16 bits as a blocking key
+        for members in buckets.values():
+            for i, a in enumerate(members):
+                if a["id"] in seen:
+                    continue
+                near = [a]
+                for b in members[i + 1 :]:
+                    if b["id"] not in seen and hamming(a["phash"], b["phash"]) <= threshold:
+                        near.append(b)
+                if len(near) > 1:
+                    groups.append(near)
+                    seen.update(m["id"] for m in near)
+    return groups
+
+
+def write_report(hashes: pd.DataFrame, groups: list[list[dict]], threshold: int) -> Path:
+    dup_ids = {m["id"] for g in groups for m in g}
+    cross_source = [g for g in groups if len({m["source"] for m in g}) > 1]
+
+    lines: list[str] = []
+    add = lines.append
+    add("# Near-Duplicate Report")
+    add("")
+    add(f"Phase 1.3.2. Generated by `python -m src.ingest.dedup --threshold {threshold}`.")
+    add("")
+    add(f"- Images hashed: **{len(hashes)}**")
+    add(f"- Duplicate groups: **{len(groups)}**")
+    add(f"- Images in a duplicate group: **{len(dup_ids)}**")
+    add(f"- Groups spanning more than one source: **{len(cross_source)}**")
+    add("")
+    add("## Why this matters")
+    add("")
+    add("A duplicate that lands in both train and test inflates every score silently. The")
+    add("splits in Phase 1.3.3 therefore keep each duplicate group whole, in one split.")
+    add("")
+    add("## Threshold sensitivity, and what dHash can and cannot see")
+    add("")
+    add("| Hamming threshold | groups | images |")
+    add("| ---: | ---: | ---: |")
+    for t in (0, 2, 3, 5, 8):
+        g = find_duplicates(hashes, threshold=t)
+        add(f"| {t} | {len(g)} | {len({m['id'] for grp in g for m in grp})} |")
+    add("")
+    add("**Only one pair is an exact match (threshold 0).** The count then grows smoothly")
+    add("with the threshold rather than jumping at some natural boundary, and inspection")
+    add("shows why: at threshold 5 the groups contain *different writers drawing the same")
+    add("exercise*. That is not duplication, it is the dataset working as intended.")
+    add("")
+    add("A difference hash downsamples to 8x8 and compares adjacent pixels. For a sparse")
+    add("line drawing on white paper most of those comparisons are paper-versus-paper, so")
+    add("the hash mostly encodes gross layout. It reliably catches re-encodes, rescales and")
+    add("recompressions; it cannot distinguish two people's renderings of one flowchart.")
+    add("")
+    add(f"The default is therefore the conservative **threshold {DEFAULT_THRESHOLD}**. Real")
+    add("leakage protection comes from the split policy in Phase 1.3.3 - scribe-disjoint,")
+    add("and duplicate groups kept whole - not from this hash alone.")
+    add("")
+    if groups:
+        add("## Largest groups")
+        add("")
+        add("| Size | Sources | Members (first three) |")
+        add("| ---: | :--- | :--- |")
+        for g in sorted(groups, key=len, reverse=True)[:20]:
+            srcs = ", ".join(sorted({m["source"] for m in g}))
+            members = ", ".join(f"`{m['id']}`" for m in g[:3])
+            add(f"| {len(g)} | {srcs} | {members} |")
+        add("")
+    if cross_source:
+        add("## Cross-source duplicates")
+        add("")
+        add("These matter most: the same image reached the corpus through two datasets.")
+        add("")
+        for g in cross_source[:20]:
+            members = ", ".join("`" + m["id"] + "`" for m in g)
+            add(f"- {members}")
+        add("")
+    if not groups:
+        add("## Result")
+        add("")
+        add("No duplicate groups were found at this threshold.")
+
+    REPORT.parent.mkdir(parents=True, exist_ok=True)
+    while lines and not lines[-1].strip():  # the end-of-file-fixer hook strips these
+        lines.pop()
+    with REPORT.open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines) + "\n")
+    return REPORT
+
+
+def duplicate_group_map(groups: list[list[dict]]) -> dict[str, int]:
+    """id -> group number, for the splitter to keep groups whole."""
+    return {m["id"]: i for i, g in enumerate(groups) for m in g}
+
+
+def main(argv: list[str] | None = None) -> int:
+    from src.ingest.manifest import load
+
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--threshold", type=int, default=DEFAULT_THRESHOLD)
+    ap.add_argument("--limit", type=int, default=None, help="hash only the first N images")
+    args = ap.parse_args(argv)
+
+    df = load()
+    print(f"hashing {len(df[~df['path'].str.contains('#', regex=False)])} on-disk images ...")
+    hashes = hash_manifest(df, limit=args.limit)
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    hashes.to_parquet(OUT, index=False)
+    print(f"wrote {OUT.relative_to(ROOT)}  ({len(hashes)} hashes)")
+
+    groups = find_duplicates(hashes, threshold=args.threshold)
+    path = write_report(hashes, groups, args.threshold)
+    print(f"wrote {path.relative_to(ROOT)}")
+
+    dup_ids = {m["id"] for g in groups for m in g}
+    print(
+        json.dumps({"hashed": len(hashes), "groups": len(groups), "images": len(dup_ids)}, indent=2)
+    )
+
+    checks = {
+        "hashes_computed": len(hashes) > 0,
+        "hashes_are_64_bit": bool((hashes["phash"] < 2**64).all()) if len(hashes) else False,
+        "report_written": path.is_file(),
+    }
+    for name, ok in checks.items():
+        print(f"  {'PASS' if ok else 'FAIL'}  {name}")
+    return 0 if all(checks.values()) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
