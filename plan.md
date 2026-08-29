@@ -71,7 +71,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | 0.2.3 | Config system | Hydra/YAML configs, no hardcoded paths or hyperparameters | Every script runs `python -m src.x --config configs/x.yaml` | ✅ |
 | 0.2.4 | Logging | Structured logging, per-run log dir `experiments/<ts>_<name>/` | Logs written for a dummy run | ✅ |
 | 0.2.5 | `Makefile` / task runner | `make data`, `make train-clf`, `make eval`, `make app`; `tasks.ps1` mirror for Windows (no GNU make on the target machine) | All targets execute | ✅ |
-| 0.2.6 | Pre-commit | black, ruff, isort, nbstripout | Hook blocks a bad commit | ❌ |
+| 0.2.6 | Pre-commit | black, ruff, isort, nbstripout | Hook blocks a bad commit | ✅ |
 | 0.2.7 | Test scaffold | pytest + fixtures with 5 tiny sample images | `pytest` green on empty suite | ❌ |
 
 ### 0.3 Project Governance

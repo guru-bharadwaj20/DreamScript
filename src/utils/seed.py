@@ -13,6 +13,7 @@ entry point, before importing anything that samples randomness at import time.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import random
 import sys
@@ -56,10 +57,8 @@ def set_seed(seed: int = DEFAULT_SEED, *, deterministic: bool = True) -> int:
         torch.backends.cudnn.benchmark = False
         # cuBLAS needs this workspace config for deterministic matmuls on CUDA >= 10.2.
         os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
-        try:
+        with contextlib.suppress(Exception):  # older torch builds lack this switch
             torch.use_deterministic_algorithms(True, warn_only=True)
-        except Exception:  # noqa: BLE001 - older torch builds
-            pass
     else:
         torch.backends.cudnn.benchmark = True
 
