@@ -62,10 +62,14 @@ def main() -> int:
     checks["sauvola_binarizes"] = 0.005 < float(sauvola.mean()) < 0.30
 
     # Connected components: 2 boxes + 1 arrow should survive binarization.
-    n_labels, _, stats, _ = cv2.connectedComponentsWithStats(adaptive, connectivity=8)
-    big = int((stats[1:, cv2.CC_STAT_AREA] > 100).sum())
-    print(f"components  : {n_labels - 1} total, {big} larger than 100 px")
-    checks["components_found"] = big >= 3
+    otsu_u8 = (otsu * 255).astype(np.uint8)
+    n_labels, _, stats, _ = cv2.connectedComponentsWithStats(otsu_u8, connectivity=8)
+    keep = stats[1:][stats[1:, cv2.CC_STAT_AREA] > 100]
+    big = int(len(keep))
+    widest = int(keep[:, cv2.CC_STAT_WIDTH].max()) if big else 0
+    print(f"components  : {n_labels - 1} total, {big} larger than 100 px, widest={widest}px")
+    # The arrow joins both boxes, so the drawing is one wide component spanning the page.
+    checks["components_found"] = big >= 1 and widest > 300
 
     # --- pdf2image (import-level; poppler binary is only needed for real PDFs) --
     try:
