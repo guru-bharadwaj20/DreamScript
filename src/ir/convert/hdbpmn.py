@@ -8,9 +8,17 @@ therefore the one that produces ground-truth IR rather than an estimate of it.
 Two things need care.
 
 **Coordinates.** BPMN DI bounds are not in image pixels. Each file opens with a comment
-`{"backgroundSize": 1000}`, meaning the annotator worked on the photo scaled so its longest
-side was 1000 units. Every bound and waypoint is multiplied by `max(width, height) / 1000` to
-land back on the original photo.
+`{"backgroundSize": 1000}`, meaning the annotator worked on the photo scaled so its **width**
+was 1000 units; every bound and waypoint is multiplied by `width / backgroundSize` to land back
+on the original photo.
+
+That it is the width and not the longer side was found the hard way. The first version used
+`max(width, height)`, which is identical on a landscape photo and wrong on a portrait one -
+and the diagram checked by eye happened to be landscape. The Phase 2.2.5 validator then
+reported 162 diagrams with boxes outside the frame, all portrait. Measured across 198
+annotations: the width rule puts every box inside the image, the longest-side rule fails on
+exactly the 38 portrait ones. `tests/test_ir_convert.py` now checks portrait and landscape
+separately.
 
 **Shape versus role.** The XML says an element is a `task`; it does not say the writer drew a
 rounded rectangle. The role is ground truth, the shape is the BPMN drawing convention applied
@@ -147,7 +155,7 @@ def convert(annotation: Path, *, image: Path | None = None) -> Diagram:
             width, height = im.size
     else:  # geometry is meaningless without knowing what it indexes
         raise FileNotFoundError(f"no image beside {annotation.name}: {image}")
-    scale = max(width, height) / _background_size(raw)
+    scale = width / _background_size(raw)
 
     # -- semantics: every element that could be drawn, keyed by id --------------------
     kinds: dict[str, str] = {}
