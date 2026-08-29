@@ -23,6 +23,29 @@ import numpy as np
 #: into a triangle.
 EPSILON_FRAC = 0.02
 
+# Thresholds below are the midpoints between class medians measured on the **calibration half**
+# of the Phase 2.2.4 sample - 25 hdBPMN diagrams, 404 annotated regions - never on the half the
+# agreement report scores. Real ink is nothing like an ideal render, which is why the first
+# version of this module, calibrated on drawn-in-code shapes, reached kappa 0.05:
+#
+#   class          v    circularity  extent  aspect
+#   circle         8.5     0.70       0.72    1.03
+#   diamond        8.0     0.50       0.49    0.98
+#   rectangle      4.0     0.35       0.88    3.00
+#   rounded-rect   7.0     0.39       0.78    1.83
+#
+# The lesson worth keeping: a hand-drawn circle has circularity 0.70, not the 0.89 of a
+# rendered one, because the filled boundary of a pen stroke is ragged.
+
+#: Below this a shape leaves half its bounding box empty; only a diamond does that.
+DIAMOND_EXTENT = 0.58
+
+#: Above this a shape essentially fills its box: the rectangle family.
+RECT_EXTENT = 0.83
+
+#: Circle and ellipse sit well above the rectangle family on circularity (0.70 vs 0.35-0.39).
+ROUND_CIRCULARITY = 0.55
+
 
 def _corner_positions(approx: np.ndarray, x: float, y: float, w: float, h: float) -> float:
     """Mean distance of the polygon's vertices from the bounding-box corners, normalised.
@@ -52,34 +75,19 @@ def classify_contour(contour: np.ndarray) -> tuple[str, float]:
     circularity = 4 * np.pi * area / (peri * peri)
     v = len(approx)
 
-    if v == 3:
-        return "diamond", 0.35  # a diamond that lost a corner to the approximation
+    # A diamond is the only vocabulary shape that leaves half its bounding box empty.
+    if extent < DIAMOND_EXTENT:
+        return "diamond", 0.6
+    # Fills its box: the rectangle family. Four corners means square ones, more means rounded -
+    # which is the only signal there is for that distinction, and it is a weak one.
+    if extent >= RECT_EXTENT:
+        return ("rectangle", 0.6) if v <= 5 else ("rounded-rect", 0.45)
+    # Four clean corners but a wasted box: slanted sides.
     if v == 4:
-        # Vertices at the bbox corners means a rectangle; at the edge midpoints, a diamond.
-        if _corner_positions(approx, x, y, w, h) > 0.18:
-            return "diamond", 0.7
-        # A parallelogram wastes its bounding box; a rectangle fills it. Measured extents on
-        # ideal renders: rectangle 0.99, parallelogram 0.76, so 0.85 sits between the two.
-        if extent < 0.85:
-            return "parallelogram", 0.5
-        return "rectangle", 0.7
-
-    # Five or more vertices: a curve, or a many-sided polygon. Thresholds are the midpoints
-    # between measured values on ideal renders rather than round numbers -
-    # circularity: circle 0.89, octagon 0.81, rounded-rect 0.82, ellipse 0.70;
-    # extent:     circle 0.77, octagon 0.70, rounded-rect 0.96, ellipse 0.78.
-    if extent > 0.90:
-        return "rounded-rect", 0.5  # only a straight-sided shape fills its box this well
-    if not 0.75 <= aspect <= 1.33:
-        return "ellipse", 0.55
-    if circularity >= 0.85:
-        return "circle", 0.6
-    if circularity >= 0.60:
-        # Circle and octagon are 0.89 against 0.81 on *perfect* renders; hand-drawn examples
-        # of the two overlap outright. This is the least trustworthy branch here, which is
-        # why it returns the lowest confidence in the module.
-        return "octagon", 0.35
-    return "freeform", 0.3
+        return "parallelogram", 0.45
+    if circularity >= ROUND_CIRCULARITY:
+        return ("circle", 0.6) if 0.75 <= aspect <= 1.33 else ("ellipse", 0.55)
+    return "rounded-rect", 0.4
 
 
 def classify_mask(mask: np.ndarray) -> tuple[str, float]:
@@ -97,12 +105,32 @@ def classify_crop(gray: np.ndarray) -> tuple[str, float]:
 
     Used by the geometric second annotator in Phase 2.2.4, which sees only the pixels inside
     an annotated box and must decide what was drawn there without being told.
+
+    The **fill** step is what makes this work at all. A drawn shape is an outline, not a solid,
+    so its external contour traces the ragged outside of a pen stroke and wraps whatever text
+    sits inside it. Measured on 820 hdBPMN regions, analysing that contour directly called 327
+    of them `ellipse` and reached kappa 0.05 against the annotation. Filling the largest
+    external contour into a solid region first - which discards the interior text and collapses
+    the two sides of the stroke into one boundary - makes the same measurements comparable to
+    the ideal shapes the thresholds were calibrated on.
     """
     if gray.size == 0:
         return "freeform", 0.0
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     _, binary = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    # Close small gaps so a shaky outline is one contour rather than several arcs.
-    kernel = np.ones((3, 3), np.uint8)
-    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel, iterations=2)
-    return classify_mask(binary)
+    # Close gaps so a shaky outline is one contour rather than a string of arcs. The kernel
+    # scales with the crop: a fixed 3px kernel closes nothing on a 600px photograph of a box.
+    span = max(gray.shape)
+    k = max(3, (span // 60) | 1)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((k, k), np.uint8), iterations=2)
+
+    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return "freeform", 0.0
+    filled = np.zeros_like(binary)
+    cv2.drawContours(filled, [max(contours, key=cv2.contourArea)], -1, 255, thickness=cv2.FILLED)
+    # A shape should occupy most of its own box; a stray stroke that happens to be the biggest
+    # contour will not, and calling that a rectangle would be worse than admitting ignorance.
+    if filled.sum() / 255 < 0.15 * filled.size:
+        return "freeform", 0.2
+    return classify_mask(filled)

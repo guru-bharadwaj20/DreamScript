@@ -310,16 +310,29 @@ def _ideal(kind: str) -> np.ndarray:
 
 @pytest.mark.parametrize(
     "kind",
-    ["rectangle", "diamond", "circle", "ellipse", "octagon", "parallelogram", "rounded-rect"],
+    ["rectangle", "diamond", "circle", "ellipse", "parallelogram", "rounded-rect"],
 )
 def test_geometry_classifier_on_ideal_shapes(kind):
-    """Seven of the twelve vocabulary shapes are drawable as ideal masks; the classifier has
-    to get all seven right on those before its guesses on real ink mean anything."""
+    """Six vocabulary shapes are drawable as ideal masks and the classifier must get all six
+    right on those before its guesses on real ink mean anything. Note that its thresholds are
+    calibrated on hand-drawn ink, not on these - so passing here is necessary, not sufficient."""
     from src.ir.convert.geometry import classify_mask
 
     shape, confidence = classify_mask(_ideal(kind))
     assert shape == kind
     assert 0 < confidence <= 0.7
+
+
+def test_geometry_classifier_cannot_tell_an_octagon_from_a_circle():
+    """A known, deliberate limitation, pinned rather than hidden.
+
+    A rendered octagon has circularity 0.81 and a rendered circle 0.89 - but a *hand-drawn*
+    circle measures 0.70, below both. No threshold on this feature separates the three, so the
+    classifier does not emit `octagon` at all; that shape only ever comes from a source that
+    declares it, such as a DIDI prompt."""
+    from src.ir.convert.geometry import classify_mask
+
+    assert classify_mask(_ideal("octagon"))[0] == "circle"
 
 
 def test_geometry_classifier_confidence_is_never_certain():
