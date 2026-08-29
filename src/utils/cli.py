@@ -5,7 +5,8 @@ Every pipeline package exposes the same command line:
     python -m src.<package> --config configs/<package>.yaml [key.path=value ...]
 
 `main()` below parses those arguments, loads and composes the config, seeds every RNG from
-it, and hands the result to the package's `run(cfg)`. Packages whose stage is not implemented
+it, opens a run directory under `experiments/`, and hands both to the package's
+`run(cfg, run)`. Packages whose stage is not implemented
 yet raise `StageNotImplemented`, which prints the resolved config and exits non-zero — so the
 contract is testable from Phase 0 onward instead of after the stage is written.
 """
@@ -19,6 +20,7 @@ from typing import Callable
 from omegaconf import DictConfig, OmegaConf
 
 from src.utils.config import add_config_args, load_config
+from src.utils.logging import Run, start_run
 from src.utils.seed import set_seed
 
 
@@ -28,7 +30,7 @@ class StageNotImplemented(NotImplementedError):
 
 def main(
     package: str,
-    run: Callable[[DictConfig], int | None],
+    run: Callable[[DictConfig, Run], int | None],
     argv: list[str] | None = None,
 ) -> int:
     parser = argparse.ArgumentParser(
@@ -50,10 +52,18 @@ def main(
         print(OmegaConf.to_yaml(cfg, resolve=True))
         return 0
 
+    active = start_run(cfg)
     try:
-        return int(run(cfg) or 0)
+        code = int(run(cfg, active) or 0)
+        active.finish("ok" if code == 0 else f"exit-{code}")
+        return code
     except StageNotImplemented as exc:
-        print(f"{package}: {exc}", file=sys.stderr)
+        active.log.warning("%s: %s", package, exc)
+        active.finish("not-implemented")
         print(f"config resolved from {cfg._config_path}:", file=sys.stderr)  # noqa: SLF001
         print(OmegaConf.to_yaml(cfg, resolve=True), file=sys.stderr)
         return 2
+    except Exception:
+        active.log.exception("%s failed", package)
+        active.finish("error")
+        raise
