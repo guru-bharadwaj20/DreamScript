@@ -165,7 +165,7 @@ that reflects real human messiness.
 | # | Task | Technique | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 3.1.1 | EXIF orientation fix | Auto-rotate | `src/preprocess/exif.py`; round-trip test on all 8 orientations incl. mirrored. Corpus survey: 0/693 tagged | ✅ |
-| 3.1.2 | Page/board detection | Largest quadrilateral contour | Detects page in ≥90% of test photos | ❌ |
+| 3.1.2 | Page/board detection | Largest quadrilateral contour | 97% handled correctly on 200 hdBPMN photos (criterion: the quad keeps every annotated shape); precision when it crops 0.54 | ✅ |
 | 3.1.3 | Perspective rectification | Homography warp to top-down | Visual QA grid | ❌ |
 | 3.1.4 | Illumination correction | CLAHE + background estimate via large-kernel morphological opening | Shadowed samples readable | ❌ |
 | 3.1.5 | Binarization | Sauvola / adaptive threshold; compare against Otsu | Chosen method logged with F1 on stroke masks | ❌ |
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 1 | ❌ |
+| 3 — Preprocessing | 21 | 2 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **52** | ❌ |
+| **Total** | **302** | **53** | ❌ |
