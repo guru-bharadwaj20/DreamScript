@@ -1,13 +1,29 @@
+# --- environments -----------------------------------------------------------
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.ruff_cache/
 .ipynb_checkpoints/
-experiments/
-data/raw/
-data/interim/
-data/processed/
+
+# --- data: tracked by DVC, never committed raw ------------------------------
+data/raw/*
+data/interim/*
+data/processed/*
+data/features/*
+
+# --- experiment outputs -----------------------------------------------------
+experiments/*
+mlruns/
+
+# --- model weights ----------------------------------------------------------
 *.pt
 *.pth
 *.onnx
+*.safetensors
+
+# --- secrets ----------------------------------------------------------------
 .env
+
+# --- keep the directory skeleton itself -------------------------------------
+!**/.gitkeep
