@@ -124,7 +124,7 @@ that reflects real human messiness.
 | 1.3.4 | Class balance report | Counts per type per split and per source; imbalance ratio and its downstream consequences | Histogram in `reports/` — **487:1 imbalance documented, every type present in every split** | ✅ |
 | 1.3.5 | DVC tracking | 7 datasets tracked by content hash, hardlink cache, local remote (licence audit forbids a public one) | `dvc status` clean | ✅ |
 | 1.3.6 | Augmentation policy | 10 transforms, each tied to a named risk: rotate, perspective, shadow, glare, brightness, blur, JPEG, ink-thickness, paper texture, stain | `src/ingest/augment.py` + visual grid | ✅ |
-| 1.3.7 | Synthetic diagram generator | Programmatic diagrams rendered then "hand-ified" (jitter, wobbly lines) for cheap volume | 5K synthetic images generated | ❌ |
+| 1.3.7 | Synthetic diagram generator | Wobbled-stroke renderer for all 5 types, each image carrying its ground-truth graph; kept in `data/processed/synthetic/`, never mixed into the real corpus | 5K synthetic images generated — **5,000 with graphs, 2,917 augmented** | ✅ |
 
 ---
 
