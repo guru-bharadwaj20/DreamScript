@@ -30,7 +30,10 @@ TEMPLATE_CSV = ROOT / "docs" / "collection" / "scribes_template.csv"
 
 # Self-declared, because the point is to span the range, not to grade anyone's handwriting.
 STYLES = ("neat", "average", "messy")
-HANDEDNESS = ("left", "right")
+# "unknown" is valid only for sourced scribes: public datasets publish writer identity but
+# never handedness, and guessing it would be fabrication.
+HANDEDNESS = ("left", "right", "unknown")
+ORIGINS = ("self", "sourced")
 
 
 @dataclass
@@ -41,19 +44,33 @@ class Scribe:
     media_used: str  # semicolon-separated subset of MEDIA
     consent: str  # yes | no - no row without consent is used
     notes: str = ""
+    origin: str = "self"  # self = drew for this project; sourced = from a public dataset
+    style_basis: str = "declared"  # declared by the person, or measured from their strokes
 
     def validate(self) -> list[str]:
         problems = []
-        if not self.scribe_id.startswith("scribe"):
+        # Self-collected ids are opaque (`scribe07`); sourced ids name the dataset and the
+        # writer identity that dataset publishes (`hdbpmn-writer0042`), so the corpus can
+        # always be traced back to the person's real record in the original release.
+        if self.origin == "sourced":
+            if "-" not in self.scribe_id:
+                problems.append(f"{self.scribe_id}: sourced id must be '<dataset>-<writer>'")
+        elif not self.scribe_id.startswith("scribe"):
             problems.append(f"{self.scribe_id}: id must start with 'scribe'")
         if self.style not in STYLES:
             problems.append(f"{self.scribe_id}: style {self.style!r} not in {STYLES}")
         if self.handedness not in HANDEDNESS:
             problems.append(f"{self.scribe_id}: handedness {self.handedness!r} not in {HANDEDNESS}")
+        if self.handedness == "unknown" and self.origin != "sourced":
+            problems.append(f"{self.scribe_id}: handedness may only be unknown for sourced data")
+        if self.origin not in ORIGINS:
+            problems.append(f"{self.scribe_id}: origin {self.origin!r} not in {ORIGINS}")
         for m in filter(None, self.media_used.split(";")):
             if m not in MEDIA:
                 problems.append(f"{self.scribe_id}: unknown medium {m!r}")
         if self.consent != "yes":
+            # For sourced scribes, consent is carried by the dataset's licence (recorded in
+            # its data card); for people who drew for this project it is given directly.
             problems.append(f"{self.scribe_id}: consent is {self.consent!r}, must be 'yes'")
         return problems
 

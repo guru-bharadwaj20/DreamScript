@@ -120,7 +120,7 @@ that reflects real human messiness.
 | :---: | :--- | :--- | :--- | :---: |
 | 1.3.1 | Unified manifest | `data/processed/manifest.parquet`: id, source, path, type, scribe, medium, condition, adverse, has_structure, has_text, native_split, split | Manifest builds from raw dirs — **35,414 rows** | ✅ |
 | 1.3.2 | Deduplication | 64-bit dHash + prefix-bucketed Hamming search; groups kept whole by the splitter | Duplicate report generated — **16 groups / 50 images over 1,435 on-disk files** | ✅ |
-| 1.3.3 | **Scribe-disjoint splits** | Train/val/test split *by person*, not by image | No scribe appears in two splits | ❌ |
+| 1.3.3 | **Scribe-disjoint splits** | Scribes and duplicate groups unified into connected components, then assigned whole; source writer-splits adopted where published | No scribe appears in two splits — **verified, 0 leaks, 0 straddling duplicate groups** | ✅ |
 | 1.3.4 | Class balance report | Counts per diagram type per split | Histogram in `reports/` | ❌ |
 | 1.3.5 | DVC / Git-LFS tracking | Data versioned, not committed raw | `dvc status` clean | ❌ |
 | 1.3.6 | Augmentation policy | Rotation ±15°, perspective warp, blur, JPEG noise, brightness/contrast, ink-thickness morphology, paper-texture blend | `src/ingest/augment.py` + visual grid | ❌ |

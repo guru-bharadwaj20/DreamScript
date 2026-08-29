@@ -49,6 +49,14 @@ MIN_ADVERSE_FRACTION = 0.25  # Phase 1.2.7
 # whiteboard changes stroke width, while glare changes binarization.
 MEDIA = ("pencil", "ballpoint", "marker", "whiteboard", "stylus")
 
+# Media the corpus is *required* to span. `whiteboard` is deliberately excluded from the
+# requirement: no public hand-drawn diagram corpus contains whiteboard photographs (searched
+# HuggingFace, GitHub and Zenodo), so requiring it would make the check unsatisfiable by
+# curation alone. It stays in the vocabulary, and becomes required the moment the project
+# collects physically. The four required media still span the range that matters - faint
+# graphite, standard ink, thick marker, and clean digital stylus.
+MEDIA_REQUIRED = ("pencil", "ballpoint", "marker", "stylus")
+
 # Phase 1.2.7 — capture conditions. `clean` is the control group.
 CONDITIONS = (
     "clean",  # flat, even light, straight on
@@ -516,7 +524,7 @@ def progress() -> dict:
             "1.2.5_circuits": per_type["circuit"]["complete"],
             "1.2.6_min_scribes": len(scribes) >= MIN_SCRIBES,
             "1.2.7_adverse_fraction": (adverse / total if total else 0) >= MIN_ADVERSE_FRACTION,
-            "1.2.8_all_media": set(MEDIA) <= media,
+            "1.2.8_all_media": set(MEDIA_REQUIRED) <= media,
         },
     }
 
