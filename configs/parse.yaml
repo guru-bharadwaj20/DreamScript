@@ -1,0 +1,8 @@
+# Config for python -m src.parse — see plan.md for the owning phase.
+defaults:
+  - base
+
+logging:
+  run_name: parse-default
+
+parse: {}

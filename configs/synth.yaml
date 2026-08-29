@@ -1,0 +1,8 @@
+# Config for python -m src.synth — see plan.md for the owning phase.
+defaults:
+  - base
+
+logging:
+  run_name: synth-default
+
+synth: {}

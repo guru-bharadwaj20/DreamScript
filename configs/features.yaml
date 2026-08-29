@@ -1,0 +1,8 @@
+# Config for python -m src.features — see plan.md for the owning phase.
+defaults:
+  - base
+
+logging:
+  run_name: features-default
+
+features: {}

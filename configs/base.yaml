@@ -1,0 +1,27 @@
+# Phase 0.2.3 — settings shared by every runnable module. Module configs list this file
+# under `defaults:` and add their own block on top.
+
+project: dreamscript
+seed: 42
+deterministic: true
+
+paths:
+  root: .
+  data: data
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  features: data/features
+  experiments: experiments
+  reports: reports
+
+logging:
+  level: INFO
+  to_file: true
+  # Run directories are named experiments/<timestamp>_<run_name>/ (see docs/conventions.md).
+  run_name: null
+
+hardware:
+  device: cuda        # cuda | cpu
+  num_workers: 4
+  amp_dtype: bfloat16

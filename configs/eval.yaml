@@ -1,0 +1,8 @@
+# Config for python -m src.eval — see plan.md for the owning phase.
+defaults:
+  - base
+
+logging:
+  run_name: eval-default
+
+eval: {}

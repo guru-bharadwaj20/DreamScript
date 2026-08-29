@@ -1,0 +1,35 @@
+# Phase 3 preprocessing. Run:  python -m src.preprocess --config configs/preprocess.yaml
+defaults:
+  - base
+
+logging:
+  run_name: p3-preprocess-default
+
+preprocess:
+  page_detection: true
+  rectify: true
+
+  illumination:
+    clahe_clip_limit: 2.0
+    clahe_tile_grid: 8
+    background_kernel: 51
+
+  binarization:
+    method: sauvola      # sauvola | adaptive | otsu
+    window_size: 25
+    k: 0.2
+
+  denoise:
+    median_kernel: 3
+    min_component_area: 20
+
+  deskew:
+    enabled: true
+    max_angle_deg: 15
+
+  ruled_line_suppression:
+    enabled: true
+    min_line_length_ratio: 0.5
+
+  skeletonize: true
+  cache_primitives: true

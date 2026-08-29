@@ -1,0 +1,24 @@
+# Phase 5 classical diagram-type classification.
+# Run:  python -m src.classify --config configs/classify.yaml model=knn
+defaults:
+  - base
+
+logging:
+  run_name: p5-classical-baseline
+
+data:
+  feature_table: data/features/handcrafted.parquet
+  label_column: diagram_type
+  group_column: scribe_id
+
+model: logreg           # logreg | knn | tree
+
+cv:
+  strategy: grouped     # stratified | grouped (GroupKFold over scribe_id)
+  n_splits: 5
+  n_repeats: 3
+
+metrics:
+  - accuracy
+  - macro_f1
+  - roc_auc_ovr
