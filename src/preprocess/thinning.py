@@ -86,6 +86,35 @@ def thin(mask: np.ndarray, max_iterations: int = MAX_ITERATIONS) -> np.ndarray:
     return image
 
 
+def prune_spurs(skeleton: np.ndarray, max_length: int = 4) -> np.ndarray:
+    """Remove skeleton branches shorter than `max_length` that end in a free end.
+
+    Thinning a rasterised stroke leaves short whiskers wherever the stroke's edge was ragged -
+    a diagonal 3px line produces several. They are indistinguishable from real short branches
+    to anything that counts branches at a junction, so an arrowhead detector run on an unpruned
+    skeleton sees phantom three-way forks all over the page. Pruning is iterative because
+    removing one whisker can expose another.
+    """
+    result = skeleton.astype(bool).copy()
+    for _ in range(max_length):
+        ends = end_points(result)
+        if not ends.any():
+            break
+        # Only remove an endpoint whose neighbour is a junction or another endpoint pixel -
+        # that is, a whisker - never the tip of a long stroke.
+        padded = np.pad(result, 1, constant_values=False)
+        neighbour_count = sum(x.astype(np.uint8) for x in _neighbours(padded))
+        near_junction = cv2.dilate(
+            (result & (neighbour_count >= 3)).astype(np.uint8),
+            np.ones((2 * max_length + 1, 2 * max_length + 1), np.uint8),
+        ).astype(bool)
+        remove = ends & near_junction
+        if not remove.any():
+            break
+        result &= ~remove
+    return result
+
+
 def width_profile(mask: np.ndarray) -> float:
     """Mean stroke width in pixels, as ink area divided by skeleton length.
 
@@ -102,14 +131,25 @@ def width_profile(mask: np.ndarray) -> float:
 
 
 def branch_points(skeleton: np.ndarray) -> np.ndarray:
-    """Skeleton pixels with three or more neighbours: junctions."""
+    """Skeleton pixels where three or more branches meet.
+
+    The test is the **crossing number** - how many 0-to-1 transitions there are going once
+    around the eight neighbours - and not the neighbour count, which is the obvious choice and
+    is wrong. On a diagonal line the 8-connected skeleton is a staircase, and a staircase pixel
+    has three neighbours while being an ordinary point of a simple line. Counting neighbours
+    reported twelve junctions along the shaft of one straight diagonal arrow; counting crossings
+    reports none, because all three neighbours form a single connected run.
+    """
     padded = np.pad(skeleton.astype(bool), 1, constant_values=False)
-    count = sum(x.astype(np.uint8) for x in _neighbours(padded))
-    return skeleton & (count >= 3)
+    return skeleton & (_transitions(_neighbours(padded)) >= 3)
 
 
 def end_points(skeleton: np.ndarray) -> np.ndarray:
-    """Skeleton pixels with exactly one neighbour: the tips of strokes."""
+    """Skeleton pixels with exactly one neighbour: the tips of strokes.
+
+    Neighbour count is the right test here - unlike for junctions - because a stroke tip has
+    exactly one neighbour however the line is oriented.
+    """
     padded = np.pad(skeleton.astype(bool), 1, constant_values=False)
     count = sum(x.astype(np.uint8) for x in _neighbours(padded))
     return skeleton & (count == 1)

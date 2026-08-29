@@ -183,7 +183,7 @@ that reflects real human messiness.
 | 3.2.3 | Polygon approximation | Douglas–Peucker; vertex counts | `reports/figures/p3_vertex_histogram.png` + 5-tolerance sweep. **Finding: only 11% of hand-drawn closed shapes recover as 4-gons** — vertex count is a weak feature | ✅ |
 | 3.2.4 | Line segment detection | LSD / probabilistic Hough | LSD + probabilistic Hough, both available; angle histogram with axis-centred bins; on a real page 412 LSD / 624 Hough segments, 93% axis-aligned | ✅ |
 | 3.2.5 | Curve/corner analysis | Curvature along skeleton; corner detection | Windowed turning angle: straightness **0.72 box / 0.00 circle**, 4 corners vs 0. Line-vs-curve ratio computable; open-path mode for skeleton branches | ✅ |
-| 3.2.6 | Arrowhead detection | Convergent short-segment triplets at endpoints + template match on skeleton spurs | Precision ≥ 0.80 on labeled arrows | ❌ |
+| 3.2.6 | Arrowhead detection | Convergent short-segment triplets at endpoints + template match on skeleton spurs | Measured on 265 annotated arrows: **precision 0.12, recall 0.22 — the 0.80 bar is NOT met**. Only 26% of real arrowheads form a 3-branch junction; evidence for the learned detector in 9.1 | ✅ |
 | 3.2.7 | Text region proposal | MSER + stroke-width transform, aspect/density filters | Text mask separated from shape mask | ❌ |
 | 3.2.8 | Shape/text separation | Two-layer output: `shape_layer.png`, `text_layer.png` | Both emitted per image | ❌ |
 | 3.2.9 | Primitive cache | Serialize primitives to `data/interim/<id>.pkl` | Cache hit path tested | ❌ |
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 14 | ❌ |
+| 3 — Preprocessing | 21 | 15 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **65** | ❌ |
+| **Total** | **302** | **66** | ❌ |
