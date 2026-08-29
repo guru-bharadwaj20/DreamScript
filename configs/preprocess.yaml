@@ -27,7 +27,7 @@ preprocess:
 
   denoise:
     median_kernel: 3
-    min_component_area: 20
+    min_component_area_frac: 5.0e-5   # measured sweep, see src/preprocess/denoise.py
 
   deskew:
     enabled: true
