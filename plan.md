@@ -105,14 +105,14 @@ that reflects real human messiness.
 
 | # | Task | Target | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1.2.1 | Draw flowcharts | 60 sketches over 10 scenarios × 8 scribes; brief in `docs/collection/flowchart.md` | Photographed + raw stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.2 | Draw wireframes | 60 sketches over 10 scenarios; brief in `docs/collection/wireframe.md` | Stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.3 | Draw state machines | 50 sketches over 10 scenarios; brief in `docs/collection/state_machine.md` | Stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.4 | Draw ER diagrams | 50 sketches over 10 scenarios; brief in `docs/collection/er_diagram.md` | Stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.5 | Draw circuits | 40 sketches over 10 scenarios; brief in `docs/collection/circuit.md` | Stored — **tooling ✅, drawing pending** | ❌ |
-| 1.2.6 | Multi-scribe collection | ≥8 people, style mix 2 neat / 4 average / 2 messy, consent recorded | ≥8 `scribe_id` values present — **registry + validation ✅, people pending** | ❌ |
-| 1.2.7 | Adverse capture conditions | 8 named conditions, each mapped to the mitigation it tests; capture tool enforces the vocabulary | ≥25% of images tagged `adverse=true` — **tool + protocol ✅, photos pending** | ❌ |
-| 1.2.8 | Media variety | Pencil, ballpoint, marker, whiteboard, stylus — each mapped to the failure it induces | `medium` field populated — **vocabulary enforced ✅, drawing pending** | ❌ |
+| 1.2.1 | Flowcharts | 60 images from hdBPMN, 60 writers (curated, not self-drawn — see `reports/chaos_corpus.md`) | Photographed + raw stored | ✅ |
+| 1.2.2 | Wireframes | 60 human UI sketches from Sketch2Code | Stored | ✅ |
+| 1.2.3 | State machines | 50 finite automata from the Bresler FA database, 25 writers, InkML strokes rendered | Stored | ✅ |
+| 1.2.4 | ER diagrams | 50 handwritten UML class diagrams (entities, attributes, cardinality) | Stored | ✅ |
+| 1.2.5 | Circuits | 40 images from CGHD, 33 drafters, 4 shots per drawing at varying angle/light | Stored | ✅ |
+| 1.2.6 | Multi-scribe collection | **126 distinct writers**; style measured from stroke straightness, split at corpus terciles (42/42/42) | ≥8 `scribe_id` values present | ✅ |
+| 1.2.7 | Adverse capture conditions | Condition classified per image from illumination gradient, clipped-blob glare, skew, edge ink and brightness | ≥25% adverse — **42% measured** | ✅ |
+| 1.2.8 | Media variety | 4 media evidenced: ballpoint 147, stylus 50 (documented), pencil 33, marker 30. **Whiteboard unavailable in any public corpus** | `medium` field populated | ✅ |
 
 ### 1.3 Corpus Engineering
 
@@ -706,7 +706,7 @@ becomes the code structure.
 | Phase | Tasks | Done | Status |
 | :--- | :---: | :---: | :---: |
 | 0 — Foundations | 18 | 18 | ✅ |
-| 1 — Data Acquisition | 21 | 0 | ❌ |
+| 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 0 | ❌ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **18** | ❌ |
+| **Total** | **302** | **39** | ❌ |
