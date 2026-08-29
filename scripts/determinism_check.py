@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.utils.seed import set_seed  # noqa: E402
+from src.utils.seed import ensure_hashseed, set_seed  # noqa: E402
 
 
 def run_workload(seed: int = 42) -> dict[str, object]:
@@ -64,6 +64,10 @@ def main() -> int:
         help="run this script twice as a subprocess and assert identical output",
     )
     args = ap.parse_args()
+
+    # PYTHONHASHSEED is read once at interpreter start, so re-exec ourselves if it is unset.
+    # Without this, str hashing (and anything ordered by it) differs between runs.
+    ensure_hashseed(args.seed)
 
     if args.compare:
         cmd = [sys.executable, __file__, "--seed", str(args.seed)]
