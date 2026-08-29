@@ -81,7 +81,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | 0.3.1 | Data card template | Source, license, size, bias notes per dataset | `docs/data_cards/` template exists | ✅ |
 | 0.3.2 | Model card template | Intended use, metrics, limits | `docs/model_cards/` template exists | ✅ |
 | 0.3.3 | Experiment naming convention | `<phase>-<model>-<variant>-<seed>` | Documented in `docs/conventions.md` | ✅ |
-| 0.3.4 | Risk register | Failure modes: bad lighting, occlusion, unseen diagram type | `docs/risks.md` with mitigations | ❌ |
+| 0.3.4 | Risk register | Failure modes: bad lighting, occlusion, unseen diagram type | `docs/risks.md` with mitigations | ✅ |
 
 ---
 
@@ -705,7 +705,7 @@ becomes the code structure.
 
 | Phase | Tasks | Done | Status |
 | :--- | :---: | :---: | :---: |
-| 0 — Foundations | 18 | 14 | ❌ |
+| 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 0 | ❌ |
 | 2 — Annotation Schema | 12 | 0 | ❌ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **14** | ❌ |
+| **Total** | **302** | **18** | ❌ |
