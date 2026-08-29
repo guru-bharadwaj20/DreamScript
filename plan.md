@@ -58,7 +58,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | 0.1.2 | CUDA + PyTorch | Torch 2.x + CUDA 12.x verified on RTX 4500 Ada (24 GB) | `torch.cuda.is_available()` True, bf16 supported | ✅ |
 | 0.1.3 | Core CV stack | OpenCV, scikit-image, Pillow, `pdf2image` | Smoke test loads and thresholds an image | ✅ |
 | 0.1.4 | Classical ML stack | scikit-learn, xgboost, lightgbm, hmmlearn, imbalanced-learn | Import test passes | ✅ |
-| 0.1.5 | DL / GenAI stack | transformers, peft, trl, bitsandbytes, accelerate, datasets | 7B model loads in 4-bit | ❌ |
+| 0.1.5 | DL / GenAI stack | transformers, peft, trl, bitsandbytes, accelerate, datasets | 7B model loads in 4-bit | ✅ |
 | 0.1.6 | Determinism harness | Global seed util, `PYTHONHASHSEED`, cudnn deterministic flag | Two runs of one script give identical metrics | ❌ |
 | 0.1.7 | Hardware profile doc | VRAM budget per phase (CNN ~6 GB, LoRA ~18 GB) | `docs/hardware.md` written | ❌ |
 

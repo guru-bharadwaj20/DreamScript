@@ -1,0 +1,10 @@
+# Phase 0.1.5 — deep learning / generative stack (Phase 9 detection+OCR, Phase 12 QLoRA).
+transformers==4.47.1
+peft==0.14.0
+trl==0.13.0
+accelerate==1.2.1
+datasets==3.2.0
+bitsandbytes==0.45.0
+sentencepiece==0.2.0
+safetensors==0.4.5
+huggingface-hub==0.27.0
