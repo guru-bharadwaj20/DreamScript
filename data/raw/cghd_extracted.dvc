@@ -1,0 +1,6 @@
+outs:
+- md5: b05a95d20a6d673b9da2b18999dd6624.dir
+  size: 253117052
+  nfiles: 198
+  hash: md5
+  path: cghd_extracted

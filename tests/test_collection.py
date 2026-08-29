@@ -195,7 +195,10 @@ def test_scribe_template_covers_the_style_range():
     assert len(rows) >= MIN_SCRIBES
     styles = {r.style for r in rows}
     assert styles == set(scribes.STYLES), "the template must span neat, average and messy"
-    assert {r.handedness for r in rows} == set(scribes.HANDEDNESS)
+    # The self-collection template must state handedness for real; `unknown` exists only for
+    # writers sourced from public datasets, which never publish it.
+    assert {r.handedness for r in rows} == {"left", "right"}
+    assert all(r.origin == "self" for r in rows)
 
 
 def test_scribe_validation_catches_bad_rows():
@@ -210,10 +213,13 @@ def test_scribe_without_consent_is_invalid():
     assert any("consent" in p for p in s.validate())
 
 
-def test_scribe_report_runs_on_an_empty_corpus():
+def test_scribe_report_matches_the_corpus_on_disk():
+    """Whatever is collected, every drawing must belong to a registered, consenting writer."""
     r = scribes.report()
     assert r["checks"]["no_unregistered_drawings"] is True
-    assert r["checks"]["min_scribes_registered"] is False
+    assert r["checks"]["no_validation_problems"] is True
+    # The registry and the corpus must agree about who exists.
+    assert set(r["scribes_with_drawings"]) <= {s.scribe_id for s in scribes.load()}
 
 
 def test_condition_vocabulary_is_closed():
