@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dreamscript.local/schemas/node.schema.json",
+  "title": "DreamScript IR node",
+  "description": "One drawn shape. A node is anything a reader would point at and call a thing rather than a connection between things.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "shape", "bbox", "text", "semantic_role", "confidence"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.:-]{1,64}$",
+      "description": "Unique within its diagram. Stable across re-runs of a converter so diffs are readable."
+    },
+    "shape": {
+      "type": "string",
+      "description": "What was drawn. Tightened to a closed vocabulary in schemas/shape.schema.json (Phase 2.1.4)."
+    },
+    "bbox": {
+      "description": "[x, y, w, h] in pixels of the image named by meta.image, origin top-left. Null when the source records structure but no geometry - see meta.geometry.",
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "number" }
+        },
+        { "type": "null" }
+      ]
+    },
+    "text": {
+      "type": "string",
+      "description": "Transcribed content, empty string when the shape carries none. Never null: absent text and unread text are different states, and the second one belongs in low_conf_text."
+    },
+    "semantic_role": {
+      "type": "string",
+      "description": "What the shape means in its diagram type. Tightened to a closed vocabulary in schemas/role.schema.json (Phase 2.1.5)."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Producer's belief in this node. 1.0 only for ground truth copied from a dataset annotation; anything inferred is scored below it."
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Identifier this node had in the originating dataset, kept so a conversion can be audited against its source."
+    },
+    "attrs": {
+      "type": "object",
+      "description": "Type-specific extras that do not deserve a first-class field (a circuit component value, an HTML tag).",
+      "additionalProperties": true
+    }
+  }
+}
