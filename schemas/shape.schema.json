@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dreamscript.local/schemas/shape.schema.json",
+  "title": "DreamScript shape vocabulary",
+  "description": "What was drawn, independent of what it means. Frozen at Phase 2.1.4; generated from src.ir.vocab.SHAPES.",
+  "type": "string",
+  "enum": [
+    "rectangle",
+    "rounded-rect",
+    "diamond",
+    "ellipse",
+    "circle",
+    "double-circle",
+    "parallelogram",
+    "octagon",
+    "arrow",
+    "line",
+    "text-block",
+    "freeform"
+  ]
+}

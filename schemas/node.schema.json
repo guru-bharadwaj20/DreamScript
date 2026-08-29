@@ -13,8 +13,8 @@
       "description": "Unique within its diagram. Stable across re-runs of a converter so diffs are readable."
     },
     "shape": {
-      "type": "string",
-      "description": "What was drawn. Tightened to a closed vocabulary in schemas/shape.schema.json (Phase 2.1.4)."
+      "$ref": "https://dreamscript.local/schemas/shape.schema.json",
+      "description": "What was drawn. Closed vocabulary, generated from src.ir.vocab.SHAPES."
     },
     "bbox": {
       "description": "[x, y, w, h] in pixels of the image named by meta.image, origin top-left. Null when the source records structure but no geometry - see meta.geometry.",

@@ -139,7 +139,7 @@ that reflects real human messiness.
 | 2.1.1 | Node schema | `{id, shape, bbox, text, semantic_role, confidence}` | JSON Schema file validates | ✅ |
 | 2.1.2 | Edge schema | `{id, src, dst, directed, label, polyline, confidence}` | `schemas/edge.schema.json`, dangling endpoints representable | ✅ |
 | 2.1.3 | Diagram schema | `{diagram_type, nodes[], edges[], meta}` — the **DreamScript IR** | `schemas/ir.schema.json` + `src/ir/model.py`; `Diagram.save` refuses invalid IR | ✅ |
-| 2.1.4 | Shape vocabulary | rectangle, rounded-rect, diamond, ellipse/oval, circle, parallelogram, arrow, line, text-block, freeform | Enum frozen | ❌ |
+| 2.1.4 | Shape vocabulary | rectangle, rounded-rect, diamond, ellipse/oval, circle, parallelogram, arrow, line, text-block, freeform | Enum frozen: 12 shapes, generated into `schemas/shape.schema.json` (+double-circle, +octagon, both evidence-counted) | ✅ |
 | 2.1.5 | Semantic role vocabulary | start, end, process, decision, io, state, transition, entity, attribute, relationship, container, ui-input, ui-button, ui-label, ui-image, component, wire | Enum frozen | ❌ |
 | 2.1.6 | Ambiguity fields | `unresolved_edges[]`, `crossed_out[]`, `low_conf_text[]` | Present in schema | ❌ |
 
@@ -707,7 +707,7 @@ becomes the code structure.
 | :--- | :---: | :---: | :---: |
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
-| 2 — Annotation Schema | 12 | 3 | ❌ |
+| 2 — Annotation Schema | 12 | 4 | ❌ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **42** | ❌ |
+| **Total** | **302** | **43** | ❌ |
