@@ -79,7 +79,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 0.3.1 | Data card template | Source, license, size, bias notes per dataset | `docs/data_cards/` template exists | ✅ |
-| 0.3.2 | Model card template | Intended use, metrics, limits | `docs/model_cards/` template exists | ❌ |
+| 0.3.2 | Model card template | Intended use, metrics, limits | `docs/model_cards/` template exists | ✅ |
 | 0.3.3 | Experiment naming convention | `<phase>-<model>-<variant>-<seed>` | Documented in `docs/conventions.md` | ❌ |
 | 0.3.4 | Risk register | Failure modes: bad lighting, occlusion, unseen diagram type | `docs/risks.md` with mitigations | ❌ |
 
