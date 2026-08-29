@@ -102,34 +102,40 @@ def assign(df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
 
     df["_unit"] = df.apply(unit_of, axis=1)
 
-    # --- assign whole units --------------------------------------------------------------
+    # --- assign whole units, quota-balanced *within each diagram type* --------------------
+    # A single global quota starves the rare types: er_diagram has 5 writers and
+    # state_machine 25, so a global greedy pass can put every one of them in train and leave
+    # the test split with no examples of that class at all. Allocating per type guarantees
+    # each type reaches all three splits while units stay whole.
     constrained = df["_unit"].notna()
     if constrained.any():
-        sizes = df[constrained].groupby("_unit").size().to_dict()
-        total = sum(sizes.values())
-        quota = {k: v * total for k, v in RATIOS.items()}
-        filled = dict.fromkeys(RATIOS, 0)
+        sub = df[constrained]
+        unit_type = sub.groupby("_unit")["diagram_type"].agg(lambda c: c.value_counts().idxmax())
+        sizes = sub.groupby("_unit").size().to_dict()
+        native_by_unit = sub.groupby("_unit")["native_split"].agg(
+            lambda col: col.dropna().unique().tolist()
+        )
+
         assignment: dict[str, str] = {}
         basis: dict[str, str] = {}
 
-        # A unit whose rows all carry the same published split keeps it: adopting a source's
-        # writer-disjoint split is better than re-deriving one. Everything else is allocated
-        # greedily, largest unit first, into whichever split is furthest below quota.
-        native_by_unit = (
-            df[constrained]
-            .groupby("_unit")["native_split"]
-            .agg(lambda col: col.dropna().unique().tolist())
-        )
-        for unit in sorted(sizes, key=lambda u: -sizes[u]):
-            natives = native_by_unit.get(unit, [])
-            if len(natives) == 1 and natives[0] in RATIOS:
-                target = natives[0]
-                basis[unit] = "source_writer_split"
-            else:
-                target = max(RATIOS, key=lambda k: quota[k] - filled[k])
-                basis[unit] = "scribe_disjoint"
-            assignment[unit] = target
-            filled[target] += sizes[unit]
+        for dtype in sorted(unit_type.unique()):
+            units = [u for u in sizes if unit_type[u] == dtype]
+            total = sum(sizes[u] for u in units)
+            quota = {k: v * total for k, v in RATIOS.items()}
+            filled = dict.fromkeys(RATIOS, 0)
+            # Largest first, into whichever split is furthest below its quota: deterministic,
+            # and it prevents a big unit from being the only thing in a small split.
+            for unit in sorted(units, key=lambda u: -sizes[u]):
+                natives = native_by_unit.get(unit, [])
+                if len(natives) == 1 and natives[0] in RATIOS:
+                    target = natives[0]
+                    basis[unit] = "source_writer_split"
+                else:
+                    target = max(RATIOS, key=lambda k: quota[k] - filled[k])
+                    basis[unit] = "scribe_disjoint"
+                assignment[unit] = target
+                filled[target] += sizes[unit]
 
         df.loc[constrained, "split"] = df.loc[constrained, "_unit"].map(assignment).to_numpy()
         df.loc[constrained, "split_basis"] = df.loc[constrained, "_unit"].map(basis).to_numpy()
