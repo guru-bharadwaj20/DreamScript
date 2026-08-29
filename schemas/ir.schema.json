@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dreamscript.local/schemas/ir.schema.json",
+  "title": "DreamScript IR",
+  "description": "One hand-drawn diagram, whatever its type, as a labelled directed multigraph plus provenance. Everything downstream of Phase 2 consumes this and nothing else.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ir_version", "id", "diagram_type", "nodes", "edges", "meta"],
+  "properties": {
+    "ir_version": {
+      "type": "string",
+      "pattern": "^[0-9]+[.][0-9]+$",
+      "description": "Major version changes when a consumer written against the old schema would break."
+    },
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "diagram_type": {
+      "enum": ["flowchart", "wireframe", "state_machine", "er_diagram", "circuit", "unknown"],
+      "description": "'unknown' is legal and honest: the classifier of Phase 5 fills this in, and a converter that cannot tell must not guess."
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "https://dreamscript.local/schemas/node.schema.json" }
+    },
+    "edges": {
+      "type": "array",
+      "items": { "$ref": "https://dreamscript.local/schemas/edge.schema.json" }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["source", "geometry"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Dataset or process this diagram came from, matching a key in src/ingest/registry.py where one exists."
+        },
+        "geometry": {
+          "enum": ["annotated", "derived", "absent"],
+          "description": "How much to trust bbox and polyline. 'annotated': copied from a human-made annotation. 'derived': computed by this project from something the source did record, and therefore only as good as that derivation. 'absent': the source records structure and no positions at all - bbox and polyline are null and no geometric metric may be computed from this diagram."
+        },
+        "image": {
+          "type": "string",
+          "description": "Repo-relative path to the image these coordinates index. Empty when geometry is absent."
+        },
+        "image_size": {
+          "oneOf": [
+            {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "integer", "minimum": 1 }
+            },
+            { "type": "null" }
+          ],
+          "description": "[width, height] in pixels. Required for the out-of-frame check in Phase 2.2.5."
+        },
+        "scribe_id": { "type": "string" },
+        "split": { "enum": ["train", "validation", "test"] },
+        "producer": {
+          "type": "string",
+          "description": "What wrote this file, e.g. 'src.ir.convert.hdbpmn'. A conversion is an experiment and gets attributed like one."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}
