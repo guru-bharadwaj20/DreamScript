@@ -105,11 +105,11 @@ that reflects real human messiness.
 
 | # | Task | Target | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1.2.1 | Draw flowcharts | 60 sketches, varying neatness | Photographed + raw stored | ❌ |
-| 1.2.2 | Draw wireframes | 60 sketches (login, dashboard, list, form, profile) | Stored | ❌ |
-| 1.2.3 | Draw state machines | 50 sketches (traffic light, vending, TCP, elevator) | Stored | ❌ |
-| 1.2.4 | Draw ER diagrams | 50 sketches (blog, school, e-commerce, library) | Stored | ❌ |
-| 1.2.5 | Draw circuits | 40 sketches (series/parallel, RC, logic gates) | Stored | ❌ |
+| 1.2.1 | Draw flowcharts | 60 sketches over 10 scenarios × 8 scribes; brief in `docs/collection/flowchart.md` | Photographed + raw stored — **tooling ✅, drawing pending** | ❌ |
+| 1.2.2 | Draw wireframes | 60 sketches over 10 scenarios; brief in `docs/collection/wireframe.md` | Stored — **tooling ✅, drawing pending** | ❌ |
+| 1.2.3 | Draw state machines | 50 sketches over 10 scenarios; brief in `docs/collection/state_machine.md` | Stored — **tooling ✅, drawing pending** | ❌ |
+| 1.2.4 | Draw ER diagrams | 50 sketches over 10 scenarios; brief in `docs/collection/er_diagram.md` | Stored — **tooling ✅, drawing pending** | ❌ |
+| 1.2.5 | Draw circuits | 40 sketches over 10 scenarios; brief in `docs/collection/circuit.md` | Stored — **tooling ✅, drawing pending** | ❌ |
 | 1.2.6 | Multi-scribe collection | ≥8 different people to capture style variance | ≥8 `scribe_id` values present | ❌ |
 | 1.2.7 | Adverse capture conditions | Phone/webcam, shadows, angles, ruled paper, whiteboard glare, coffee stain, crossed-out elements | ≥25% of images tagged `adverse=true` | ❌ |
 | 1.2.8 | Media variety | Pencil, ballpoint, marker, whiteboard, tablet stylus | `medium` field populated | ❌ |
