@@ -152,7 +152,7 @@ that reflects real human messiness.
 | 2.2.3 | Annotation guidelines | Written rules for ambiguous cases (broken arrow, overlapping boxes) | `docs/annotation_guide.md` — 10 named hard cases, all 6 relation types, coverage tested | ✅ |
 | 2.2.4 | Inter-annotator agreement | Three labellers (dataset annotation, geometry, human-blind); κ on shape and role, calibration half held out | 50 diagrams / 877 regions triple-labelled; **best kappa 0.52, none reach 0.75** — reported in `reports/annotator_agreement.md` | ✅ |
 | 2.2.5 | Label QA pass | Automated validator: dangling edges, missing roles, bbox out of frame | **Green: 0 errors** over 5,796 IR files / 95,771 nodes — `reports/label_qa.md`. Caught a real hdBPMN scaling bug (162 diagrams) | ✅ |
-| 2.2.6 | Target-code pairs | For each self-drawn diagram, write the correct target code (Python / React / SQL / netlist) | ≥260 pairs stored | ❌ |
+| 2.2.6 | Target-code pairs | For each self-drawn diagram, write the correct target code (Python / React / SQL / netlist) | **1,477 pairs** (hdBPMN 693 Python, FA 300 Python, Sketch2Code 484 HTML); 993/993 compile *and run* — `reports/target_pairs.md` | ✅ |
 
 ---
 
@@ -707,7 +707,7 @@ becomes the code structure.
 | :--- | :---: | :---: | :---: |
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
-| 2 — Annotation Schema | 12 | 11 | ❌ |
+| 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **50** | ❌ |
+| **Total** | **302** | **51** | ❌ |
