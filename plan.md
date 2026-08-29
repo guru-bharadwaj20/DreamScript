@@ -193,7 +193,7 @@ that reflects real human messiness.
 | # | Task | Metric | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 3.3.1 | Stroke IoU | Binarized mask vs. hand-traced GT on 30 images | **Mean IoU 0.821** (median 0.868) over 30 items with exact pen-trajectory GT through the full 3.1 chain — `reports/stroke_iou.md`. Recall 0.998, precision 0.823: the loss is entirely stroke *thickening*, worst under jpeg (0.726) and blur (0.737) | ✅ |
-| 3.3.2 | Robustness sweep | Metric under blur / rotation / lighting sweeps | Degradation curves plotted | ❌ |
+| 3.3.2 | Robustness sweep | Metric under blur / rotation / lighting sweeps | `reports/robustness.md` + `reports/figures/p3_robustness.png`: blur / rotation / lighting curves over 20 items with exact GT, mask warped with the image. **Blur is the only expensive one** (0.99→0.63 by radius 11); rotation costs 0.05 to 15° with deskew error <1°. Finding: a global threshold survives a multiplicative shadow until the shaded paper is darker than the lit ink, and CLAHE *costs* 0.10 past that point | ✅ |
 | 3.3.3 | Failure gallery | 20 worst preprocessing cases with diagnosis | `reports/preproc_failures.md` | ❌ |
 
 ---
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 19 | ❌ |
+| 3 — Preprocessing | 21 | 20 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **70** | ❌ |
+| **Total** | **302** | **71** | ❌ |
