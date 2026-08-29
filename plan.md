@@ -178,7 +178,7 @@ that reflects real human messiness.
 
 | # | Task | Technique | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 3.2.1 | Connected components | Labeling + bbox/area/solidity stats | CC table produced | ❌ |
+| 3.2.1 | Connected components | Labeling + bbox/area/solidity stats | `primitives/components.py`: area, bbox, aspect, extent, solidity, perimeter, circularity, holes, border contact | ✅ |
 | 3.2.2 | Contour extraction | `findContours` + hierarchy | Contours stored | ❌ |
 | 3.2.3 | Polygon approximation | Douglas–Peucker; vertex counts | Vertex histogram | ❌ |
 | 3.2.4 | Line segment detection | LSD / probabilistic Hough | Segment set per image | ❌ |
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 9 | ❌ |
+| 3 — Preprocessing | 21 | 10 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **60** | ❌ |
+| **Total** | **302** | **61** | ❌ |
