@@ -33,8 +33,8 @@
       "description": "Transcribed content, empty string when the shape carries none. Never null: absent text and unread text are different states, and the second one belongs in low_conf_text."
     },
     "semantic_role": {
-      "type": "string",
-      "description": "What the shape means in its diagram type. Tightened to a closed vocabulary in schemas/role.schema.json (Phase 2.1.5)."
+      "$ref": "https://dreamscript.local/schemas/role.schema.json",
+      "description": "What the shape means in its diagram type. Closed vocabulary, generated from src.ir.vocab.ROLES."
     },
     "confidence": {
       "type": "number",

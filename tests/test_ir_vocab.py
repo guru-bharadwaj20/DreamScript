@@ -75,3 +75,92 @@ def test_node_schema_rejects_a_shape_outside_the_vocabulary():
     assert schema.validate_node(node)
     node["shape"] = "parallelogram"
     assert schema.validate_node(node) == []
+
+
+def test_role_schema_matches_the_code():
+    on_disk = json.loads(schema.schema_path("role").read_text(encoding="utf-8"))
+    assert on_disk["enum"] == list(vocab.ROLES)
+
+
+def test_role_vocabulary_covers_the_plan():
+    planned = {
+        "start",
+        "end",
+        "process",
+        "decision",
+        "io",
+        "state",
+        "transition",
+        "entity",
+        "attribute",
+        "relationship",
+        "container",
+        "ui-input",
+        "ui-button",
+        "ui-label",
+        "ui-image",
+        "component",
+        "wire",
+    }
+    assert planned <= set(vocab.ROLES)
+
+
+def test_every_role_is_reachable_from_some_diagram_type():
+    reachable = set().union(*vocab.ROLES_BY_TYPE.values())
+    assert set(vocab.ROLES) <= reachable
+
+
+def test_role_type_map_covers_every_diagram_type():
+    from src.ir import model  # noqa: F401  (import kept local to the assertion it supports)
+
+    declared = set(
+        json.loads(schema.schema_path("ir").read_text(encoding="utf-8"))["properties"][
+            "diagram_type"
+        ]["enum"]
+    )
+    assert declared == set(vocab.ROLES_BY_TYPE)
+
+
+def test_every_role_has_a_shape_prior():
+    assert set(vocab.SHAPE_ROLE_PRIOR) == set(vocab.ROLES)
+    for role, shapes in vocab.SHAPE_ROLE_PRIOR.items():
+        assert set(shapes) <= set(vocab.SHAPES), role
+
+
+def test_every_role_alias_target_is_in_the_vocabulary():
+    assert set(vocab.ROLE_ALIASES.values()) <= set(vocab.ROLES)
+
+
+@pytest.mark.parametrize(
+    ("raw", "want"),
+    [
+        ("task", "process"),
+        ("startEvent", "start"),
+        ("exclusiveGateway", "decision"),
+        ("parallelGateway", "fork"),
+        ("final state", "final-state"),
+        ("ui-button", "ui-button"),
+        ("button", "ui-button"),
+        ("wire", "wire"),
+        ("banana", "unknown"),
+        ("", "unknown"),
+    ],
+)
+def test_canonical_role(raw, want):
+    assert vocab.canonical_role(raw) == want
+
+
+def test_edge_like_roles_are_real_roles():
+    assert set(vocab.ROLES) >= vocab.EDGE_LIKE_ROLES
+
+
+def test_node_schema_rejects_a_role_outside_the_vocabulary():
+    node = {
+        "id": "n1",
+        "shape": "rectangle",
+        "bbox": None,
+        "text": "",
+        "semantic_role": "subroutine",
+        "confidence": 1.0,
+    }
+    assert schema.validate_node(node)

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dreamscript.local/schemas/role.schema.json",
+  "title": "DreamScript semantic role vocabulary",
+  "description": "What the shape means in its diagram type. Frozen at Phase 2.1.5; generated from src.ir.vocab.ROLES.",
+  "type": "string",
+  "enum": [
+    "start",
+    "end",
+    "process",
+    "decision",
+    "io",
+    "fork",
+    "join",
+    "event",
+    "state",
+    "initial-state",
+    "final-state",
+    "transition",
+    "entity",
+    "attribute",
+    "relationship",
+    "container",
+    "ui-input",
+    "ui-button",
+    "ui-label",
+    "ui-image",
+    "component",
+    "wire",
+    "unknown"
+  ]
+}

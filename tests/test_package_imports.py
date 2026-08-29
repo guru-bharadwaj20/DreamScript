@@ -15,6 +15,7 @@ import src
 
 PACKAGES = [
     "src.ingest",
+    "src.ir",
     "src.preprocess",
     "src.features",
     "src.classify",
