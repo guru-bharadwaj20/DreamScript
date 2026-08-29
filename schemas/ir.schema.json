@@ -5,7 +5,17 @@
   "description": "One hand-drawn diagram, whatever its type, as a labelled directed multigraph plus provenance. Everything downstream of Phase 2 consumes this and nothing else.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["ir_version", "id", "diagram_type", "nodes", "edges", "meta"],
+  "required": [
+    "ir_version",
+    "id",
+    "diagram_type",
+    "nodes",
+    "edges",
+    "meta",
+    "unresolved_edges",
+    "crossed_out",
+    "low_conf_text"
+  ],
   "properties": {
     "ir_version": {
       "type": "string",
@@ -24,6 +34,75 @@
     "edges": {
       "type": "array",
       "items": { "$ref": "https://dreamscript.local/schemas/edge.schema.json" }
+    },
+    "unresolved_edges": {
+      "type": "array",
+      "description": "Edges whose endpoints could not be decided. These are the arrows that miss their box, fork into two candidates, or run off the page. They stay in `edges` with a null endpoint AND are listed here with a reason, so a consumer that ignores this array degrades to 'some edges are dangling' rather than silently dropping them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["edge", "reason"],
+        "properties": {
+          "edge": { "type": "string", "description": "id of an entry in `edges`" },
+          "reason": {
+            "enum": [
+              "no-source",
+              "no-target",
+              "both-ends-open",
+              "ambiguous-endpoint",
+              "crosses-other-edge",
+              "outside-frame"
+            ]
+          },
+          "candidates": {
+            "type": "array",
+            "description": "Node ids the open end might belong to, best first. Empty when nothing plausible is near.",
+            "items": { "type": "string" }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "crossed_out": {
+      "type": "array",
+      "description": "Regions the writer struck through. A crossed-out box is not an absent box: it was drawn, then retracted, and a model that never sees the retraction learns to read scribble as content.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bbox"],
+        "properties": {
+          "ref": {
+            "description": "Node or edge id the strike-through covers; null when it covers something that was never parsed into an element.",
+            "type": ["string", "null"]
+          },
+          "bbox": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": { "type": "number" }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "low_conf_text": {
+      "type": "array",
+      "description": "Transcriptions the producer does not stand behind. Kept separate from `text` so that a downstream consumer can choose between using a doubtful reading and refusing to guess - Phase 13 does the latter and asks the user.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "confidence"],
+        "properties": {
+          "ref": { "type": "string", "description": "id of a node or an edge" },
+          "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "alternatives": {
+            "type": "array",
+            "description": "Other readings considered, best first.",
+            "items": { "type": "string" }
+          },
+          "note": { "type": "string" }
+        }
+      }
     },
     "meta": {
       "type": "object",

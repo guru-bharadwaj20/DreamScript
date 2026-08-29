@@ -72,6 +72,12 @@ class Diagram:
     edges: list[Edge] = field(default_factory=list)
     meta: dict[str, Any] = field(default_factory=dict)
     ir_version: str = IR_VERSION
+    #: Phase 2.1.6. Three kinds of ambiguity a hand-drawn diagram leaves behind, recorded
+    #: rather than resolved. A converter or detector that cannot decide writes the doubt down
+    #: here; Phase 10 repairs what it can and Phase 13 asks the user about the rest.
+    unresolved_edges: list[dict[str, Any]] = field(default_factory=list)
+    crossed_out: list[dict[str, Any]] = field(default_factory=list)
+    low_conf_text: list[dict[str, Any]] = field(default_factory=list)
 
     # -- conversion -------------------------------------------------------------------
 
@@ -89,6 +95,9 @@ class Diagram:
             "diagram_type": self.diagram_type,
             "nodes": [clean(asdict(n), ("source_id", "attrs")) for n in self.nodes],
             "edges": [clean(asdict(e), ("source_id", "attrs")) for e in self.edges],
+            "unresolved_edges": [dict(u) for u in self.unresolved_edges],
+            "crossed_out": [dict(c) for c in self.crossed_out],
+            "low_conf_text": [dict(t) for t in self.low_conf_text],
             "meta": dict(self.meta),
         }
 
@@ -101,7 +110,45 @@ class Diagram:
             edges=[Edge(**e) for e in d.get("edges", [])],
             meta=dict(d.get("meta", {})),
             ir_version=d.get("ir_version", IR_VERSION),
+            unresolved_edges=[dict(u) for u in d.get("unresolved_edges", [])],
+            crossed_out=[dict(c) for c in d.get("crossed_out", [])],
+            low_conf_text=[dict(t) for t in d.get("low_conf_text", [])],
         )
+
+    # -- ambiguity --------------------------------------------------------------------
+
+    def record_unresolved(self, edge: Edge, candidates: list[str] | None = None, **extra) -> None:
+        """Note that `edge` has an open end, deriving the reason from which end it is."""
+        if edge.src is None and edge.dst is None:
+            reason = "both-ends-open"
+        elif edge.src is None:
+            reason = "no-source"
+        elif edge.dst is None:
+            reason = "no-target"
+        else:
+            reason = extra.pop("reason", "ambiguous-endpoint")
+        entry = {"edge": edge.id, "reason": reason}
+        if candidates:
+            entry["candidates"] = list(candidates)
+        entry.update(extra)
+        self.unresolved_edges.append(entry)
+
+    def sync_unresolved(self) -> int:
+        """Make sure every dangling edge is also listed as unresolved, and return how many
+        entries had to be added.
+
+        The two representations exist for different readers - `edges` for anything walking the
+        graph, `unresolved_edges` for anything reporting on quality - and the failure mode is
+        that a converter updates one and forgets the other. This is the cheap fix; the QA pass
+        in Phase 2.2.5 is the check that it was called.
+        """
+        listed = {u["edge"] for u in self.unresolved_edges}
+        added = 0
+        for edge in self.edges:
+            if edge.dangling and edge.id not in listed:
+                self.record_unresolved(edge)
+                added += 1
+        return added
 
     # -- validation -------------------------------------------------------------------
 
