@@ -179,7 +179,7 @@ that reflects real human messiness.
 | # | Task | Technique | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 3.2.1 | Connected components | Labeling + bbox/area/solidity stats | `primitives/components.py`: area, bbox, aspect, extent, solidity, perimeter, circularity, holes, border contact | ✅ |
-| 3.2.2 | Contour extraction | `findContours` + hierarchy | Contours stored | ❌ |
+| 3.2.2 | Contour extraction | `findContours` + hierarchy | `primitives/contours.py`: RETR_TREE with depth, parent and children; `drawn_outlines` removes the stroke's inner edge so containment is not double-counted | ✅ |
 | 3.2.3 | Polygon approximation | Douglas–Peucker; vertex counts | Vertex histogram | ❌ |
 | 3.2.4 | Line segment detection | LSD / probabilistic Hough | Segment set per image | ❌ |
 | 3.2.5 | Curve/corner analysis | Curvature along skeleton; corner detection | Line-vs-curve ratio computable | ❌ |
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 10 | ❌ |
+| 3 — Preprocessing | 21 | 11 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **61** | ❌ |
+| **Total** | **302** | **62** | ❌ |
