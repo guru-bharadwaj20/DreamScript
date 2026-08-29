@@ -141,7 +141,12 @@ def write_report() -> Path:
     add("")
 
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # Drop trailing blanks and force LF: without both, Python writes CRLF plus a blank final
+    # line on Windows, and the end-of-file-fixer hook rewrites the report on every commit.
+    while lines and not lines[-1].strip():
+        lines.pop()
+    with REPORT.open("w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines) + "\n")
     return REPORT
 
 

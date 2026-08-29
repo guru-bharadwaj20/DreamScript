@@ -99,7 +99,7 @@ that reflects real human messiness.
 | 1.1.3 | **DIDI** | 22,287 digital-ink diagrams with stroke sequences + 6,555 dot-graph prompts (CC BY 4.0) | Multi-type classification, stroke-order signal | ✅ |
 | 1.1.4 | **IAM Handwriting** | 10,373 line images + transcripts via the MIT-licensed Teklia mirror (original needs registration) | OCR sub-pipeline pretraining | ✅ |
 | 1.1.5 | **Sketch2Code** (MS dead → SALT-NLP) | 731 sketches paired with 484 real webpages (HTML + screenshot), ODC-BY | Wireframe class + wireframe→code pairs | ✅ |
-| 1.1.6 | License audit | Confirm redistribution terms for each | `docs/data_cards/*.md` completed | ❌ |
+| 1.1.6 | License audit | Confirm redistribution terms for each; unknown treated as non-redistributable | `docs/data_cards/*.md` + `reports/license_audit.md` | ✅ |
 
 ### 1.2 Self-Collected "Chaos" Corpus
 
