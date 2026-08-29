@@ -171,7 +171,7 @@ that reflects real human messiness.
 | 3.1.5 | Binarization | Sauvola / adaptive threshold; compare against Otsu | Measured on 30 items with exact stroke GT: **otsu F1 0.912** > sauvola 0.897 > adaptive 0.860 *after* illumination correction; logged in `configs/preprocess.yaml` | ✅ |
 | 3.1.6 | Denoise | Median filter + small-component removal | On 40 real photos: **83% of components removed, 92% of ink pixels kept**; on ground truth 0.001% of true ink lost. Threshold chosen from a published sweep | ✅ |
 | 3.1.7 | Deskew | Hough-based dominant-angle correction | Median skew after correction **0.28°** over 144 trials on known-straight pages; declines when the page has no dominant direction | ✅ |
-| 3.1.8 | Ruled-paper line suppression | Directional morphology removes notebook rules, keeps strokes | Ruled samples cleaned | ❌ |
+| 3.1.8 | Ruled-paper line suppression | Directional morphology removes notebook rules, keeps strokes | Grid over known ink: **99.98% of grid removed, F1 0.504 → 0.979**, true-ink recall 1.00 → 0.967 | ✅ |
 | 3.1.9 | Stroke thinning | Zhang–Suen skeletonization | Skeleton produced | ❌ |
 
 ### 3.2 Primitive Extraction
@@ -708,7 +708,7 @@ becomes the code structure.
 | 0 — Foundations | 18 | 18 | ✅ |
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
-| 3 — Preprocessing | 21 | 7 | ❌ |
+| 3 — Preprocessing | 21 | 8 | ❌ |
 | 4 — Feature Engineering | 16 | 0 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **58** | ❌ |
+| **Total** | **302** | **59** | ❌ |
