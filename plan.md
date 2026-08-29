@@ -94,7 +94,7 @@ that reflects real human messiness.
 
 | # | Dataset | Content | Use in DreamScript | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 1.1.1 | **hdBPMN** | 700+ hand-drawn BPMN process diagrams, full shape/edge/label annotation | Primary source for flowchart-like structure + edge supervision | ❌ |
+| 1.1.1 | **hdBPMN** | 700+ hand-drawn BPMN process diagrams, full shape/edge/label annotation | Primary source for flowchart-like structure + edge supervision | ✅ |
 | 1.1.2 | **FC-A / FC-B** | Hand-drawn flowcharts with component bounding boxes | Detector training, flowchart class | ❌ |
 | 1.1.3 | **DIDI** | Hand-drawn diagrams, multiple types, structural labels | Multi-type classification, stroke-order signal | ❌ |
 | 1.1.4 | **IAM Handwriting** | 13K handwritten text lines | OCR sub-pipeline pretraining | ❌ |
