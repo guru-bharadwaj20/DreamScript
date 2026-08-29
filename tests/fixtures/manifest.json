@@ -1,0 +1,47 @@
+[
+  {
+    "id": "flowchart",
+    "file": "flowchart.png",
+    "diagram_type": "flowchart",
+    "width": 320,
+    "height": 240,
+    "synthetic": true,
+    "bytes": 2901
+  },
+  {
+    "id": "wireframe",
+    "file": "wireframe.png",
+    "diagram_type": "wireframe",
+    "width": 320,
+    "height": 240,
+    "synthetic": true,
+    "bytes": 3171
+  },
+  {
+    "id": "state_machine",
+    "file": "state_machine.png",
+    "diagram_type": "state_machine",
+    "width": 320,
+    "height": 240,
+    "synthetic": true,
+    "bytes": 3190
+  },
+  {
+    "id": "er_diagram",
+    "file": "er_diagram.png",
+    "diagram_type": "er_diagram",
+    "width": 320,
+    "height": 240,
+    "synthetic": true,
+    "bytes": 3144
+  },
+  {
+    "id": "circuit",
+    "file": "circuit.png",
+    "diagram_type": "circuit",
+    "width": 320,
+    "height": 240,
+    "synthetic": true,
+    "bytes": 2749
+  }
+]
