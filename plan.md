@@ -60,7 +60,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | 0.1.4 | Classical ML stack | scikit-learn, xgboost, lightgbm, hmmlearn, imbalanced-learn | Import test passes | ✅ |
 | 0.1.5 | DL / GenAI stack | transformers, peft, trl, bitsandbytes, accelerate, datasets | 7B model loads in 4-bit | ✅ |
 | 0.1.6 | Determinism harness | Global seed util, `PYTHONHASHSEED`, cudnn deterministic flag | Two runs of one script give identical metrics | ✅ |
-| 0.1.7 | Hardware profile doc | VRAM budget per phase (CNN ~6 GB, LoRA ~18 GB) | `docs/hardware.md` written | ❌ |
+| 0.1.7 | Hardware profile doc | VRAM budget per phase (CNN ~6 GB, LoRA ~18 GB) | `docs/hardware.md` written | ✅ |
 
 ### 0.2 Repository Layout
 
@@ -705,7 +705,7 @@ becomes the code structure.
 
 | Phase | Tasks | Done | Status |
 | :--- | :---: | :---: | :---: |
-| 0 — Foundations | 18 | 0 | ❌ |
+| 0 — Foundations | 18 | 7 | ❌ |
 | 1 — Data Acquisition | 21 | 0 | ❌ |
 | 2 — Annotation Schema | 12 | 0 | ❌ |
 | 3 — Preprocessing | 21 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **0** | ❌ |
+| **Total** | **302** | **7** | ❌ |
