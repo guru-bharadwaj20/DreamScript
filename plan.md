@@ -97,7 +97,7 @@ that reflects real human messiness.
 | 1.1.1 | **hdBPMN** | 700+ hand-drawn BPMN process diagrams, full shape/edge/label annotation | Primary source for flowchart-like structure + edge supervision | ✅ |
 | 1.1.2 | **FC-A / FC-B** → substituted by **flowchartseg** | FC-A/B download is dead (404, verified); flowchartseg gives 1,319 hand-drawn flowcharts with per-node masks | Detector training, flowchart class | ✅ |
 | 1.1.3 | **DIDI** | 22,287 digital-ink diagrams with stroke sequences + 6,555 dot-graph prompts (CC BY 4.0) | Multi-type classification, stroke-order signal | ✅ |
-| 1.1.4 | **IAM Handwriting** | 13K handwritten text lines | OCR sub-pipeline pretraining | ❌ |
+| 1.1.4 | **IAM Handwriting** | 10,373 line images + transcripts via the MIT-licensed Teklia mirror (original needs registration) | OCR sub-pipeline pretraining | ✅ |
 | 1.1.5 | **Sketch2Code (Microsoft)** | Hand-drawn UI wireframes ↔ HTML | Wireframe class + wireframe→code pairs | ❌ |
 | 1.1.6 | License audit | Confirm redistribution terms for each | `docs/data_cards/*.md` completed | ❌ |
 
