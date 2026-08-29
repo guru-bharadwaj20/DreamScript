@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from src.ingest.datasets import hdbpmn  # noqa: F401
+from src.ingest.datasets import flowcharts, hdbpmn  # noqa: F401
 
-__all__ = ["hdbpmn"]
+__all__ = ["flowcharts", "hdbpmn"]

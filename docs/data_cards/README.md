@@ -6,7 +6,7 @@ form; `dreamscript_chaos.md` is a worked example for the corpus collected by thi
 | Dataset | Card | Phase 1 task | Status |
 | :--- | :--- | :--- | :---: |
 | hdBPMN | `hdbpmn.md` | 1.1.1 | ✅ |
-| FC-A / FC-B | `flowchart_fc.md` | 1.1.2 | ❌ |
+| FC-A / FC-B → flowchartseg | `flowchart_fc.md` | 1.1.2 | ✅ |
 | DIDI | `didi.md` | 1.1.3 | ❌ |
 | IAM Handwriting | `iam.md` | 1.1.4 | ❌ |
 | Sketch2Code | `sketch2code.md` | 1.1.5 | ❌ |
