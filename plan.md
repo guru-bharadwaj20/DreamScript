@@ -249,7 +249,7 @@ that reflects real human messiness.
 | :---: | :--- | :--- | :--- | :---: |
 | 5.2.1 | Stratified k-fold CV | k = 5, repeated ×3, fixed seeds | `src/classify/cv.py`: repeated stratified 5-fold x 3 (seeds 42/43/44, fixed), one model registry shared by all of 5.2 and 5.3, and **out-of-fold predictions as the unit** - every row predicted by a model that never saw it, so the nine downstream tasks all read the same predictions and McNemar in 5.2.8 compares models on identical rows. Measured: **logreg 0.9413 acc / 0.7898 macro F1, knn 0.9269 / 0.7614, tree 0.8970 / 0.7426** against majority 0.4478 / 0.1237. Records that the gaps between the three are smaller than the fold-to-fold spread, so the ranking is not yet evidence | ✅ |
 | 5.2.2 | **Grouped CV by scribe** | GroupKFold on `scribe_id` — the neat-drafter vs. chaotic-scribbler test | `src/classify/grouped.py`: GroupKFold over `scribe_id` against stratified CV, same models and seeds, 170 writers. **There is no writer effect: logreg -0.0023 (it is fractionally better on unseen hands), tree +0.0199, knn +0.0358** - all inside the fold-to-fold spread, and kNN losing most is the expected ordering. The 63-writer chaos corpus shows no drop either. Reports per-source columns honestly (sketch2code has no writer ids, so its two numbers are the same measurement twice) and surfaces the finding that matters more: **circuit recall is 0.225** against 1.000 for state machines | ✅ |
-| 5.2.3 | Metrics | Accuracy, per-class precision/recall/F1, macro & weighted F1 | Full classification report | ❌ |
+| 5.2.3 | Metrics | Accuracy, per-class precision/recall/F1, macro & weighted F1 | `src/classify/metrics.py` -> `reports/classification_report.md`: per-class precision/recall/F1/support plus macro, weighted and balanced accuracy for every model, all from 5.2.1's out-of-fold predictions. **Every model loses ~0.15 between weighted and macro F1** (logreg 0.9379 -> 0.7917), so the same result reads as 93% or 79% solved depending on the metric. Per class: **wireframe 0.981, state_machine 0.955, flowchart 0.950, er_diagram 0.796, circuit 0.277** - and scarcity is ruled out on the corpus itself, since state machines have 50 rows to circuits' 40 and score 0.955 | ✅ |
 | 5.2.4 | ROC / AUC | One-vs-rest ROC curves, macro & micro AUC | Curves plotted | ❌ |
 | 5.2.5 | PR curves | Especially for the minority diagram type | Curves plotted | ❌ |
 | 5.2.6 | Confusion matrices | Raw and row-normalized | Heatmaps saved | ❌ |
@@ -710,7 +710,7 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 6 | ❌ |
+| 5 — Classical Classifiers | 17 | 7 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
 | 8 — Clustering | 10 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **94** | ❌ |
+| **Total** | **302** | **95** | ❌ |
