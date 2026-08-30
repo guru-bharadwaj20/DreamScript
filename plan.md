@@ -238,7 +238,7 @@ that reflects real human messiness.
 
 | # | Model | Configuration to explore | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 5.1.1 | Logistic Regression | L1 / L2 / elastic-net; multinomial softmax; C sweep | Best C selected by CV | ❌ |
+| 5.1.1 | Logistic Regression | L1 / L2 / elastic-net; multinomial softmax; C sweep | `src/classify/linear.py` (+ `data.py`, the corpus contract, and `gpu.py`): 44-candidate grid over l1/l2/elasticnet x C x class_weight, scored by **macro F1** on the 5-class real corpus (600/600/50/50/40), 40 s on 32 cores. **Best macro F1 0.789** (l1, C=10) recorded in `BEST_PARAMS` so 5.2 and 5.3 refit the identical model; class_weight=balanced does not win. **The camera leak is worth 0.0052 macro F1** - the feature 4.2.6 ranked first by mutual information is nearly free to remove. GPU solver agrees with sklearn on 100% of predictions and is **0.01x the speed** - measured and reported rather than claimed | ✅ |
 | 5.1.2 | K-Nearest Neighbors | k ∈ {1,3,5,7,11,15}; Euclidean / Manhattan / cosine; distance weighting | k and metric selected | ❌ |
 | 5.1.3 | Decision Tree | depth, min_samples_leaf, gini vs. entropy; cost-complexity pruning α sweep | Pruned tree chosen | ❌ |
 | 5.1.4 | Baselines | Majority class, stratified random | Reported for context | ❌ |
@@ -710,7 +710,7 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 0 | ❌ |
+| 5 — Classical Classifiers | 17 | 1 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
 | 8 — Clustering | 10 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **88** | ❌ |
+| **Total** | **302** | **89** | ❌ |
