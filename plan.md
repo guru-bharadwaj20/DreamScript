@@ -209,7 +209,7 @@ that reflects real human messiness.
 | 4.1.1 | Structural counts | node count, edge count, arrowhead count, text-block count | `src/features/context.py` (the shared `Region` every family reads) + `src/features/structural.py`: node, edge, arrowhead and text-block counts. Measured against the synthetic ground-truth graphs, 375 graph-like pages: **node count exact 42.4% / within one 60.0%; edge count exact 24.5% / within one 43.7%** - and on flowcharts alone **0.896 and 0.592 exact**. Padding shapes by a stroke width before subtracting them is what moved edge count from +5.48 error to -1.28; strand floor from a published 7-point sweep | ✅ |
 | 4.1.2 | Ratios | line-to-curve ratio, arrows-per-node, text-per-node, edge/node ratio | `src/features/ratios.py`: line-to-curve, arrows-per-node, text-per-node, edges-per-node. An undefined ratio is `nan`, never 0.0, so 4.2.3's missingness indicator keeps 'this page has no shapes' as its own signal (7.8% of 600 pages). Per-type medians published: **edges_per_node 0.48-0.83 for drawn graphs against 5.0 circuit / 8.0 wireframe**, and line_to_curve orders types by node roundness, 0.20 state machine to 2.50 wireframe. arrows_per_node has median 0.000 in four of five types - 3.2.6's detector showing as a dead feature | ✅ |
 | 4.1.3 | Shape mix | fraction rectangles / diamonds / ovals / circles / freeform | `src/features/shapes.py`: five page-level fractions over rectangle/diamond/ellipse/circle/freeform. Needs two measurements - `rect_fill` (rotation-invariant: is it four-sided) and `extent` (deliberately not: **a diamond is a rotated square**, so only orientation separates them). Exact on clean renders, and scored against the 30 blind human labels from 2.2.4 it reaches **0.367 against a 0.400 majority baseline - it does not work on photographs**, with the overlapping rect_fill distributions published as the reason and a 1,530-point grid search topping out at 0.467 | ✅ |
-| 4.1.4 | Layout geometry | node density, mean nearest-neighbour distance, grid-alignment score, row/column regularity | Wireframes are grid-like | ❌ |
+| 4.1.4 | Layout geometry | node density, mean nearest-neighbour distance, grid-alignment score, row/column regularity | `src/features/layout.py`: node density, mean nearest-neighbour distance, grid-alignment score, row and column regularity - every distance a fraction of the page's long side, pinned scale-invariant by test. Tolerance swept over a 16x range and the score is **flat across all of it**. Finding: the plan's rationale is backwards - **wireframes score 0.000 on grid-alignment and flowcharts 1.000**, because a chain is a column and because a wireframe's panels fuse before they can be counted; density and nn-distance are the members that separate cleanly | ✅ |
 | 4.1.5 | Global geometry | image aspect ratio, ink coverage, bounding-box fill ratio | Cheap priors | ❌ |
 | 4.1.6 | Text statistics | text-area fraction, mean label length, labels-inside-shape vs. on-edge ratio | ER diagrams are label-heavy | ❌ |
 | 4.1.7 | Connectivity | mean degree, self-loop count, cycle count, connected-component count | State machines have self-loops | ❌ |
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 3 | ❌ |
+| 4 — Feature Engineering | 16 | 4 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **75** | ❌ |
+| **Total** | **302** | **76** | ❌ |
