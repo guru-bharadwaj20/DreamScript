@@ -224,7 +224,7 @@ that reflects real human messiness.
 | 4.2.2 | Feature table build | `data/features/handcrafted.parquet` for full corpus | `src/features/build.py` -> `data/features/handcrafted.parquet`, DVC-tracked: **4,340 rows x 34 features** plus seven identity columns that are never features (flowchart 1,200 / wireframe 1,200 / er 650 / state 650 / circuit 640; train 3,485 / val 729 / test 126), 648 s on 32 cores, **no all-nan rows**, 11.9% missing cells concentrated in the four columns 4.1.4 said would be undefined. Records two silent sampling bugs the first build exposed - an unstratified slice returned 88 real rows and zero wireframes - now fixed by dropping absent files before sampling and stratifying per type on both corpora. Atomic write | ✅ |
 | 4.2.3 | Missing-value strategy | Median impute + missingness indicator | `src/features/impute.py`: `MedianImputer` - training-median fill plus a `*_missing` indicator per column that was ever absent, and 0.0 for a column with no observed value anywhere. Measured on the built table: **26 of 34 columns go missing and 63.5% of rows have a hole**, and the holes track the label - **circuit 0.958 of rows against state_machine 0.369** - which is why the indicator is kept rather than the median alone. 21 columns share one cause (no region found). No kNN or iterative fill, because the correlated columns are missing together | ✅ |
 | 4.2.4 | Scaling | StandardScaler fit on train only (no leakage) | `src/features/scaling.py`: `feature_scaler()` = median-impute -> indicator -> StandardScaler, 34 columns in and 60 out. Leakage is **measured, not asserted**: transforming the held-out rows from a train-only fit reproduces itself to 1.5e-13, while the same pipeline fitted on train+test differs by **0.205 sd on average and 2.19 at the worst column** - the size of the mistake the test prevents. Order pinned (scaling first would compute statistics over columns still holding nan, and no nan survives) | ✅ |
-| 4.2.5 | Correlation pruning | Drop \|r\| > 0.95 pairs | Pruned list logged | ❌ |
+| 4.2.5 | Correlation pruning | Drop \|r\| > 0.95 pairs | `src/features/prune.py`: pairwise-complete |r| over the 4,340-row table, |r| > 0.95, survivor chosen by lower missingness then column order, and **nothing about the label is used**. **One feature of 34 is dropped** - layout_node_density against node_count at r=0.962 - and the pruned list is logged with the ten strongest pairs. Finding: **every redundancy the 4.1 docstrings predicted was wrong** (text_area_frac/ink_coverage 0.046, row/col regularity 0.030, the five shape fractions 0.312), and arrowhead_count correlates 0.805 with ink coverage | ✅ |
 | 4.2.6 | Feature importance preview | Mutual information + ANOVA F ranking | Ranked bar chart | ❌ |
 | 4.2.7 | Visualization | PCA and t-SNE/UMAP of feature space coloured by diagram type | Figure in report | ❌ |
 
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 13 | ❌ |
+| 4 — Feature Engineering | 16 | 14 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **85** | ❌ |
+| **Total** | **302** | **86** | ❌ |
