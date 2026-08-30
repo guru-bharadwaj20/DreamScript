@@ -211,7 +211,7 @@ that reflects real human messiness.
 | 4.1.3 | Shape mix | fraction rectangles / diamonds / ovals / circles / freeform | `src/features/shapes.py`: five page-level fractions over rectangle/diamond/ellipse/circle/freeform. Needs two measurements - `rect_fill` (rotation-invariant: is it four-sided) and `extent` (deliberately not: **a diamond is a rotated square**, so only orientation separates them). Exact on clean renders, and scored against the 30 blind human labels from 2.2.4 it reaches **0.367 against a 0.400 majority baseline - it does not work on photographs**, with the overlapping rect_fill distributions published as the reason and a 1,530-point grid search topping out at 0.467 | ✅ |
 | 4.1.4 | Layout geometry | node density, mean nearest-neighbour distance, grid-alignment score, row/column regularity | `src/features/layout.py`: node density, mean nearest-neighbour distance, grid-alignment score, row and column regularity - every distance a fraction of the page's long side, pinned scale-invariant by test. Tolerance swept over a 16x range and the score is **flat across all of it**. Finding: the plan's rationale is backwards - **wireframes score 0.000 on grid-alignment and flowcharts 1.000**, because a chain is a column and because a wireframe's panels fuse before they can be counted; density and nn-distance are the members that separate cleanly | ✅ |
 | 4.1.5 | Global geometry | image aspect ratio, ink coverage, bounding-box fill ratio | `src/features/geometry.py`: aspect, ink coverage, bounding-box fill - the three features that survive a page where nothing else is detected. **Records a leak rather than hiding it**: aspect ratio is a camera property that tracks the source dataset (sketch2code 0.822 vs hdBPMN 1.361 median, measured on 180 images) and the 1.3.7 generator reproduces it (0.809 wireframe vs 1.067 flowchart), so a classifier can read type off page shape; flagged for Phase 14's first ablation. bbox_fill separates 0.859 wireframe from 0.298 ER | ✅ |
-| 4.1.6 | Text statistics | text-area fraction, mean label length, labels-inside-shape vs. on-edge ratio | ER diagrams are label-heavy | ❌ |
+| 4.1.6 | Text statistics | text-area fraction, mean label length, labels-inside-shape vs. on-edge ratio | `src/features/textstats.py`: text-area fraction, mean label width (a width, not a character count - OCR is 9.3), and labels-inside-shape share, all read off 3.2.8's text layer so there is one answer and not two. **text_inside_share is the strongest single signal in Phase 4 so far: 1.000 flowchart / 0.71 ER / 0.67 state machine / 0.000 circuit and wireframe.** Records that text_area_frac inverts the plan's expectation (circuits 0.103 above flowcharts 0.004) because it measures how much *drawing* there is too, and inherits 3.2.7's real-page recall of 0.46 as a known downward bias | ✅ |
 | 4.1.7 | Connectivity | mean degree, self-loop count, cycle count, connected-component count | State machines have self-loops | ❌ |
 | 4.1.8 | Directionality | dominant flow axis, edge-angle histogram entropy | Flowcharts flow downward | ❌ |
 | 4.1.9 | Containment | nested-box count and nesting depth | Wireframes nest; flowcharts don't | ❌ |
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 5 | ❌ |
+| 4 — Feature Engineering | 16 | 6 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **77** | ❌ |
+| **Total** | **302** | **78** | ❌ |
