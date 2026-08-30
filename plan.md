@@ -207,7 +207,7 @@ that reflects real human messiness.
 | # | Feature Group | Members | Rationale | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 4.1.1 | Structural counts | node count, edge count, arrowhead count, text-block count | `src/features/context.py` (the shared `Region` every family reads) + `src/features/structural.py`: node, edge, arrowhead and text-block counts. Measured against the synthetic ground-truth graphs, 375 graph-like pages: **node count exact 42.4% / within one 60.0%; edge count exact 24.5% / within one 43.7%** - and on flowcharts alone **0.896 and 0.592 exact**. Padding shapes by a stroke width before subtracting them is what moved edge count from +5.48 error to -1.28; strand floor from a published 7-point sweep | ✅ |
-| 4.1.2 | Ratios | line-to-curve ratio, arrows-per-node, text-per-node, edge/node ratio | Type-discriminative | ❌ |
+| 4.1.2 | Ratios | line-to-curve ratio, arrows-per-node, text-per-node, edge/node ratio | `src/features/ratios.py`: line-to-curve, arrows-per-node, text-per-node, edges-per-node. An undefined ratio is `nan`, never 0.0, so 4.2.3's missingness indicator keeps 'this page has no shapes' as its own signal (7.8% of 600 pages). Per-type medians published: **edges_per_node 0.48-0.83 for drawn graphs against 5.0 circuit / 8.0 wireframe**, and line_to_curve orders types by node roundness, 0.20 state machine to 2.50 wireframe. arrows_per_node has median 0.000 in four of five types - 3.2.6's detector showing as a dead feature | ✅ |
 | 4.1.3 | Shape mix | fraction rectangles / diamonds / ovals / circles / freeform | Diamonds ⇒ flowchart or ER | ❌ |
 | 4.1.4 | Layout geometry | node density, mean nearest-neighbour distance, grid-alignment score, row/column regularity | Wireframes are grid-like | ❌ |
 | 4.1.5 | Global geometry | image aspect ratio, ink coverage, bounding-box fill ratio | Cheap priors | ❌ |
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 1 | ❌ |
+| 4 — Feature Engineering | 16 | 2 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **73** | ❌ |
+| **Total** | **302** | **74** | ❌ |
