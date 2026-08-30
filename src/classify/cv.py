@@ -130,6 +130,24 @@ def splitter(dataset: Dataset, strategy: str, seed: int, n_splits: int = N_SPLIT
     raise ValueError(f"strategy must be stratified or grouped; got {strategy!r}")
 
 
+#: Out-of-fold predictions are recomputed by six downstream tasks with the same arguments, and
+#: each set costs a full 5-fold refit. They are a pure function of (model, data, strategy, seed),
+#: so they are memoised on the content of the matrix rather than on the object's identity - a
+#: caller that builds a new `Dataset` around the same numbers gets the cached answer, and one
+#: that changes a single value does not.
+_CACHE: dict[tuple, FoldPredictions] = {}
+
+
+def cache_key(model: str, dataset: Dataset, strategy: str, seed: int, n_splits: int) -> tuple:
+    import hashlib
+
+    digest = hashlib.blake2b(np.ascontiguousarray(dataset.X).tobytes(), digest_size=16)
+    digest.update(np.asarray(dataset.y, dtype=str).tobytes())
+    if strategy == "grouped":
+        digest.update(np.asarray(dataset.groups, dtype=str).tobytes())
+    return (model, strategy, seed, n_splits, digest.hexdigest())
+
+
 def out_of_fold(
     model: str,
     dataset: Dataset,
@@ -137,10 +155,15 @@ def out_of_fold(
     strategy: str = "stratified",
     seed: int = SEEDS[0],
     n_splits: int = N_SPLITS,
+    use_cache: bool = True,
 ) -> FoldPredictions:
     """One prediction and one probability vector per row, from a model that did not see it."""
     if model not in MODELS:
         raise KeyError(f"unknown model {model!r}; known: {sorted(MODELS)}")
+
+    key = cache_key(model, dataset, strategy, seed, n_splits)
+    if use_cache and key in _CACHE:
+        return _CACHE[key]
 
     classes = np.array(sorted(set(dataset.y.tolist())), dtype=object)
     predictions = np.empty(len(dataset.y), dtype=object)
@@ -158,7 +181,7 @@ def out_of_fold(
         for position, name in enumerate(estimator.classes_):
             probabilities[test_index, int(np.where(classes == name)[0][0])] = raw[:, position]
 
-    return FoldPredictions(
+    result = FoldPredictions(
         y_true=dataset.y,
         y_pred=predictions,
         y_proba=probabilities,
@@ -167,6 +190,9 @@ def out_of_fold(
         seed=seed,
         model=model,
     )
+    if use_cache:
+        _CACHE[key] = result
+    return result
 
 
 def evaluate(
