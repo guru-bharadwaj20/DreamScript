@@ -79,6 +79,8 @@ class Region:
     extent: float  # area / bbox area
     solidity: float  # area / convex hull area
     aspect: float  # w / h
+    rect_fill: float  # area / minimum-area rectangle: extent without the axis
+    rect_aspect: float  # long side / short side of that rectangle
     vertices: int  # Douglas-Peucker, 3.2.3
     straightness: float  # 3.2.5
     corners: int  # 3.2.5
@@ -235,6 +237,14 @@ def build_regions(shape_mask: np.ndarray, min_area_frac: float = MIN_AREA_FRAC) 
             continue
         x, y, w, h = contour.bbox
         hull_area = float(cv2.contourArea(cv2.convexHull(contour.points))) or contour.area
+        # Rotation-invariant twin of `extent`. On a photograph the page is not square to the
+        # camera, so a drawn box sits a few degrees off axis and its axis-aligned box is much
+        # larger than it is: measured on the 2.2.4 crops, `extent` reads 0.55-0.75 for shapes a
+        # person labelled rectangle. Against its own minimum-area rectangle the same shape
+        # reads what it should, and 4.1.3 is built on this rather than on `extent`.
+        (_, (rect_w, rect_h), _) = cv2.minAreaRect(contour.points.astype(np.float32))
+        rect_area = float(rect_w * rect_h)
+        long_side, short_side = max(rect_w, rect_h), max(min(rect_w, rect_h), 1e-6)
         described = cu.describe(densify(contour.points))
         polygon = pg.describe(contour)
         out.append(
@@ -249,6 +259,8 @@ def build_regions(shape_mask: np.ndarray, min_area_frac: float = MIN_AREA_FRAC) 
                 # width of its own boundary pixels, so a thin outline can score above 1.
                 solidity=round(min(contour.area / hull_area, 1.0), 4) if hull_area else 0.0,
                 aspect=round(w / h, 4) if h else 0.0,
+                rect_fill=round(min(contour.area / rect_area, 1.0), 4) if rect_area else 0.0,
+                rect_aspect=round(float(long_side / short_side), 4),
                 vertices=int(polygon["vertices"]),
                 straightness=float(described.get("straightness", 0.0)),
                 corners=int(described.get("corners", 0)),
