@@ -251,7 +251,7 @@ that reflects real human messiness.
 | 5.2.2 | **Grouped CV by scribe** | GroupKFold on `scribe_id` — the neat-drafter vs. chaotic-scribbler test | `src/classify/grouped.py`: GroupKFold over `scribe_id` against stratified CV, same models and seeds, 170 writers. **There is no writer effect: logreg -0.0023 (it is fractionally better on unseen hands), tree +0.0199, knn +0.0358** - all inside the fold-to-fold spread, and kNN losing most is the expected ordering. The 63-writer chaos corpus shows no drop either. Reports per-source columns honestly (sketch2code has no writer ids, so its two numbers are the same measurement twice) and surfaces the finding that matters more: **circuit recall is 0.225** against 1.000 for state machines | ✅ |
 | 5.2.3 | Metrics | Accuracy, per-class precision/recall/F1, macro & weighted F1 | `src/classify/metrics.py` -> `reports/classification_report.md`: per-class precision/recall/F1/support plus macro, weighted and balanced accuracy for every model, all from 5.2.1's out-of-fold predictions. **Every model loses ~0.15 between weighted and macro F1** (logreg 0.9379 -> 0.7917), so the same result reads as 93% or 79% solved depending on the metric. Per class: **wireframe 0.981, state_machine 0.955, flowchart 0.950, er_diagram 0.796, circuit 0.277** - and scarcity is ruled out on the corpus itself, since state machines have 50 rows to circuits' 40 and score 0.955 | ✅ |
 | 5.2.4 | ROC / AUC | One-vs-rest ROC curves, macro & micro AUC | `src/classify/roc.py` + `reports/figures/p5_roc.png`: one-vs-rest curves for all five classes per model, with macro, micro and weighted AUC from 5.2.1's out-of-fold probabilities. **logreg macro AUC 0.9454 / micro 0.9903**, tree 0.8798, knn 0.8655. The finding: **circuits rank at 0.788 AUC while only 23% are predicted** - the model ranks them well above chance and never wins the five-way argmax, so the missing recall is a threshold problem rather than a representation one. Records that kNN's AUC is not comparable at all, because k=1 makes every probability one-hot and the curve a staircase | ✅ |
-| 5.2.5 | PR curves | Especially for the minority diagram type | Curves plotted | ❌ |
+| 5.2.5 | PR curves | Especially for the minority diagram type | `src/classify/pr.py` + `reports/figures/p5_pr.png`: per-class PR curves with each class's prevalence drawn as its own baseline, average precision, lift, and **precision available at 0.25/0.50/0.75/0.90 recall** - the table that prices the minority-class trade. logreg macro AP 0.804. Lift makes the small classes readable (**state_machine 26.5x, er_diagram 21.5x, circuit 8.8x** against 2.2x for the two 45% classes). **Half the circuits can be recovered at 21% precision and three quarters at 7%**, so a threshold only partly fixes the class - while **75% of ER diagrams are recoverable at 81% precision**, showing the problem is specific to circuits rather than to small classes | ✅ |
 | 5.2.6 | Confusion matrices | Raw and row-normalized | Heatmaps saved | ❌ |
 | 5.2.7 | Calibration | Reliability diagram + Brier score; Platt/isotonic if miscalibrated | Calibration plot | ❌ |
 | 5.2.8 | Statistical comparison | McNemar test between top models; CV score confidence intervals | Significance table | ❌ |
@@ -710,7 +710,7 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 8 | ❌ |
+| 5 — Classical Classifiers | 17 | 9 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
 | 8 — Clustering | 10 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **96** | ❌ |
+| **Total** | **302** | **97** | ❌ |
