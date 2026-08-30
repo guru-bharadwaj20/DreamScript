@@ -91,7 +91,11 @@ WEIGHTINGS = ("uniform", "distance")
 
 def pipeline(**kwargs) -> Pipeline:
     """Scaler plus kNN, so the neighbours are found in standardised space."""
-    settings = {"n_neighbors": 5, "n_jobs": -1, **kwargs}
+    # `ball_tree` rather than the default `auto`: on 33 features sklearn's `auto` chooses the
+    # brute-force path, whose fast `predict_proba` kernel casts the class labels to integers and
+    # raises on this project's string labels. Both algorithms do an exact search, so the
+    # neighbours - and therefore every prediction - are identical; only the traversal differs.
+    settings = {"n_neighbors": 5, "n_jobs": -1, "algorithm": "ball_tree", **kwargs}
     return Pipeline([("prepare", feature_scaler()), ("model", KNeighborsClassifier(**settings))])
 
 

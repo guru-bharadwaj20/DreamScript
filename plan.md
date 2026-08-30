@@ -247,7 +247,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 5.2.1 | Stratified k-fold CV | k = 5, repeated ×3, fixed seeds | CV harness implemented | ❌ |
+| 5.2.1 | Stratified k-fold CV | k = 5, repeated ×3, fixed seeds | `src/classify/cv.py`: repeated stratified 5-fold x 3 (seeds 42/43/44, fixed), one model registry shared by all of 5.2 and 5.3, and **out-of-fold predictions as the unit** - every row predicted by a model that never saw it, so the nine downstream tasks all read the same predictions and McNemar in 5.2.8 compares models on identical rows. Measured: **logreg 0.9413 acc / 0.7898 macro F1, knn 0.9269 / 0.7614, tree 0.8970 / 0.7426** against majority 0.4478 / 0.1237. Records that the gaps between the three are smaller than the fold-to-fold spread, so the ranking is not yet evidence | ✅ |
 | 5.2.2 | **Grouped CV by scribe** | GroupKFold on `scribe_id` — the neat-drafter vs. chaotic-scribbler test | Grouped scores reported alongside plain CV | ❌ |
 | 5.2.3 | Metrics | Accuracy, per-class precision/recall/F1, macro & weighted F1 | Full classification report | ❌ |
 | 5.2.4 | ROC / AUC | One-vs-rest ROC curves, macro & micro AUC | Curves plotted | ❌ |
@@ -710,7 +710,7 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 4 | ❌ |
+| 5 — Classical Classifiers | 17 | 5 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
 | 8 — Clustering | 10 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **92** | ❌ |
+| **Total** | **302** | **93** | ❌ |
