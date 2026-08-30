@@ -220,7 +220,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 4.2.1 | `FeatureExtractor` class | sklearn-compatible `fit` / `transform` | Unit tested | ❌ |
+| 4.2.1 | `FeatureExtractor` class | sklearn-compatible `fit` / `transform` | `src/features/extractor.py`: `FeatureExtractor(BaseEstimator, TransformerMixin)` - paths in, a fixed-order **(n, 34)** float matrix out, with `get_feature_names_out`, sklearn `clone` and a Pipeline test. Stateless by design so nothing can leak (scaling and imputation are separate transformers); one `PageContext` per page feeds all nine families; an unreadable page is a row of `nan`, not a dead batch. Parallel over processes at **4.7x on 32 cores, byte-identical to serial** - threads reached only 2.3x and the measurement is recorded | ✅ |
 | 4.2.2 | Feature table build | `data/features/handcrafted.parquet` for full corpus | Table built | ❌ |
 | 4.2.3 | Missing-value strategy | Median impute + missingness indicator | Documented | ❌ |
 | 4.2.4 | Scaling | StandardScaler fit on train only (no leakage) | Leakage test passes | ❌ |
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 9 | ❌ |
+| 4 — Feature Engineering | 16 | 10 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **81** | ❌ |
+| **Total** | **302** | **82** | ❌ |
