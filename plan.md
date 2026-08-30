@@ -222,7 +222,7 @@ that reflects real human messiness.
 | :---: | :--- | :--- | :--- | :---: |
 | 4.2.1 | `FeatureExtractor` class | sklearn-compatible `fit` / `transform` | `src/features/extractor.py`: `FeatureExtractor(BaseEstimator, TransformerMixin)` - paths in, a fixed-order **(n, 34)** float matrix out, with `get_feature_names_out`, sklearn `clone` and a Pipeline test. Stateless by design so nothing can leak (scaling and imputation are separate transformers); one `PageContext` per page feeds all nine families; an unreadable page is a row of `nan`, not a dead batch. Parallel over processes at **4.7x on 32 cores, byte-identical to serial** - threads reached only 2.3x and the measurement is recorded | ✅ |
 | 4.2.2 | Feature table build | `data/features/handcrafted.parquet` for full corpus | `src/features/build.py` -> `data/features/handcrafted.parquet`, DVC-tracked: **4,340 rows x 34 features** plus seven identity columns that are never features (flowchart 1,200 / wireframe 1,200 / er 650 / state 650 / circuit 640; train 3,485 / val 729 / test 126), 648 s on 32 cores, **no all-nan rows**, 11.9% missing cells concentrated in the four columns 4.1.4 said would be undefined. Records two silent sampling bugs the first build exposed - an unstratified slice returned 88 real rows and zero wireframes - now fixed by dropping absent files before sampling and stratifying per type on both corpora. Atomic write | ✅ |
-| 4.2.3 | Missing-value strategy | Median impute + missingness indicator | Documented | ❌ |
+| 4.2.3 | Missing-value strategy | Median impute + missingness indicator | `src/features/impute.py`: `MedianImputer` - training-median fill plus a `*_missing` indicator per column that was ever absent, and 0.0 for a column with no observed value anywhere. Measured on the built table: **26 of 34 columns go missing and 63.5% of rows have a hole**, and the holes track the label - **circuit 0.958 of rows against state_machine 0.369** - which is why the indicator is kept rather than the median alone. 21 columns share one cause (no region found). No kNN or iterative fill, because the correlated columns are missing together | ✅ |
 | 4.2.4 | Scaling | StandardScaler fit on train only (no leakage) | Leakage test passes | ❌ |
 | 4.2.5 | Correlation pruning | Drop \|r\| > 0.95 pairs | Pruned list logged | ❌ |
 | 4.2.6 | Feature importance preview | Mutual information + ANOVA F ranking | Ranked bar chart | ❌ |
@@ -709,7 +709,7 @@ becomes the code structure.
 | 1 — Data Acquisition | 21 | 21 | ✅ |
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
-| 4 — Feature Engineering | 16 | 11 | ❌ |
+| 4 — Feature Engineering | 16 | 12 | ❌ |
 | 5 — Classical Classifiers | 17 | 0 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **83** | ❌ |
+| **Total** | **302** | **84** | ❌ |
