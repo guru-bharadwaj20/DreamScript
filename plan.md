@@ -240,7 +240,7 @@ that reflects real human messiness.
 | :---: | :--- | :--- | :--- | :---: |
 | 5.1.1 | Logistic Regression | L1 / L2 / elastic-net; multinomial softmax; C sweep | `src/classify/linear.py` (+ `data.py`, the corpus contract, and `gpu.py`): 44-candidate grid over l1/l2/elasticnet x C x class_weight, scored by **macro F1** on the 5-class real corpus (600/600/50/50/40), 40 s on 32 cores. **Best macro F1 0.789** (l1, C=10) recorded in `BEST_PARAMS` so 5.2 and 5.3 refit the identical model; class_weight=balanced does not win. **The camera leak is worth 0.0052 macro F1** - the feature 4.2.6 ranked first by mutual information is nearly free to remove. GPU solver agrees with sklearn on 100% of predictions and is **0.01x the speed** - measured and reported rather than claimed | ✅ |
 | 5.1.2 | K-Nearest Neighbors | k ∈ {1,3,5,7,11,15}; Euclidean / Manhattan / cosine; distance weighting | `src/classify/knn.py`: 36 configurations (k in 1..15 x euclidean/manhattan/cosine x uniform/distance), five folds, scaler refit per fold. **Best k=1, manhattan, uniform at macro F1 0.7635** - below 5.1.1's 0.789, and k=1 wins because any larger k erases the 40-row circuit class. **This is where the GPU pays: one distance matrix per fold per metric instead of 180 neighbour searches - 5.17 s CPU vs 0.51 s GPU, 10.1x, with all 36 configurations agreeing to 0.0000** and the same winner; the opposite of 5.1.1's 0.01x on the same device | ✅ |
-| 5.1.3 | Decision Tree | depth, min_samples_leaf, gini vs. entropy; cost-complexity pruning α sweep | Pruned tree chosen | ❌ |
+| 5.1.3 | Decision Tree | depth, min_samples_leaf, gini vs. entropy; cost-complexity pruning α sweep | `src/classify/tree.py`: 100-candidate shape sweep (criterion x depth x leaf size x class_weight) then a 24-point cost-complexity pruning path scored by the same CV. **Pruning is worth 24 leaves: 0.7486 unpruned (78 leaves) -> 0.7539 at alpha=0.003977 (54 leaves)**, with the 1-SE tree (42 leaves, 0.7384) reported alongside. class_weight=balanced wins here and lost in 5.1.1. **The camera leak is worth -0.0102 to the tree** - it scores 0.7588 without global_aspect - the same feature 5.1.1 gained 0.0052 from and 4.2.6 ranked first | ✅ |
 | 5.1.4 | Baselines | Majority class, stratified random | Reported for context | ❌ |
 
 ### 5.2 Evaluation Protocol
@@ -710,7 +710,7 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 2 | ❌ |
+| 5 — Classical Classifiers | 17 | 3 | ❌ |
 | 6 — ANN & SVM | 18 | 0 | ❌ |
 | 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
 | 8 — Clustering | 10 | 0 | ❌ |
@@ -723,4 +723,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **90** | ❌ |
+| **Total** | **302** | **91** | ❌ |
