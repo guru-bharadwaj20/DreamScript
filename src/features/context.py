@@ -125,8 +125,15 @@ class PageContext:
 
     @property
     def connector_segments(self) -> list[dict]:
-        """Segments whose midpoint is not inside any region: the ink that joins shapes."""
-        return [s for s in self.segments if not self.inside_any(*midpoint(s))]
+        """Segments whose midpoint is not inside any region: the ink that joins shapes.
+
+        The box is padded by a stroke width and a half before the test, for the same reason
+        `connector_ink` pads it: a region's box can be its own *inner* edge, and without the
+        padding the outer edge of every drawn shape is classified as a connector - which makes
+        4.1.8 a measurement of how rectangular the boxes are.
+        """
+        pad = 1.5 * stroke_width(self.shape_mask)
+        return [s for s in self.segments if not self.inside_any(*midpoint(s), pad=pad)]
 
     def inside_any(self, x: float, y: float, pad: float = 0.0) -> bool:
         return any(inside(r.bbox, x, y, pad) for r in self.regions)
