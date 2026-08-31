@@ -261,7 +261,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 5.3.1 | **KNN decision boundary plots** | 2-D projections (PCA / top-2 features) showing diagram types clustering | Figures produced | ❌ |
+| 5.3.1 | **KNN decision boundary plots** | 2-D projections (PCA / top-2 features) showing diagram types clustering | `src/classify/boundaries.py` + `reports/figures/p5_knn_boundaries.png`: kNN boundaries over two projections x three k, with the projection **refit inside each training fold** so the picture's score is earned. **Two dimensions cost half the model: best projected macro F1 0.583 against 0.764 on the 33 features** - the figure shows where the classes sit and not what the model does. PCA scores 0.384 while keeping a little of everything; the top-2 pair scores 0.576 while discarding 31 columns, so the signal is spread thin. **The most informative pair of axes is led by `global_aspect`, the camera leak.** And 5.1.2's reason for k=1 is made visible: **the circuit decision region shrinks from 3.3% of the PCA plane at k=1 to exactly 0.0 at k=15** - a minority class survives kNN as islands, and smoothing removes islands | ✅ |
 | 5.3.2 | Decision tree export | Rendered tree + extracted human-readable rules | `reports/tree_rules.md` | ❌ |
 | 5.3.3 | Logistic coefficients | Per-class coefficient table, sign interpretation | Table in report | ❌ |
 | 5.3.4 | Error taxonomy | Which diagram pairs confuse most (expect flowchart ↔ state) | Written analysis | ❌ |
