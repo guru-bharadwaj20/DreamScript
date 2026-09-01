@@ -285,7 +285,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 6.2.1 | Architecture search | 1–3 hidden layers, widths {64,128,256,512} | Best topology chosen | ❌ |
+| 6.2.1 | Architecture search | 1–3 hidden layers, widths {64,128,256,512} | `src/classify/mlp.py`: 16 topologies x 3 feature tables under 5.2.1's fold protocol, 15 s a sweep on 32 cores. **Best: (512, 256) on the hybrid table, 0.9310** - and the sweep selected the *opposite* of what was predicted, picking 215,557 parameters for 1,340 rows (161 per training example) with width 512 taking the top two places and 64 the bottom; early stopping regularizes what the parameter count says should be impossible. Two hidden layers beat three; one layer is worst everywhere. **The finding that matters: no network beats a logistic regression** - the MLP loses on all three tables (handcrafted 0.7620 vs 0.7981, hybrid 0.9310 vs 0.9503, embedding 0.9484 vs 0.9554) with two hundred times the parameters, which is 5.2.9's data-limited corpus showing up again. Provisional in one way: `alpha` is left at default because regularization is 6.2.3's task, so **6.2.3 either closes the 0.019 or confirms it, against 0.9554 rather than 0.7898**. Includes `StringSafeMLP`, since sklearn's `early_stopping` path calls `np.isnan` on predicted labels and every Dataset here carries strings | ✅ |
 | 6.2.2 | Activations | ReLU vs. LeakyReLU vs. GELU vs. tanh | Comparison table | ❌ |
 | 6.2.3 | Regularization | Dropout {0, 0.2, 0.5}, weight decay, early stopping | Overfit gap reduced | ❌ |
 | 6.2.4 | **Optimizer comparison** | SGD, SGD+momentum, RMSProp, Adam, AdamW — convergence on image data | Loss-vs-epoch overlay figure | ❌ |
