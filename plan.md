@@ -276,7 +276,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 6.1.1 | Backbone selection | Frozen ResNet-18/34 or CLIP-ViT features on 224×224 binarized images | Embeddings cached | ❌ |
+| 6.1.1 | Backbone selection | Frozen ResNet-18/34 or CLIP-ViT features on 224×224 binarized images | `src/embed/backbone.py`: six combinations (resnet18/resnet34/clip_vit_b32 x binary/grey) over the same 1,340 rows as 4.2.2's table, each scored by a logistic probe under Phase 5's protocol. **Frozen CLIP-ViT-B/32 on greyscale reaches 0.9720 macro F1 against 5.1.1's 0.7898** - nine hand-built feature families beaten by 0.18 by a network told nothing about diagrams. The plan's "binarized" is measured rather than obeyed and **grey wins on the two backbones that matter** (CLIP +0.005, ResNet-34 +0.013); ResNet-18 is the lone exception. **The result this corpus could have faked**: source fixes the label for 1,200 of 1,340 rows, so a dataset-recogniser scores 0.9328 free - and the embedding does predict source at 0.99. But within the chaos corpus alone (140 rows, 3 classes, one capture protocol) **CLIP scores 0.9925 against the handcrafted features' 0.9135**, so the win survives the only control available and is not a camera artefact. Decoding costs 144 s per mode against a 1 s forward pass - **the GPU is idle for 99% of the task**, which is the whole argument for 6.1.2 | ✅ |
 | 6.1.2 | Embedding cache | `data/features/embeddings.npy` + index | Built | ❌ |
 | 6.1.3 | Dimensionality reduction | PCA to 128-D; retained-variance report | Reduced set stored | ❌ |
 | 6.1.4 | Hybrid feature set | Concatenate handcrafted + embedding features | Combined table built | ❌ |

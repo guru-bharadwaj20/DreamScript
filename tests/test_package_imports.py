@@ -19,6 +19,7 @@ PACKAGES = [
     "src.preprocess",
     "src.features",
     "src.classify",
+    "src.embed",
     "src.detect",
     "src.ocr",
     "src.parse",
