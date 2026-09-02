@@ -313,7 +313,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 7.1.1 | Bagging baseline | Bagged trees | Recorded | ❌ |
+| 7.1.1 | Bagging baseline | Bagged trees | `src/classify/bagging.py`: 3 base learners x 7 ensemble sizes x 3 tables. **A low-variance control (logistic regression) is bagged alongside the trees**, because "bagging reduces variance" is only demonstrable against something that has little - and the mechanism separates by a factor of ten: **bagging a tree is worth +0.060 to +0.119, bagging a logistic regression +0.008 to +0.022**, on every table. **The small-class worry stated up front turned out to be false**: the minority mean gains *more* than the macro on all nine curves (+0.182 vs +0.119 on the hybrid), and the simulated bootstrap share explains why - a 40-row class keeps 0.639 of its distinct rows against a 600-row class's 0.632, so 40 is already asymptotic and the finite-sample penalty does not exist. The tuned tree gains more than the unpruned one (+0.119 vs +0.060) but both converge within 0.008. **10-25 members is enough**; past 50 the curves are flat and non-monotone. Best 0.8644 (tuned trees, hybrid) - a large gain on Phase 5's tree and still 0.11 below 6.3.7's best cell and 0.09 below a bagged logistic regression on the same table | ✅ |
 | 7.1.2 | Random Forest | n_estimators, max_features, depth sweep; OOB score | Tuned model | ❌ |
 | 7.1.3 | AdaBoost | Stump and depth-3 base learners | Recorded | ❌ |
 | 7.1.4 | Gradient Boosting / XGBoost / LightGBM | lr, depth, subsample, colsample, early stopping | Best booster chosen | ❌ |
