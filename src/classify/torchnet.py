@@ -62,6 +62,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 
@@ -71,7 +72,21 @@ from sklearn.pipeline import Pipeline
 
 from src.features.scaling import feature_scaler
 
+# Set before torch is imported anywhere, because the OpenMP runtime reads it once at load time
+# and ignores `torch.set_num_threads` for the pool it has already built. This is what makes a
+# multi-process sweep of a single-threaded fit safe rather than a lottery.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 SEED = 42
+
+#: Worker cap for `sweep`, and it is a cap rather than `-1` for a measured reason. On this
+#: machine `n_jobs=-1` starts 32 loky processes that each initialise a fresh OpenMP runtime, and
+#: the pool wedges: 36 processes alive, the CPU at 3%, and no progress in ten minutes. At 8
+#: workers the same grid runs to completion every time. The arithmetic also says the cap costs
+#: little - each fit is single-threaded and memory-bound on a 863 KB table, so the speed-up was
+#: never going to be linear in cores - and `OMP_NUM_THREADS` is pinned below for the same reason.
+MAX_WORKERS = 8
 
 #: The four the plan names. `relu` is the reference point against 6.2.1's sklearn sweep; the
 #: other three are the reason this module exists.
@@ -248,7 +263,13 @@ class TorchMLP(ClassifierMixin, BaseEstimator):
         self.device_ = resolve_device(self.device)
         device = self.device_
 
-        if self.early_stopping and self.validation_fraction > 0:
+        # The hold-out is carved whenever `validation_fraction` is set, *independently* of
+        # `early_stopping`. That is deliberate and it is a correctness fix: if the un-stopped arm
+        # trained on 100% while the stopped arm trained on 88%, then "early stopping costs
+        # 0.021" would really be "12% more training data is worth 0.021" on a corpus 5.2.9
+        # measured as data-limited. Both arms now see exactly the same rows, and the only
+        # difference between them is whether the run is cut short and the best weights restored.
+        if self.validation_fraction > 0:
             counts = np.bincount(encoded)
             # A stratified hold-out needs two rows of every class, and the 40-row circuit class
             # at a 12% split inside a 4/5 training fold is close enough to that floor that the
@@ -451,12 +472,16 @@ def sweep(data, configs: list[dict], n_jobs: int | None = None, folds: int = 5) 
     def one(config: dict) -> dict:
         import torch
 
+        # One thread per worker. The default is for each process to claim every core, and N
+        # processes each doing that is N x 32 threads fighting over 32 cores.
         torch.set_num_threads(1)
         result = cross_validate(data, folds=folds, device="cpu", **config)
         return {**config, **{k: v for k, v in result.items() if k != "predicted"}}
 
-    workers = n_jobs if n_jobs is not None else -1
-    return list(Parallel(n_jobs=workers)(delayed(one)(config) for config in configs))
+    workers = MAX_WORKERS if n_jobs is None else n_jobs
+    return list(
+        Parallel(n_jobs=workers, backend="loky")(delayed(one)(config) for config in configs)
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
