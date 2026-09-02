@@ -297,7 +297,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 6.3.1 | Linear SVM | C sweep, hinge loss | Baseline recorded | ❌ |
+| 6.3.1 | Linear SVM | C sweep, hinge loss | `src/classify/svm.py`: 7 values of C x hinge and squared hinge x 3 tables. **The margin beats the likelihood on both learned tables and loses on the geometric one**: hybrid 0.9628 (C=0.1) vs 6.1.4's 0.9503, embedding 0.9691 (C=0.01) vs 0.9554, handcrafted 0.7656 (C=1.0) vs 0.7981. **0.9628 is the best number in Phase 6** - ahead of every MLP cell in 6.2 including 6.2.6's 0.9593, from 810 parameters and no training loop. Unlike 6.2.3's weight decay, **C actually has to be chosen**: the plateau is 1-3 cells of 14 spanning at most one order of magnitude, the best C falls as the table widens (1.0 / 0.1 / 0.01 for 33 / 161 / 128 columns), and sklearn's default of 1.0 is the worst of the three on the embedding table. Squared hinge beats the plan's plain hinge on all three tables, so sweeping both turned a spec discrepancy into a measurement. **The support vectors already carry 6.3.5's finding**: a quarter of the corpus defines the boundary at the selected C (rising to 48% at C=0.001), and **39 of the 40 circuit pages are support vectors against 50 of 600 wireframes** - the smallest class is all boundary and no interior | ✅ |
 | 6.3.2 | **Polynomial kernel** | degree {2,3,4}, coef0, γ — target the flowchart vs. state-diagram boundary | Focused binary study done | ❌ |
 | 6.3.3 | RBF kernel | γ and C grid | Compared | ❌ |
 | 6.3.4 | Multiclass strategy | OvO vs. OvR comparison | Chosen and justified | ❌ |
