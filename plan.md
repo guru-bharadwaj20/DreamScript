@@ -326,7 +326,7 @@ that reflects real human messiness.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 7.2.1 | Text-region feature set | Statistics of text regions only (fast, cheap) | Feature table built | ❌ |
+| 7.2.1 | Text-region feature set | Statistics of text regions only (fast, cheap) | `src/features/textregions.py`: 14 columns over 1,695 pages (1,340 real, 355 synthetic) from the text layer alone. **The plan's own intuition for 7.2.3 is wrong on this corpus**: flowcharts are the label-heavy class, not ER diagrams (37.6 blocks a page against 22.7), because every flowchart box carries a sentence while an ER attribute is one word. ER wins on `text_ink_share` instead (0.481, nearly double any other class) - its pages are *mostly* writing without being the pages with the most blocks, so 7.2.3 has to learn the corrected rule rather than encode the guessed one. Ranked by ANOVA F against diagram type, the strongest column is not the count at all but **`text_aspect_mean` (1115.9, versus 419.7 for `text_n_blocks`)**: what separates the classes is the *shape* of a label - a flowchart's long thin sentence against a wireframe's short squarish caption - which is visible without reading a single word. 28 pages carry no text blocks and 39 more carry exactly one, leaving 67 undefined values in `text_nn_distance` and `text_row_alignment`; those stay NaN here so that 4.2.3 remains the one place imputation is decided | ✅ |
 | 7.2.2 | Gaussian NB | On continuous text statistics | Trained | ❌ |
 | 7.2.3 | Multinomial NB | On discretized token/label counts (many labels ⇒ ER; few + arrows ⇒ flowchart) | Trained | ❌ |
 | 7.2.4 | Independence-assumption analysis | Where it breaks and why it still works | Written analysis | ❌ |
