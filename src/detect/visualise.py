@@ -35,7 +35,50 @@ heatmaps as an explanation of the network.
 
 ## What it measured
 
-FILLED_IN_BELOW
+**9.2.4 - the filters did differentiate, and the number says so where the picture cannot.**
+The 16 first-layer kernels have weight standard deviation 0.2028 and norms spanning 0.4823 to
+0.7342, and **the mean absolute cosine similarity between distinct kernels is 0.2852** with a
+maximum of 0.8233. Sixteen 3x3 kernels rendered as small red-blue squares are close to
+unreadable and every such figure ever published looks equally convincing, so the figure carries
+that cosine on its title: near 1.0 would mean the layer learned one filter sixteen times, which
+is the failure a filter grid is supposed to reveal and almost never does. At 0.285 the layer is
+genuinely diverse; the one pair at 0.82 is the redundancy that remains.
+
+**9.2.6 - the class evidence is mostly not on the ink, and which classes are the exception is
+the finding.** Measured over 290 validation crops rather than the seven on the figure, as
+*enrichment* - the share of Grad-CAM mass falling on ink, divided by the share of pixels that
+are ink - so that a crop being mostly paper cannot masquerade as a result:
+
+    class            median enrichment   crops above 1.0
+    freeform                   1.117           60%
+    double-circle              1.104           74%
+    rounded-rect               0.753           36%
+    diamond                    0.410            9%
+    parallelogram              0.031            0%
+    rectangle                  0.000           20%
+    circle                     0.000           22%
+
+**Median across classes 0.41: the heat sits on paper at less than half of chance.** And the two
+classes above 1.0 are exactly the two whose identity *is* a local ink feature - a
+`double-circle` is defined by its second ring and a `freeform` by an irregular boundary, and
+both are things you must look at a stroke to see. The classes at zero are the ones whose
+identity is the **shape of the enclosed region**: what makes a rectangle is where its area
+extends, not what its outline is made of, and at the last conv layer that is represented by
+which of the 8x8 cells are active rather than by whether they sit on a line.
+
+Read with 9.2.3 this is coherent rather than surprising. The final receptive field is 52 of 64
+pixels and the fully connected layer holds 70% of the parameters, so **the network's global
+shape reasoning happens after the last convolution, in a layer with no spatial extent that
+Grad-CAM cannot see at all.** A heatmap here shows where the *local* evidence was gathered, and
+for four of seven classes the honest answer is that the discriminative local evidence is not on
+the strokes.
+
+**Three limits are recorded rather than smoothed over.** The map is **8x8 upsampled to 64x64**,
+so every claim has a resolution of 8 pixels and the figure says so. **17 of 307 crops have an
+empty ink mask at a 0.5 grey threshold** - faint pencil - and are excluded rather than scored
+zero, since that is a limit of the mask and not evidence about the model. And `parallelogram`'s
+row rests on **7 crops**, which is the same 7 instances that make its F1 unreadable everywhere
+else in 9.2.
 """
 
 from __future__ import annotations
@@ -208,10 +251,20 @@ def figure_gradcam(model, root: Path = CROPS, path: Path = GRADCAM) -> tuple[Pat
             axes[row, column].set_yticks([])
         # How much of the heat sits on ink rather than on paper: the one quantitative check a
         # heatmap figure can carry, since "it looks like it is on the shape" is not a finding.
+        #
+        # Reported **against the share of pixels that are ink at all**, because a crop is mostly
+        # paper: a rectangle's outline is a few per cent of its 4,096 pixels, so a perfectly
+        # uniform heatmap already puts only a few per cent of its mass on ink. Without that
+        # denominator the raw share reads as "the network ignores the strokes" when it may only
+        # mean "there are not many strokes".
         ink = crop[0] < 0.5
-        mass[SHAPE_CLASSES[label]] = round(
-            float(cam[ink].sum() / max(cam.sum(), 1e-9)) if ink.any() else 0.0, 4
-        )
+        share = float(cam[ink].sum() / max(cam.sum(), 1e-9)) if ink.any() else 0.0
+        pixels = float(ink.mean())
+        mass[SHAPE_CLASSES[label]] = {
+            "cam_share_on_ink": round(share, 4),
+            "ink_pixel_share": round(pixels, 4),
+            "enrichment": round(share / pixels, 3) if pixels > 1e-9 else None,
+        }
     fig.suptitle(
         "Phase 9.2.6 - Grad-CAM at the last conv layer (8x8 map upsampled; resolution is 8 px)",
         fontsize=10,
@@ -223,17 +276,58 @@ def figure_gradcam(model, root: Path = CROPS, path: Path = GRADCAM) -> tuple[Pat
     return path, mass
 
 
+def cam_statistics(model, root: Path = CROPS, per_class: int = 50, threshold: float = 0.5) -> dict:
+    """Ink enrichment over many crops, so the figure's claim is a statistic and not an anecdote.
+
+    The seven crops on the figure are one example each; this repeats the same measurement over
+    up to `per_class` validation crops and reports the median enrichment per class. Crops whose
+    ink mask is empty at this threshold are counted and excluded rather than scored as zero -
+    a faint pencil stroke above 0.5 grey is a limit of the mask, not evidence about the model.
+    """
+    x, y = load_split("val", root)
+    out: dict[str, dict] = {}
+    empty = 0
+    for index, name in enumerate(SHAPE_CLASSES):
+        rows = np.flatnonzero(y == index)[:per_class]
+        values = []
+        for row in rows:
+            crop = x[row]
+            ink = crop[0] < threshold
+            if not ink.any():
+                empty += 1
+                continue
+            cam = gradcam(model, crop, index)
+            share = float(cam[ink].sum() / max(cam.sum(), 1e-9))
+            values.append(share / float(ink.mean()))
+        if values:
+            out[name] = {
+                "crops": len(values),
+                "median_enrichment": round(float(np.median(values)), 3),
+                "share_above_one": round(float(np.mean(np.asarray(values) > 1.0)), 3),
+            }
+    pooled = [v["median_enrichment"] for v in out.values()]
+    return {
+        "per_class": out,
+        "median_enrichment": round(float(np.median(pooled)), 3) if pooled else None,
+        "crops_with_empty_ink_mask": empty,
+        "ink_threshold": threshold,
+    }
+
+
 def run(weights: Path = WEIGHTS, root: Path = CROPS) -> dict:
     model, _ = load(weights)
     stats = filter_stats(model)
     filters = figure_filters(model)
     maps = figure_maps(model, root)
     cam, mass = figure_gradcam(model, root)
-    ink_share = dict(mass)
+    enrichments = [v["enrichment"] for v in mass.values() if v["enrichment"] is not None]
     return {
         "filter_stats": stats,
-        "gradcam_ink_share": ink_share,
-        "mean_ink_share": round(float(np.mean(list(ink_share.values()))), 4) if ink_share else None,
+        "gradcam_ink": dict(mass),
+        # Above 1.0 the heat concentrates on strokes; at 1.0 it is indifferent to them; below,
+        # it sits on paper. This is the number, not the raw share.
+        "mean_ink_enrichment": round(float(np.mean(enrichments)), 3) if enrichments else None,
+        "cam_statistics": cam_statistics(model, root),
         "figures": [str(p.relative_to(ROOT)) for p in (filters, maps, cam)],
     }
 
