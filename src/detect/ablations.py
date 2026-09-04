@@ -24,7 +24,50 @@ weights, and the table has to show both for the reader to tell which one moved t
 
 ## What it measured
 
-FILLED_IN_BELOW
+Seven arms, 20 epochs each, one knob apart.
+
+    arm             change                params      RF   macro F1   d vs ref
+    reference       3x3, 4 stages, max     372,183     52     0.9511        -
+    kernel_5        5x5 kernels            564,951     88     0.9481    -0.0030
+    kernel_7        7x7 kernels            854,103    124     0.9519    +0.0008
+    depth_3         3 stages               560,343     28     0.9344    -0.0167
+    depth_2         2 stages             1,066,071     16     0.9430    -0.0081
+    pool_avg        average pooling        372,183     52     0.9463    -0.0048
+    no_batchnorm    BatchNorm removed      371,895     52     0.8990    -0.0521
+
+**BatchNorm is the only knob that matters, and it is free.** Removing it costs **0.0521 macro
+F1 - ten times the next largest effect - while changing the parameter count by 288, or 0.08%.**
+Every other axis moves the score by less than 0.017, and the three that move it most cost 1.5x
+to 2.9x the parameters to do so. If one sentence is wanted from this table: **the architecture
+was not the problem; the normalisation was the only thing holding it up.**
+
+**Enlarging the kernel buys nothing, and that is a direct refutation of the obvious reading of
+9.2.3.** 9.2.3 found the reference network's receptive field 12 pixels short of its input and
+observed that shape is a global property. The natural inference is that widening the field would
+help. It does not: `kernel_5` reaches RF 88 and `kernel_7` reaches 124 - **both comfortably
+covering the 64-pixel crop** - and they score -0.0030 and +0.0008 for 1.5x and 2.3x the
+parameters. Covering the input is worth nothing measurable, because 9.2.3's other half was
+already the explanation: **the fully connected layer does the global integration**, and it does
+it whether or not the convolutions could have. The +0.0008 of `kernel_7` is well inside run
+noise and is not a result.
+
+**Depth is the one axis where fewer parameters would have been the wrong summary.** Removing
+stages *increases* the parameter count - 4 stages 372k, 3 stages 560k, 2 stages 1.07M - because
+each dropped pool doubles the flatten width and the first dense layer pays for every position.
+So `depth_2` is a **2.9x larger model that scores 0.0081 worse**, and `depth_3` is 1.5x larger
+and 0.0167 worse. Parameters and capacity are not the same quantity, and this is the cleanest
+illustration of it in the project: the pooling that removes parameters is also what buys the
+depth that earns the accuracy.
+
+**Average pooling costs 0.0048 at identical cost**, which is small but consistent with the
+domain: these crops are thin dark strokes on white paper, max-pooling propagates the strongest
+local response and averaging dilutes a 1-pixel stroke across a 2x2 window. It is the cheapest
+change in the table and the one most safely ignored.
+
+**The spread across the whole table is 0.0529, and 0.0521 of it is BatchNorm.** Excluding that
+row, every architectural choice in this grid is worth less than 0.017 macro F1 - which is the
+same shape as 9.1.1's finding that three detector families landed inside 0.014, and 6.3.7's that
+six classifiers landed inside 0.012. Three phases, three model families, one conclusion.
 """
 
 from __future__ import annotations
