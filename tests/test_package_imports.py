@@ -20,6 +20,7 @@ PACKAGES = [
     "src.features",
     "src.classify",
     "src.embed",
+    "src.cluster",
     "src.detect",
     "src.ocr",
     "src.parse",
