@@ -30,7 +30,50 @@ than 224, because upsampling a 64px crop to 224 fabricates detail and quadruples
 
 ## What it measured
 
-FILLED_IN_BELOW
+Four arms, 20 epochs, identical crops and metric.
+
+    arm                macro F1   accuracy      params   trainable
+    scratch              0.9574     0.9922     372,183     372,183
+    resnet18_ft          0.9475     0.9927  11,180,103  11,180,103
+    resnet18_random      0.9440     0.9897  11,180,103  11,180,103
+    resnet18_frozen      0.7928     0.9410  11,180,103       3,591
+
+**"Transfer beats scratch" is false here, and the fourth arm is what turns that from an
+anecdote into a decomposition.** The naive comparison - fine-tuned ResNet against the hand-built
+network - reads **-0.0099**: transfer *loses* to a model with **30 times fewer parameters**.
+Split into its two parts:
+
+    pretraining benefit    resnet18_ft - resnet18_random   =  +0.0035
+    architecture benefit   resnet18_random - scratch       =  -0.0134
+
+So **ImageNet pretraining is worth +0.0035 macro F1 - three thousandths, indistinguishable from
+run noise - and the larger architecture is worth minus 0.0134.** Without `resnet18_random` the
+only available reading would have been "transfer loses by 0.01", with no way to tell whether the
+weights or the architecture were responsible; the answer is that the weights help imperceptibly
+and the architecture hurts. 7.4.7 priced per-scribe adaptation and 8.7 priced per-style OCR
+heads with exactly this kind of control, and both found the same shape: **on this corpus, the
+bigger or more specialised model loses to the smaller general one.**
+
+**Freezing is a disaster and it is the most informative arm.** At **0.7928, a cost of 0.1547**
+against fine-tuning, with only 3,591 trainable parameters, the frozen ResNet is being asked to
+classify line drawings using features learned from natural photographs, and the per-class
+breakdown says precisely which features are missing: `parallelogram` **0.2500**, `freeform`
+**0.7489**, `double-circle` **0.7543**, against `diamond` 0.9847 and `rectangle` 0.9676. The
+classes it can still do are the ones with strong oriented edges - which is the one thing
+ImageNet's early layers genuinely transfer - and the classes it cannot are the ones needing a
+*shape-specific conjunction*: a slanted pair of sides, an irregular outline, one ring inside
+another. That is the domain gap this task predicted, measured rather than asserted.
+
+**What fine-tuning actually is here.** `resnet18_ft` and `resnet18_random` differ by 0.0035
+after 20 epochs on 33,312 crops, so the pretrained weights are functioning as **a marginally
+better initialisation and not as reusable features**. With this much in-domain data there is
+little for pretraining to add; the frozen arm shows what happens when it is forced to add
+everything.
+
+**The recommendation is the scratch network**, which is best on macro F1, 30x smaller, and
+trains in 48 s against 64 s. The one number favouring the ResNets is accuracy - `resnet18_ft` is
+0.9927 against 0.9922 - and that is the imbalance talking: on a corpus 59% `rectangle`, accuracy
+rewards the majority class and macro F1 is what separates these models.
 """
 
 from __future__ import annotations
