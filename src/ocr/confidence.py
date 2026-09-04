@@ -87,9 +87,19 @@ must not show it to a user as "97% sure". A threshold chosen at a review budget 
 budget only needs the ordering.
 
 **467 nodes across 125 hdbpmn pages are now flagged in `low_conf_text`**, at the threshold that
-flags a fifth of reads. The first version of `annotate` wrote to `<page>.json` where the IR files
-are `<page>.ir.json` and silently annotated **zero** pages while still reporting 467 flags, so
-`pages_not_found` is now returned beside `pages_annotated` for exactly that failure.
+flags a fifth of reads, each as `{"ref", "confidence", "note"}` per 2.1's schema.
+
+**Getting that into the IR took two bugs, and both are the same mistake.** The first `annotate`
+wrote to `<page>.json` where the files are `<page>.ir.json`, and silently annotated **zero** pages
+while still reporting 467 flags - so `pages_not_found` is now returned beside `pages_annotated`,
+because a writer that finds nothing to write to must say so rather than report success. The second
+wrote the entries as **bare node-id strings** instead of the schema's objects. That round-trips
+through `json` perfectly, passes every test in this file, and breaks `Diagram.from_dict` on the
+next load - which is where it was caught, by `tests/test_preprocess_page.py`, three commits later
+and nowhere near here. **The IR is a schema, not a dictionary that happens to be JSON**, and the
+lesson worth carrying is that a module writing into shared state should be validated against the
+consumer's loader and not against its own round trip. `annotate` now also drops any `ref` that
+does not name a node on that page, which is the invariant `src/ir/qa.py` checks.
 """
 
 from __future__ import annotations
@@ -307,22 +317,30 @@ def annotate(
     ir_dir: Path = IR_DIR,
     write: bool = True,
 ) -> dict:
-    """Fill each diagram's `low_conf_text` with the node ids whose read fell below `threshold`.
+    """Fill each diagram's `low_conf_text` with the reads that fell below `threshold`.
 
-    The IR field is a list of ids rather than a per-node number because that is the shape 2.1
-    froze and Phase 16 consumes. The per-node confidences are kept in the run artefact, so
-    nothing is lost by the IR carrying only the flag.
+    2.1 froze the entry shape as `{"ref", "confidence"}` with an optional `alternatives` and
+    `note`, and `src/ir/qa.py` checks that every `ref` names a real element. The first version of
+    this function wrote bare node-id strings, which round-trips through `json` perfectly well and
+    then breaks `Diagram.from_dict` on the next load - caught by `test_preprocess_page.py`, not
+    here, three commits later. The IR is a schema and not a dictionary that happens to be JSON.
     """
     payload = json.loads(scores_path.read_text(encoding="utf-8-sig"))
     threshold = payload["threshold"] if threshold is None else threshold
-    flagged: dict[str, list[str]] = {}
+    flagged: dict[str, list[dict]] = {}
     for name, value in zip(payload["files"], payload["confidence"], strict=True):
         if value >= threshold:
             continue
         parts = name.replace(".png", "").split("__")
         if len(parts) < 3 or not parts[2].startswith("n_"):
             continue
-        flagged.setdefault(parts[1], []).append(parts[2][2:])
+        flagged.setdefault(parts[1], []).append(
+            {
+                "ref": parts[2][2:],
+                "confidence": round(float(value), 4),
+                "note": f"9.3.7 {payload['score']} below {float(threshold):.4f}",
+            }
+        )
 
     touched = missing = 0
     for page, ids in flagged.items():
@@ -331,7 +349,9 @@ def annotate(
             missing += 1
             continue
         diagram = json.loads(path.read_text(encoding="utf-8"))
-        diagram["low_conf_text"] = sorted(set(ids))
+        known = {n["id"] for n in diagram.get("nodes", [])}
+        entries = {e["ref"]: e for e in ids if e["ref"] in known}
+        diagram["low_conf_text"] = [entries[k] for k in sorted(entries)]
         if write:
             path.write_text(json.dumps(diagram, indent=2), encoding="utf-8")
         touched += 1
@@ -342,6 +362,7 @@ def annotate(
         # exactly how the first run silently annotated nothing at all.
         "pages_not_found": missing,
         "nodes_flagged": int(sum(len(v) for v in flagged.values())),
+        "entry_shape": ["ref", "confidence", "note"],
     }
 
 
