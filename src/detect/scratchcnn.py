@@ -37,7 +37,52 @@ The training loss is class-weighted for the same reason.
 
 ## What it measured
 
-FILLED_IN_BELOW
+30 epochs, 33,312 training crops, 5,359 validation crops, 136 s on one card.
+
+**Macro F1 0.9595 pooled and 0.9840 on the hand-drawn hdbpmn crops**, against a majority
+baseline of 0.5076 accuracy. Accuracy is 0.9931 and is quoted only to be discounted: on a
+corpus this imbalanced it is the number that would look good regardless.
+
+**The finding worth carrying is what this says about 7.4.** Phase 7.4.8 asked exactly this
+question - name the shape from the pixels of one hdbpmn node - and reported that **the 22
+descriptors of 7.4.1 support a 0.8160 macro F1 ceiling** with a supervised random forest, that
+the learned GMM vocabulary reached 0.4160 and 4.1.3's hand-written template rules 0.3734, and
+that "neither vocabulary should ship as a shape classifier". A 372,183-parameter CNN reading raw
+pixels reaches **0.9840 on the same source** - and it is most decisively better exactly where
+the descriptors were weakest:
+
+    class        7.4.8 RF ceiling      this CNN (hdbpmn)
+    freeform            0.5666               0.9617
+    rectangle           ~0.82                0.9812
+    circle              ~0.82                0.9934
+    diamond             ~0.82                0.9962
+
+7.4.8 wrote that `freeform` "is separable in this table, just not by a rule or by a cluster
+centre, because what identifies it is a conjunction rather than a region". **A conjunction of
+features over a region is what a convolutional stack computes**, and the +0.395 on that class is
+the clearest single statement in this project that handcrafted descriptors were the binding
+constraint rather than the difficulty of the task.
+
+That comparison is **not controlled** and is not offered as one: 7.4.8 used five folds grouped
+by page over all 12,400 hdbpmn shapes with four classes, this uses a writer-disjoint split with
+five, and the crop here carries a 12% context margin that a descriptor vector does not. The gap
+is large enough to survive those differences; the exact number is not.
+
+**Where the errors are.** The confusion matrix is almost diagonal and every off-diagonal entry
+is a confusion the earlier phases predicted. Six of 74 `double-circle` crops are called `circle`
+- the outer ring lost to the resize, which is precisely why 2.1.4 froze `double-circle` as its
+own shape and why the crop carries a context margin at all. Three `rectangle` crops are called
+`parallelogram`, which with **7 parallelogram instances in validation** is what holds that class
+to 0.8235 at perfect recall: 7 of 7 found, 3 false positives, so the F1 is a precision artefact
+of a class too small to measure. `freeform` at 0.9617 loses two crops to `rounded-rect`, which
+is a BPMN data object drawn with soft corners.
+
+**One number is deliberately not a headline.** flowchartseg's crops score 0.999 accuracy because
+they are computer-rendered with exact boundaries; the pooled 0.9595 is 54% those. The hdbpmn
+figure is the deployment one, exactly as in 9.1.4.
+
+Training time is reported at 136 s but was measured while a Phase 9.1.7 run held the same GPU,
+so it is an upper bound and not a benchmark.
 """
 
 from __future__ import annotations
@@ -249,6 +294,31 @@ def evaluate(model, x: np.ndarray, y: np.ndarray, device=None, batch: int = 256)
     }
 
 
+def by_source(weights: Path = WEIGHTS, root: Path = CROPS, split: str = "val") -> dict:
+    """The same model scored on each dataset's crops separately.
+
+    The pooled validation split is **half computer-rendered flowchartseg crops**, so a pooled
+    figure is mostly a statement about pages nobody drew - 9.1.4 made the same correction for
+    the detector. The hdbpmn row is the one comparable with 7.4.8's descriptor ceiling.
+    """
+    import torch
+
+    model, _ = load(weights)
+    out = {}
+    for name in ("hdbpmn", "fa_bresler", "flowchartseg"):
+        x, y = load_split(split, root, sources=(name,))
+        if not len(x):
+            continue
+        scored = evaluate(model, x, y, torch.device("cpu"))
+        out[name] = {
+            "rows": int(len(y)),
+            "accuracy": scored["accuracy"],
+            "macro_f1": scored["macro_f1"],
+            "per_class_f1": scored["per_class_f1"],
+        }
+    return out
+
+
 def load(path: Path = WEIGHTS):
     """Rebuild a saved model together with the spec it was trained under."""
     import torch
@@ -272,6 +342,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     result = train(Spec(), args.epochs, args.batch, root=args.root, save=WEIGHTS)
+    result["by_source"] = by_source(WEIGHTS, args.root)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "confusion"}, indent=2))

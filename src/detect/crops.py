@@ -158,8 +158,17 @@ def build(out: Path = OUT, sources=("hdbpmn", "fa_bresler", "flowchartseg"), lim
     return meta
 
 
-def load_split(split: str, out: Path = OUT) -> tuple[np.ndarray, np.ndarray]:
-    """`(N, 1, 64, 64)` float32 in [0, 1] and `(N,)` int64 labels."""
+def load_split(
+    split: str, out: Path = OUT, sources: tuple[str, ...] | None = None
+) -> tuple[np.ndarray, np.ndarray]:
+    """`(N, 1, 64, 64)` float32 in [0, 1] and `(N,)` int64 labels.
+
+    `sources` filters on the crop's originating dataset, which every filename carries as its
+    first `__`-delimited field. That filter is what lets 9.2.1 quote a hand-drawn-only figure:
+    the pooled validation split is **half computer-rendered flowchartseg crops**, whose
+    rectangles have exact boundaries, so a pooled accuracy is not comparable with 7.4.8's
+    hdbpmn-only descriptor ceiling and would flatter the network besides.
+    """
     import cv2
 
     xs, ys = [], []
@@ -169,6 +178,8 @@ def load_split(split: str, out: Path = OUT) -> tuple[np.ndarray, np.ndarray]:
         if not folder.is_dir():
             continue
         for path in sorted(folder.glob("*.png")):
+            if sources and path.name.split("__", 1)[0] not in sources:
+                continue
             image = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
             if image is None:
                 continue
