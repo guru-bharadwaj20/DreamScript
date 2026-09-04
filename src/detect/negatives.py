@@ -27,7 +27,57 @@ the comparison is the negatives and nothing else.
 
 ## What it measured
 
-FILLED_IN_BELOW
+Three arms against 9.1.3's weights, all 40 epochs at 1280 so the only variable is the training
+data:
+
+    arm                              mAP@0.5   mAP@0.5:0.95   false positives on val
+    baseline (9.1.3)                  0.9210      0.7813               46
+    mined only, 59 crops              0.9193      0.7834               36
+    mined + synthesized, 699 pages    0.9303      0.7891               45
+
+**Mining found almost nothing to mine, which is the first result.** Over 1,842 training pages
+the detector produced **65 confident false positives - 0.035 a page** - and **61 of the 65 are on
+hdbpmn photographs against 4 on 1,187 rendered flowchartseg pages**. Hallucination is a
+hand-drawn phenomenon and it is rare. Their median short side is 42 px, so they are not tiny
+detections: `rectangle` 32, `circle` 17, `freeform` 7, `diamond` 6, `rounded-rect` 3, at a mean
+confidence of 0.70. A detector that invents a whole box it is 70% sure of, thirty times per
+thousand pages, is the honest characterisation.
+
+**The two interventions do opposite things, and running them together hides both.** This is the
+finding, and it exists only because the mined-only control was run:
+
+  * **The mined negatives do exactly what they were added for and nothing else.** They cut
+    validation false positives **46 -> 36, a 22% reduction**, and move mAP@0.5 by **-0.0017** -
+    that is, not at all. 59 crops cannot teach a detector to see better; they can teach it to
+    stop seeing one particular kind of nothing.
+  * **The synthesized damage does the opposite.** Adding 640 struck-out pages and 1,913 doodles
+    lifts mAP@0.5 by **+0.0093** and lifts false positives back to 45, undoing the mining's
+    entire benefit.
+
+So the combined arm - the one the plan's design implies - buys the accuracy and loses the
+false-positive reduction, and its headline of +0.0093 would have been attributed to hard
+negatives by anyone reading it alone. **Nothing about hard-negative mining is visible in that
+number.** 7.4.7, 8.7 and 9.1.5 each needed a control to separate an effect from its confound;
+this is the fourth.
+
+**Why synthesis restores the false positives is a hypothesis, not a measurement.** The
+strike-out rule deletes a real node's box while leaving its damaged ink on the page, so **640
+genuine shapes are relabelled background** - deliberate label noise, and the most likely reason
+the model becomes more liberal elsewhere. That is consistent with the numbers and is not
+established by them; separating "doodles only" from "strike-outs only" would need two more
+40-epoch runs.
+
+**What the accuracy gain probably is.** +0.0093 mAP@0.5 from scribbling on 35% of the training
+pages is a data-augmentation result, and 7.1.6 measured the same property from the other
+direction: that classifier lost only 0.018 macro F1 with **half the page** covered by a stain.
+This corpus's models are robust to occlusion, and training on occluded pages buys a little more
+of it.
+
+**The recommendation for Phase 13 is to ship the mined negatives and not the synthesized
+damage** - the mining is the intervention that reduces the failure a user actually sees, an
+invented box in the assembled graph, and it costs 59 crops and no accuracy. The plan's
+Definition of Done, "added to training", is met by all three arms; the useful reading is which
+of them should be.
 """
 
 from __future__ import annotations
