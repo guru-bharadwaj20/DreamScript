@@ -32,7 +32,65 @@ denominator is the whole corpus and no single crop can run away with it.
 
 ## What it measured
 
-FILLED_IN_BELOW
+Thirteen model runs from 9.3.2-9.3.5 scored through one evaluator. **The target is CER <= 0.15 and
+nothing comes close: the best model in Phase 9.3 is 0.6816.**
+
+    model                CER      WER    exact   mean-crop CER
+    adapt_style_adapt 0.6816   0.9503   0.0656          0.6453
+    adapt_random      0.6818   0.9520   0.0669          0.6444
+    lexicon_beam      0.6839   0.9438   0.1046          0.6340
+    crnn_finetune     0.6864   0.9496   0.0660          0.6481
+    lexicon_domain    0.6865   0.8907   0.1185          0.6398
+    crnn_unwrap       0.6889   0.9491   0.0691          0.6459
+    lexicon_greedy    0.6972   0.9420   0.1021          0.6440
+    lexicon_generic   0.7171   0.9911   0.0928          0.6668
+    trocr_finetune    0.8211   1.0100   0.0704          0.7525
+    crnn_scratch      0.8397   0.9845   0.0439          0.7972
+    crnn_zero_shot    0.9338   1.0721   0.0029          0.9077
+    trocr_zero_shot   1.1702   1.5427   0.0055          0.8773
+
+**The spread among the seven serious arms is 0.0355 CER, and the distance from all of them to the
+target is 0.53.** That is the shape of this table and it is the same shape as 9.1.1's three
+detector families landing inside 0.014 and 9.2.5's seven ablations inside 0.017: **the choices
+being compared are much smaller than the thing that is wrong.** 9.3.2 identified what that is -
+the same network reads IAM lines at 0.1157 - so the honest summary is that Phase 9.3 has a
+recogniser that works and a corpus of crops it cannot read.
+
+**The per-provenance row is the deployment answer and it is good news.** Cropping from 9.1.3's
+detector instead of from a human's box costs **0.0040 CER - 0.6690 against 0.6730** - which is
+nothing next to the 0.53 that separates either from the target. Combined with 9.3.1's finding that
+the detector recovers 86.0% of text-bearing nodes at median IoU 0.9042, **the detector is not the
+bottleneck in this pipeline and does not need to improve before OCR does.** One number qualifies
+that: exact match falls **0.0739 to 0.0070, a factor of ten**, so box jitter destroys *completely
+correct* reads while barely moving the character rate - a few pixels of the box is a few pixels of
+a glyph, and a label needs every glyph.
+
+**The per-kind row prices 9.3.1's edge-label rule exactly.** Edge crops score **0.8332 against the
+nodes' 0.6709**, and 9.3.1 predicted the gap in advance by measuring that 19.4% of derived edge
+boxes contain no ink other than the connector. Those crops cannot be read by anything, so **a
+sixth of the edge CER is a cropping rule, not a recogniser.** Their exact-match is nevertheless the
+*highest* in the table at 0.1705, because the edge labels that are correctly cropped are single
+characters.
+
+**The per-source row is the same effect from the other side.** fa_bresler scores **0.4788 with
+exact match 0.4429** against hdbpmn's 0.6896 and 0.0051 - a model that gets 44% of fa_bresler's
+labels perfectly right and half a percent of hdbpmn's. fa_bresler labels are single alphabet
+symbols rendered onto synthetic paper; hdbpmn labels are wrapped English phrases photographed on
+real paper. **These are two different tasks sharing one metric**, which is exactly why this module
+reports the breakdown and not just the pooled number.
+
+**Per style cluster, there is nothing there.** Clusters 0, 1 and 2 score 0.6935, 0.6933 and 0.6865
+- a spread of **0.0070** across 3,900 hdbpmn crops - so the recogniser is not systematically worse
+on any of 8.6's writing styles. That is a second, independent confirmation of 9.3.5's conclusion,
+arrived at without training anything: if a per-style head were going to help, the per-style error
+would have to differ first, and it does not. (The `-1` row is fa_bresler, which has no 8.6 style,
+and is the source effect above rather than a style effect.)
+
+**The two CER definitions disagree by up to 0.07 in this table** - `trocr_zero_shot` is 1.1702
+corpus-level and 0.8773 as a capped mean of per-crop rates - which is the whole reason both columns
+are printed. A reader given only the second would conclude that zero-shot TrOCR is better than
+`crnn_scratch`; the corpus-level rate, which is what the target is written against, says it is far
+worse.
 """
 
 from __future__ import annotations
