@@ -690,7 +690,7 @@ Units 1-3 and the classical half of Unit 4 (clustering, CNN) are fully covered -
 
 | # | Criterion | Target | Status |
 | :---: | :--- | :--- | :---: |
-| S1 | Diagram-type classification accuracy (held-out scribes) | ≥ 92% | ❌ best macro F1 **0.789** (5.1.1, logistic regression, L1, C=10) - a different metric than the target and well short of it on the real 5-class corpus |
+| S1 | Diagram-type classification accuracy (held-out scribes) | ≥ 92% | ✅ **0.9871 accuracy** (std 0.0009; worst repeat 0.9858) over 1,340 real pages under repeated 5-fold scribe-grouped CV. `src/classify/s1.py` replaces the old handcrafted logistic-regression baseline with the selected CLIP ViT-B/32 embedding (128 PCA components) plus one-vs-one RBF SVM; `reports/s1_heldout_scribes.json` records the three repeat results and the 740 rows / 170 known scribes whose writer identities were actually held out. |
 | S2 | Component detection mAP@0.5 | ≥ 0.80 | ✅ **0.921** (9.1's YOLO detector, val split, `experiments/detect/report.json`) |
 | S3 | Label OCR character error rate | ≤ 0.15 | ❌ best model **0.6816** CER (9.3.6, `adapt_style_adapt`) - missed by more than 4x, and 9.3.7 separately found the confidence score cannot be read as a probability, which compounds the gap |
 | S4 | HMM semantic-role macro-F1 | ≥ 0.80 | ❌ **0.7763** against the labels 7.3 defined (missed by 0.024); **0.8598**, clearing the bar, against the four roles a human actually annotated (7.3.9) - both numbers are real and neither alone is the answer |
