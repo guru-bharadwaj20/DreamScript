@@ -1,0 +1,310 @@
+{
+  "criterion": "S3",
+  "target_cer": 0.15,
+  "model": "microsoft/trocr-base-handwritten fine-tuned 12 epochs (beam 4)",
+  "split": "val",
+  "protocol": "9.3.1 crops, 1.3.3 writer-disjoint split, src.ocr.metrics.score",
+  "train_writers": 68,
+  "eval_writers": 19,
+  "writer_overlap": 0,
+  "crops": 2205,
+  "cer": 0.3354,
+  "wer": 0.4126,
+  "exact_match": 0.5129,
+  "mean_crop_cer": 0.3428,
+  "characters": 36693,
+  "meets_target": false,
+  "unlocated_labels": 287,
+  "located_crops": 1918,
+  "cer_located_only": 0.2531,
+  "milliseconds_per_crop": 46.38,
+  "passes": false,
+  "by_kind": [
+    {
+      "kind": "node",
+      "crops": 1642,
+      "cer": 0.2285,
+      "wer": 0.3069,
+      "exact_match": 0.6102,
+      "mean_crop_cer": 0.2233,
+      "characters": 28657,
+      "meets_target": false
+    },
+    {
+      "kind": "edge",
+      "crops": 276,
+      "cer": 0.4302,
+      "wer": 0.5406,
+      "exact_match": 0.4674,
+      "mean_crop_cer": 0.37,
+      "characters": 3996,
+      "meets_target": false
+    }
+  ],
+  "by_element": [
+    {
+      "element": "Activity",
+      "crops": 548,
+      "cer": 0.0621,
+      "wer": 0.117,
+      "exact_match": 0.7828,
+      "mean_crop_cer": 0.052,
+      "characters": 11248,
+      "meets_target": true
+    },
+    {
+      "element": "Flow",
+      "crops": 275,
+      "cer": 0.4314,
+      "wer": 0.5423,
+      "exact_match": 0.4655,
+      "mean_crop_cer": 0.3714,
+      "characters": 3985,
+      "meets_target": false
+    },
+    {
+      "element": "Event",
+      "crops": 254,
+      "cer": 0.3349,
+      "wer": 0.454,
+      "exact_match": 0.4646,
+      "mean_crop_cer": 0.3196,
+      "characters": 4799,
+      "meets_target": false
+    },
+    {
+      "element": "task",
+      "crops": 190,
+      "cer": 0.0831,
+      "wer": 0.13,
+      "exact_match": 0.8,
+      "mean_crop_cer": 0.0723,
+      "characters": 3576,
+      "meets_target": true
+    },
+    {
+      "element": "Lane",
+      "crops": 120,
+      "cer": 0.5783,
+      "wer": 0.7539,
+      "exact_match": 0.2167,
+      "mean_crop_cer": 0.5463,
+      "characters": 1973,
+      "meets_target": false
+    },
+    {
+      "element": "Participant",
+      "crops": 115,
+      "cer": 0.4649,
+      "wer": 0.6164,
+      "exact_match": 0.5565,
+      "mean_crop_cer": 0.3353,
+      "characters": 1069,
+      "meets_target": false
+    },
+    {
+      "element": "DataObjectReference",
+      "crops": 97,
+      "cer": 0.4111,
+      "wer": 0.4974,
+      "exact_match": 0.5361,
+      "mean_crop_cer": 0.3252,
+      "characters": 1355,
+      "meets_target": false
+    },
+    {
+      "element": "pool",
+      "crops": 81,
+      "cer": 0.715,
+      "wer": 0.9535,
+      "exact_match": 0.4568,
+      "mean_crop_cer": 0.4683,
+      "characters": 642,
+      "meets_target": false
+    },
+    {
+      "element": "messageIntermediateCatchEvent",
+      "crops": 55,
+      "cer": 0.169,
+      "wer": 0.2532,
+      "exact_match": 0.6,
+      "mean_crop_cer": 0.1867,
+      "characters": 1124,
+      "meets_target": false
+    },
+    {
+      "element": "endEvent",
+      "crops": 32,
+      "cer": 0.3131,
+      "wer": 0.4143,
+      "exact_match": 0.5312,
+      "mean_crop_cer": 0.267,
+      "characters": 495,
+      "meets_target": false
+    },
+    {
+      "element": "messageStartEvent",
+      "crops": 24,
+      "cer": 0.2807,
+      "wer": 0.3485,
+      "exact_match": 0.5,
+      "mean_crop_cer": 0.294,
+      "characters": 456,
+      "meets_target": false
+    },
+    {
+      "element": "DataStoreReference",
+      "crops": 22,
+      "cer": 0.7212,
+      "wer": 0.7895,
+      "exact_match": 0.5,
+      "mean_crop_cer": 0.4206,
+      "characters": 226,
+      "meets_target": false
+    },
+    {
+      "element": "messageIntermediateThrowEvent",
+      "crops": 21,
+      "cer": 0.3041,
+      "wer": 0.377,
+      "exact_match": 0.5714,
+      "mean_crop_cer": 0.2712,
+      "characters": 388,
+      "meets_target": false
+    },
+    {
+      "element": "dataObjectReference",
+      "crops": 20,
+      "cer": 0.3548,
+      "wer": 0.5294,
+      "exact_match": 0.4,
+      "mean_crop_cer": 0.3502,
+      "characters": 248,
+      "meets_target": false
+    },
+    {
+      "element": "timerIntermediateEvent",
+      "crops": 15,
+      "cer": 0.4071,
+      "wer": 0.48,
+      "exact_match": 0.4,
+      "mean_crop_cer": 0.3566,
+      "characters": 253,
+      "meets_target": false
+    },
+    {
+      "element": "dataStoreReference",
+      "crops": 11,
+      "cer": 0.7917,
+      "wer": 0.9091,
+      "exact_match": 0.3636,
+      "mean_crop_cer": 0.4918,
+      "characters": 144,
+      "meets_target": false
+    },
+    {
+      "element": "startEvent",
+      "crops": 11,
+      "cer": 0.4118,
+      "wer": 0.5455,
+      "exact_match": 0.4545,
+      "mean_crop_cer": 0.4017,
+      "characters": 153,
+      "meets_target": false
+    },
+    {
+      "element": "timerStartEvent",
+      "crops": 7,
+      "cer": 0.4097,
+      "wer": 0.4643,
+      "exact_match": 0.4286,
+      "mean_crop_cer": 0.4127,
+      "characters": 144,
+      "meets_target": false
+    },
+    {
+      "element": "subProcessCollapsed",
+      "crops": 7,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": 1.0,
+      "mean_crop_cer": 0.0,
+      "characters": 103,
+      "meets_target": true
+    },
+    {
+      "element": "messageEndEvent",
+      "crops": 7,
+      "cer": 0.0783,
+      "wer": 0.1176,
+      "exact_match": 0.7143,
+      "mean_crop_cer": 0.0779,
+      "characters": 115,
+      "meets_target": true
+    },
+    {
+      "element": "exclusiveGateway",
+      "crops": 3,
+      "cer": 0.8061,
+      "wer": 0.9444,
+      "exact_match": 0.0,
+      "mean_crop_cer": 0.7875,
+      "characters": 98,
+      "meets_target": false
+    },
+    {
+      "element": "Gateway",
+      "crops": 1,
+      "cer": 0.8077,
+      "wer": 1.0,
+      "exact_match": 0.0,
+      "mean_crop_cer": 0.8077,
+      "characters": 26,
+      "meets_target": false
+    },
+    {
+      "element": "messageFlow",
+      "crops": 1,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": 1.0,
+      "mean_crop_cer": 0.0,
+      "characters": 11,
+      "meets_target": true
+    },
+    {
+      "element": "callActivity",
+      "crops": 1,
+      "cer": 0.0,
+      "wer": 0.0,
+      "exact_match": 1.0,
+      "mean_crop_cer": 0.0,
+      "characters": 22,
+      "meets_target": true
+    }
+  ],
+  "by_source": [
+    {
+      "source": "hdbpmn",
+      "crops": 1918,
+      "cer": 0.2531,
+      "wer": 0.3365,
+      "exact_match": 0.5897,
+      "mean_crop_cer": 0.2444,
+      "characters": 32653,
+      "meets_target": false
+    }
+  ],
+  "by_provenance": [
+    {
+      "provenance": "blob",
+      "crops": 1918,
+      "cer": 0.2531,
+      "wer": 0.3365,
+      "exact_match": 0.5897,
+      "mean_crop_cer": 0.2444,
+      "characters": 32653,
+      "meets_target": false
+    }
+  ]
+}
