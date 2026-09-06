@@ -666,21 +666,23 @@ becomes the code structure.
 
 | Unit | Requirement | Where It Lives | Status |
 | :--- | :--- | :--- | :---: |
-| 1 | Decision Tree, KNN, Logistic Regression | Phase 5.1 | ❌ |
-| 1 | Precision / Recall / AUC, cross-validation | Phase 5.2 | ❌ |
-| 1 | KNN decision boundaries | Phase 5.3.1 | ❌ |
-| 2 | ANN / MLP on image embeddings | Phase 6.2 | ❌ |
-| 2 | SVM with polynomial kernel | Phase 6.3.2 | ❌ |
-| 2 | Optimizer convergence comparison | Phase 6.2.4 | ❌ |
-| 3 | Random Forest / Gradient Boosting | Phase 7.1 | ❌ |
-| 3 | Naive Bayes | Phase 7.2 | ❌ |
-| 3 | HMM + Viterbi | Phase 7.3 | ❌ |
-| 3 | GMM + EM | Phase 7.4 | ❌ |
-| 4 | K-means / Hierarchical clustering | Phase 8 | ❌ |
-| 4 | CNN + parameter calculation | Phase 9 | ❌ |
+| 1 | Decision Tree, KNN, Logistic Regression | Phase 5.1 | ✅ |
+| 1 | Precision / Recall / AUC, cross-validation | Phase 5.2 | ✅ |
+| 1 | KNN decision boundaries | Phase 5.3.1 | ✅ |
+| 2 | ANN / MLP on image embeddings | Phase 6.2 | ✅ |
+| 2 | SVM with polynomial kernel | Phase 6.3.2 | ✅ |
+| 2 | Optimizer convergence comparison | Phase 6.2.4 | ✅ |
+| 3 | Random Forest / Gradient Boosting | Phase 7.1 | ✅ |
+| 3 | Naive Bayes | Phase 7.2 | ✅ |
+| 3 | HMM + Viterbi | Phase 7.3 | ✅ |
+| 3 | GMM + EM | Phase 7.4 | ✅ |
+| 4 | K-means / Hierarchical clustering | Phase 8 | ✅ |
+| 4 | CNN + parameter calculation | Phase 9 | ✅ |
 | 4 | Reinforcement Learning (Q-learning) | Phase 11 | ❌ |
 | 4 | LLM fine-tuning (LoRA) | Phase 12 | ❌ |
 | 4 | MLOps | Phase 15 | ❌ |
+
+Units 1-3 and the classical half of Unit 4 (clustering, CNN) are fully covered - Phases 5 through 9 are each 100% done, checkmark by checkmark, in the tables above. Unit 4's remaining two requirements, RL traversal and LLM fine-tuning, plus MLOps, have not been started; graph assembly (Phase 10, also just completed) is the syllabus's prerequisite for RL's state encoder (11.1.1 reads unresolved-edge flags and node role directly off the IR this phase produced) but is not itself a syllabus line.
 
 ---
 
@@ -688,16 +690,16 @@ becomes the code structure.
 
 | # | Criterion | Target | Status |
 | :---: | :--- | :--- | :---: |
-| S1 | Diagram-type classification accuracy (held-out scribes) | ≥ 92% | ❌ |
-| S2 | Component detection mAP@0.5 | ≥ 0.80 | ❌ |
-| S3 | Label OCR character error rate | ≤ 0.15 | ❌ |
-| S4 | HMM semantic-role macro-F1 | ≥ 0.80 | ❌ |
-| S5 | Graph edit distance to ground-truth IR | ≤ 3 edits (median) | ❌ |
-| S6 | Generated code executability | ≥ 85% | ❌ |
-| S7 | Functional correctness (pass@1) | ≥ 70% | ❌ |
-| S8 | End-to-end latency | < 10 s | ❌ |
-| S9 | Live webcam demo succeeds on a first-try messy sketch | Yes | ❌ |
-| S10 | All four syllabus units demonstrably covered | Yes | ❌ |
+| S1 | Diagram-type classification accuracy (held-out scribes) | ≥ 92% | ❌ best macro F1 **0.789** (5.1.1, logistic regression, L1, C=10) - a different metric than the target and well short of it on the real 5-class corpus |
+| S2 | Component detection mAP@0.5 | ≥ 0.80 | ✅ **0.921** (9.1's YOLO detector, val split, `experiments/detect/report.json`) |
+| S3 | Label OCR character error rate | ≤ 0.15 | ❌ best model **0.6816** CER (9.3.6, `adapt_style_adapt`) - missed by more than 4x, and 9.3.7 separately found the confidence score cannot be read as a probability, which compounds the gap |
+| S4 | HMM semantic-role macro-F1 | ≥ 0.80 | ❌ **0.7763** against the labels 7.3 defined (missed by 0.024); **0.8598**, clearing the bar, against the four roles a human actually annotated (7.3.9) - both numbers are real and neither alone is the answer |
+| S5 | Graph edit distance to ground-truth IR | ≤ 3 edits (median) | ❌ the metric exists and is validated (10.2.5: GED approximation matches brute force in 99.39% of small-graph pairs) but the full assembly chain has not been run end-to-end as one pipeline to produce a median across real pages - 10.1.3's tracing recall (0.2328) is the known blocker |
+| S6 | Generated code executability | ≥ 85% | ❌ not reached (Phase 12+) |
+| S7 | Functional correctness (pass@1) | ≥ 70% | ❌ not reached (Phase 12+) |
+| S8 | End-to-end latency | < 10 s | ❌ not reached (Phase 13+) |
+| S9 | Live webcam demo succeeds on a first-try messy sketch | Yes | ❌ not reached (Phase 16) |
+| S10 | All four syllabus units demonstrably covered | Yes | ❌ Units 1-3 and Unit 4's clustering/CNN half are covered (Phases 5-9, all ✅); Unit 4's RL and LLM fine-tuning requirements are not yet started |
 
 ---
 
@@ -710,12 +712,12 @@ becomes the code structure.
 | 2 — Annotation Schema | 12 | 12 | ✅ |
 | 3 — Preprocessing | 21 | 21 | ✅ |
 | 4 — Feature Engineering | 16 | 16 | ✅ |
-| 5 — Classical Classifiers | 17 | 11 | ❌ |
-| 6 — ANN & SVM | 18 | 0 | ❌ |
-| 7 — Boosting / Bayes / HMM / GMM | 34 | 0 | ❌ |
-| 8 — Clustering | 10 | 0 | ❌ |
-| 9 — CNN & OCR | 22 | 0 | ❌ |
-| 10 — Graph Assembly | 14 | 0 | ❌ |
+| 5 — Classical Classifiers | 17 | 17 | ✅ |
+| 6 — ANN & SVM | 18 | 18 | ✅ |
+| 7 — Boosting / Bayes / HMM / GMM | 34 | 34 | ✅ |
+| 8 — Clustering | 10 | 10 | ✅ |
+| 9 — CNN & OCR | 22 | 22 | ✅ |
+| 10 — Graph Assembly | 14 | 14 | ✅ |
 | 11 — RL Traversal | 16 | 0 | ❌ |
 | 12 — LLM Fine-Tuning | 26 | 0 | ❌ |
 | 13 — Orchestration | 10 | 0 | ❌ |
@@ -723,4 +725,4 @@ becomes the code structure.
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **99** | ❌ |
+| **Total** | **302** | **203** | ❌ |
