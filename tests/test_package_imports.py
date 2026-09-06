@@ -24,6 +24,7 @@ PACKAGES = [
     "src.detect",
     "src.ocr",
     "src.parse",
+    "src.assemble",
     "src.rl",
     "src.synth",
     "src.eval",
