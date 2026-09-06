@@ -1,0 +1,127 @@
+{
+  "criterion": "S4",
+  "target_macro_f1": 0.8,
+  "protocol": "5-fold over 993 sequences x len(seeds) seeds; per-component Viterbi; per-type matrices; emission interpolation weight by inner 3-fold CV",
+  "published_7_3_9": 0.7763,
+  "sequences": 993,
+  "nodes": 14056,
+  "macro_f1": 0.8003,
+  "macro_f1_std": 0.001,
+  "minimum_repeat_macro_f1": 0.7989,
+  "accuracy": 0.7873,
+  "seeds_clearing_target": 6,
+  "seeds": 10,
+  "passes": true,
+  "repeats": [
+    {
+      "seed": 42,
+      "macro_f1": 0.8009,
+      "lambdas": [
+        0.7,
+        0.9,
+        0.9,
+        1.0,
+        0.8
+      ]
+    },
+    {
+      "seed": 43,
+      "macro_f1": 0.8006,
+      "lambdas": [
+        0.7,
+        0.7,
+        0.8,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "seed": 44,
+      "macro_f1": 0.7998,
+      "lambdas": [
+        0.8,
+        0.7,
+        0.8,
+        0.8,
+        0.7
+      ]
+    },
+    {
+      "seed": 45,
+      "macro_f1": 0.8008,
+      "lambdas": [
+        0.7,
+        0.6,
+        0.8,
+        0.7,
+        0.9
+      ]
+    },
+    {
+      "seed": 46,
+      "macro_f1": 0.7989,
+      "lambdas": [
+        0.7,
+        0.8,
+        0.8,
+        0.9,
+        0.7
+      ]
+    },
+    {
+      "seed": 47,
+      "macro_f1": 0.8024,
+      "lambdas": [
+        0.6,
+        0.6,
+        0.8,
+        0.8,
+        0.9
+      ]
+    },
+    {
+      "seed": 48,
+      "macro_f1": 0.7989,
+      "lambdas": [
+        0.8,
+        0.7,
+        0.8,
+        0.8,
+        0.6
+      ]
+    },
+    {
+      "seed": 49,
+      "macro_f1": 0.8004,
+      "lambdas": [
+        0.7,
+        0.8,
+        0.8,
+        0.7,
+        0.9
+      ]
+    },
+    {
+      "seed": 50,
+      "macro_f1": 0.8007,
+      "lambdas": [
+        0.8,
+        0.8,
+        0.9,
+        0.7,
+        0.8
+      ]
+    },
+    {
+      "seed": 51,
+      "macro_f1": 0.7994,
+      "lambdas": [
+        0.8,
+        0.8,
+        0.8,
+        0.8,
+        0.7
+      ]
+    }
+  ]
+}
