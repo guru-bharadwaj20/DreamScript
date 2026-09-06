@@ -1,0 +1,114 @@
+{
+  "criterion": "S1",
+  "target_accuracy": 0.92,
+  "protocol": "repeated GroupKFold by scribe_id; 5 folds x 3 seeded group permutations",
+  "model": "CLIP ViT-B/32 grayscale embedding (128 PCA components) + OvO RBF SVM",
+  "rows": 1340,
+  "known_scribe_rows": 740,
+  "known_scribes": 170,
+  "unknown_scribe_rows": 600,
+  "accuracy": 0.9871,
+  "accuracy_std": 0.0009,
+  "macro_f1": 0.9518,
+  "macro_f1_std": 0.0035,
+  "minimum_repeat_accuracy": 0.9858,
+  "passes": true,
+  "repeats": [
+    {
+      "seed": 42,
+      "accuracy": 0.9873,
+      "macro_f1": 0.953,
+      "folds": [
+        {
+          "fold": 0,
+          "rows": 268,
+          "held_out_known_scribes": 35
+        },
+        {
+          "fold": 1,
+          "rows": 268,
+          "held_out_known_scribes": 33
+        },
+        {
+          "fold": 2,
+          "rows": 268,
+          "held_out_known_scribes": 35
+        },
+        {
+          "fold": 3,
+          "rows": 268,
+          "held_out_known_scribes": 33
+        },
+        {
+          "fold": 4,
+          "rows": 268,
+          "held_out_known_scribes": 34
+        }
+      ]
+    },
+    {
+      "seed": 43,
+      "accuracy": 0.9881,
+      "macro_f1": 0.9554,
+      "folds": [
+        {
+          "fold": 0,
+          "rows": 268,
+          "held_out_known_scribes": 34
+        },
+        {
+          "fold": 1,
+          "rows": 268,
+          "held_out_known_scribes": 34
+        },
+        {
+          "fold": 2,
+          "rows": 268,
+          "held_out_known_scribes": 32
+        },
+        {
+          "fold": 3,
+          "rows": 268,
+          "held_out_known_scribes": 34
+        },
+        {
+          "fold": 4,
+          "rows": 268,
+          "held_out_known_scribes": 36
+        }
+      ]
+    },
+    {
+      "seed": 44,
+      "accuracy": 0.9858,
+      "macro_f1": 0.9471,
+      "folds": [
+        {
+          "fold": 0,
+          "rows": 268,
+          "held_out_known_scribes": 34
+        },
+        {
+          "fold": 1,
+          "rows": 268,
+          "held_out_known_scribes": 36
+        },
+        {
+          "fold": 2,
+          "rows": 268,
+          "held_out_known_scribes": 33
+        },
+        {
+          "fold": 3,
+          "rows": 268,
+          "held_out_known_scribes": 32
+        },
+        {
+          "fold": 4,
+          "rows": 268,
+          "held_out_known_scribes": 35
+        }
+      ]
+    }
+  ]
+}
