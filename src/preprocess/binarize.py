@@ -24,6 +24,37 @@ is a global decision that Otsu makes better. So the default is `otsu` *with corr
 Sauvola remains selectable for its slightly better worst case, and the caveat stands that this
 was measured on rendered strokes rather than photographs.
 
+## The caveat came due: `PHOTO`
+
+The caveat was not decoration. On real hdBPMN photographs the default admits far too much of
+the paper: **mean ink fraction 0.0954** where a pen drawing is 2-5% ink, and the skeleton of
+that mask shatters into hundreds of fragments that 10.1.3's tracer cannot re-chain. Re-scored
+end to end by **tracing F1** on 76 *train* hdBPMN pages (every 6th page, all eleven exercises,
+ground-truth node boxes, containers excluded - the held-out pages are where 10.1.3 reports and
+were not looked at):
+
+    illumination   threshold             ink     traced   recall   precision      F1
+    correct        otsu       (default) 0.0954    13,115   0.5708      0.0535   0.0977
+    correct        sauvola k0.3         0.0711     9,132   0.5228      0.0703   0.1239
+    flat           otsu                 0.0605     6,695   0.4625      0.0848   0.1434
+    flat           sauvola w25 k0.25    0.0405     3,125   0.3697      0.1453   0.2086
+    flat           + area 2e-4          0.0314     2,493   0.3738      0.1841   0.2467  <- PHOTO
+
+**CLAHE is the single largest contributor**, and that is the part the rendered-stroke
+comparison could not see: on synthetic ink there is no paper texture for it to amplify, so the
+step that restores bite on flat scans is the step that promotes photograph grain to ink.
+Dropping it and keeping only the flat-field division (3.1.4's step 1) takes otsu's F1 from
+0.0977 to 0.1434 on its own. Sauvola past the k=0.2 the evalset chose adds the rest.
+
+`PHOTO` is that setting, named rather than made the default: the evalset measurement above is
+still the right answer for rendered strokes, and Phases 3, 4 and 9 are calibrated on the
+default. Photograph consumers ask for it by name - `binarize(image, **PHOTO)`.
+
+**Not the whole story.** The same sweep's perfect-ink control - the ground-truth polylines
+rasterised, so the mask is exactly right - scores recall 0.7239 at precision 0.6386. `PHOTO`
+closes about a third of the gap to that; the rest is the walk and the geometry, not the
+threshold.
+
     python -m src.preprocess.binarize
 """
 
@@ -42,6 +73,15 @@ from src.utils.parallel import pmap
 
 DEFAULT_WINDOW = 25
 DEFAULT_K = 0.2
+
+#: Binarisation for photographs of paper, measured by tracing F1 rather than by evalset F1 -
+#: see the module docstring. Ink fraction drops 0.0954 -> 0.0314 and 10.1.3's tracing F1 rises
+#: 0.0977 -> 0.2467 on 76 train hdBPMN pages. `area` is not this module's - it is the
+#: connected-component floor the caller should apply afterwards (`denoise.remove_small_components`),
+#: and it is quoted here because the three settings were chosen together and only mean their
+#: numbers together.
+PHOTO = {"method": "sauvola", "window": 25, "k": 0.25, "illumination_mode": "flat"}
+PHOTO_MIN_AREA_FRAC = 2e-4
 
 #: Sauvola's dynamic range of the standard deviation. 128 for 8-bit images, by the paper.
 SAUVOLA_R = 128.0
@@ -86,11 +126,30 @@ def binarize(
     window: int = DEFAULT_WINDOW,
     k: float = DEFAULT_K,
     correct_illumination: bool = True,
+    illumination_mode: str | None = None,
 ) -> np.ndarray:
-    """The project's entry point: returns a boolean ink mask."""
+    """The project's entry point: returns a boolean ink mask.
+
+    `illumination_mode` selects how much of 3.1.4 runs before the threshold:
+
+        "correct"   flat-field division then CLAHE - 3.1.4 whole, and the default
+        "flat"      the division only, no CLAHE; what `PHOTO` uses, and why
+        "none"      the raw grayscale
+
+    It defaults to `"correct"` or `"none"` according to `correct_illumination`, so every
+    existing caller keeps the behaviour it had.
+    """
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
-    if correct_illumination:
+    if illumination_mode is None:
+        illumination_mode = "correct" if correct_illumination else "none"
+    if illumination_mode == "correct":
         gray = illumination.correct(gray)
+    elif illumination_mode == "flat":
+        gray = illumination.flatten(gray)
+    elif illumination_mode != "none":
+        raise ValueError(
+            f"unknown illumination_mode {illumination_mode!r}; expected correct, flat or none"
+        )
     if method == "sauvola":
         return sauvola(gray, window, k)
     if method == "adaptive":

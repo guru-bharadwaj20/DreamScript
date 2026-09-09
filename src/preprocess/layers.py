@@ -106,10 +106,18 @@ def check_partition(layers: Layers, mask: np.ndarray) -> dict[str, bool]:
     }
 
 
-def prepare(image_path: Path) -> tuple[np.ndarray, np.ndarray]:
-    """(grayscale, ink mask) at the working width, through the 3.1 pipeline."""
-    from src.preprocess.binarize import binarize
-    from src.preprocess.denoise import denoise, median
+def prepare(image_path: Path, *, photo: bool = False) -> tuple[np.ndarray, np.ndarray]:
+    """(grayscale, ink mask) at the working width, through the 3.1 pipeline.
+
+    `photo=True` swaps 3.1.5's default threshold for `binarize.PHOTO` and adds its
+    connected-component floor. That setting was chosen on photographs of paper, scored by
+    10.1.3's tracing F1 (0.0977 -> 0.2467 on 76 train hdBPMN pages, mean ink fraction
+    0.0954 -> 0.0314); the default was chosen on rasterised pen trajectories, where there is no
+    paper grain for CLAHE to promote into ink. Both stay reachable because both are right about
+    the corpus they were measured on - see `src/preprocess/binarize.py`.
+    """
+    from src.preprocess.binarize import PHOTO, PHOTO_MIN_AREA_FRAC, binarize
+    from src.preprocess.denoise import denoise, median, remove_small_components
     from src.preprocess.exif import load
     from src.preprocess.rules import suppress
 
@@ -117,7 +125,10 @@ def prepare(image_path: Path) -> tuple[np.ndarray, np.ndarray]:
     scale = WORKING_WIDTH / max(gray.shape)
     if scale < 1:
         gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
-    return gray, denoise(suppress(binarize(median(gray))))
+    if not photo:
+        return gray, denoise(suppress(binarize(median(gray))))
+    mask = denoise(suppress(binarize(median(gray), **PHOTO)))
+    return gray, remove_small_components(mask, PHOTO_MIN_AREA_FRAC)[0]
 
 
 def run(limit: int = 40, *, write: bool = True) -> list[dict]:

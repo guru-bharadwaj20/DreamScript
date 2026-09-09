@@ -58,51 +58,59 @@ fixes in different tasks.
 fa_bresler (96 pages, 630 of them) - flowchartseg's 132 pages carry none.
 
     boxes            edges traced   recall   precision      F1   dangling ends
-    detected               17,785   0.2328      0.0626   0.0987          0.5223
-    ground truth           19,357   0.2455      0.0606   0.0972          0.5143
+    detected                8,731   0.4675      0.2548   0.3299          0.3674
+    ground truth            9,097   0.4767      0.2493   0.3273          0.3331
 
-    per source (detected -> ground truth)
-    hdbpmn        16,085 -> 17,659 traced   recall 0.1325 -> 0.1475   precision 0.0336 -> 0.0341
-    fa_bresler     1,433 ->  1,430 traced   recall 0.8825 -> 0.8810   precision 0.3880 -> 0.3881
-    flowchartseg     267 ->    268 traced, 0 GT edges - all of them false by construction
+    per source (detected)
+    hdbpmn         6,302 traced   recall 0.3895   precision 0.2523   F1 0.3062
+    fa_bresler     2,343 traced   recall 0.9730   precision 0.2616   F1 0.4124
+    flowchartseg      86 traced, 0 GT edges - all of them false by construction
 
-**Recall is poor and precision is worse, and the honest headline is that this is an
-over-segmentation problem, not a missing-edge problem.** The tracer emits **17,785 polylines
-against 4,712 ground-truth edges** - almost four traced fragments for every real one - and only
-1,097 of them land on a correct pair. A pipeline that shattered every real connector into 3-4
-pieces and matched none of the extra pieces to anything would produce exactly this shape of
-result: recall in the low twenties because *some* fragment of most edges still attaches correctly
-at least once, and precision near six percent because the other three fragments count against it.
+### What the first version measured, and why it was wrong
 
-**The ceiling shows the detector is nearly irrelevant to this failure.** Perfect boxes move recall
-from **0.2328 to 0.2455**, a 5.5% relative gain, and precision does not move with it - it is
-**slightly worse** with perfect boxes (0.0606 against 0.0626), because removing the node correctly
-still leaves the same fragmented, crossing-heavy ink behind for the walk to over-segment. That is
-the opposite of what a detector-limited pipeline would show, and it means re-running this after
-9.1's detector improves would buy under six percent of recall - the loss is almost entirely in the
-walk, not the boxes.
+The first pass reported **recall 0.2328, precision 0.0626, F1 0.0987 with 17,785 traced
+polylines**, and concluded from its own ceiling run - ground-truth boxes moving recall only to
+0.2455 - that *"the loss is almost entirely in the walk, not the boxes"*. **The conclusion did
+not follow, because both arms of that control were broken in the same way**, and a control
+whose two arms share a defect cannot see it. Two defects, in order of size:
 
-**Dangling ends are 52.23% of all ends detected, 51.43% with perfect boxes - essentially unmoved
-by box quality**, which is further evidence the failure is upstream of attachment. An end that
-attaches to no box within 6% of the diagonal is either a stroke that stops short of its node -
-10.1.4's gap - or a fragment of node outline that was never a connector; with over-segmentation
-this severe, most dangling ends are the latter: pieces of a shattered connector or a leftover box
-contour that never reaches anything.
+**1. Container boxes (`MAX_BOX_AREA`).** hdBPMN draws pools and lanes, and the IR records them
+as nodes like any other. `box_distance` is zero *inside* a box, so a pool spanning the page sat
+at distance zero from every endpoint and won every attachment; and `erase_nodes` zeroed its
+interior, which on the pooled pages **deleted 100% of the ground-truth connector ink**. Swapping
+detected boxes for ground-truth ones changes nothing about that - both sets contain the pool -
+which is exactly why the ceiling run looked flat. Excluding boxes over 10% of the page from
+erasure and attachment, alone, took the train sample from recall 0.1604/F1 0.0458 to recall
+0.4332/F1 0.0865. It also explains the reported 6.7x hdbpmn/fa_bresler gap better than density
+does: fa_bresler draws no containers.
 
-**fa_bresler traces far better than hdbpmn at every setting** (recall 0.8825 against 0.1325
-detected - a 6.7x gap), and the reason is drawing density: fa_bresler pages average 4.9 nodes and
-9.5 edges; hdbpmn pages average 18.3 nodes and 19.5 edges, with connectors that run in bundles down
-the same corridor and cross each other repeatedly. Every crossing is a junction where the
-collinear-continuation rule has to guess, and hdbpmn supplies 16,085 of the 17,785 detected traces
-- 90% of all output - almost entirely on the corpus dense enough to fragment. **Density, not
-source, is what the tracer is sensitive to, and hdbpmn is where nearly all of the over-segmentation
-lives.**
+**2. The ink (`connector_ink`).** 3.1.5's default threshold was chosen on rasterised pen
+strokes, and on photographs it admits paper grain at a mean ink fraction of 0.0954 where a pen
+drawing is 2-5% ink. `binarize.PHOTO` takes that to 0.0314 and the train sample to
+recall 0.3738 / precision 0.1841 / F1 0.2467.
 
-**flowchartseg contributes 267 edges that are all false**, because its IR has no edges at all.
-That is not a measured false-positive *rate* - the pages certainly have connectors drawn on them -
-so it is reported as a count and excluded from precision, which is computed only over the 338
-pages where a ground-truth pair exists to be right about. It is also, at 267 traces over 132 dense
-pages, far smaller a contributor to the false-positive total than hdbpmn's own over-tracing.
+**The ceiling run's actual conclusion survives, though its old evidence did not.** With both
+fixes, ground-truth boxes score F1 0.3273 against the detector's 0.3299 - the detector is still
+not what limits this row.
+
+**The walk is what is left, and it is now the largest term.** Rasterising the ground-truth
+polylines and tracing *those* - a mask that is exactly right by construction - scores recall
+0.7239 at precision 0.6386 on the train sample, while the endpoints of those same polylines
+attach to the correct node pair 1,197 times out of 1,228 (97.5%) when tested geometrically on
+their own. So roughly: 97% is reachable by geometry, 72% survives the chaining, 37% survives a
+real photograph's ink. Over-segmentation is still real - 8,731 traces against 4,712 edges - and
+it is now a factor of 1.9 rather than 3.8.
+
+**fa_bresler regressed and it is reported rather than tuned away**: F1 0.539 -> 0.4124, because
+recall rose (0.8825 -> 0.9730) while precision fell (0.388 -> 0.2616). The settings were chosen
+on train hdbpmn pages, where hdbpmn carries 4,082 of the 4,712 edges; on train *fa_bresler*
+pages the old and new settings are within noise of each other (F1 0.3283 against 0.3083), so
+there is no train evidence for making the choice per-source, and none was made.
+
+**flowchartseg contributes 86 edges that are all false**, because its IR has no edges at all.
+That is not a measured false-positive *rate* - the pages certainly have connectors drawn on them
+- so it is reported as a count and excluded from precision, which is computed only over the 338
+pages where a ground-truth pair exists to be right about.
 
 **The confidence is a heuristic and is not calibrated.** It averages the share of ends attached
 with the polyline's straightness (chord over arc), which ranks a clean two-ended trace above a
@@ -145,6 +153,28 @@ MAX_TURN = 60.0
 #: An end attaches to a box whose boundary is within this share of the page diagonal.
 ATTACH_TOL = 0.06
 
+#: A box larger than this share of the page is a *container* - a BPMN pool or lane - and is
+#: neither erased nor attached to. Both of those are load-bearing, and the second is the larger
+#: of the two: `box_distance` is zero *inside* a box, so a pool that spans the page is at
+#: distance zero from every endpoint on it and wins every attachment, which is why hdbpmn's
+#: recall was a sixth of fa_bresler's on a corpus whose only structural difference is that it
+#: draws pools. Erasing one wipes the drawing it contains: on the val pages that draw pools,
+#: **erase_nodes was deleting 100% of the ground-truth connector ink**.
+#:
+#: Measured on 76 train hdBPMN pages, ground-truth boxes, ink held fixed at `PHOTO`:
+#:
+#:   threshold   recall   precision      F1        threshold   recall   precision      F1
+#:   none (old)  0.1604      0.0267   0.0458       0.10        0.3738      0.1841   0.2467
+#:   0.50        0.2524      0.0361   0.0632       0.12        0.3681      0.1844   0.2457
+#:   0.25        0.4332      0.0480   0.0865       0.15        0.3526      0.1816   0.2397
+#:
+#: The optimum is flat between 0.06 and 0.12. Nothing is lost by it: over that sample **not one
+#: of the 1,228 ground-truth edges has an endpoint on a box larger than 10% of the page**, so a
+#: container is never an edge's node. Containers remain in `to_diagram`'s node list - they are
+#: real nodes in the IR and dropping them would cost node recall - they are only excluded from
+#: the two geometric decisions they corrupt.
+MAX_BOX_AREA = 0.10
+
 #: Douglas-Peucker tolerance for the emitted polyline, as a share of the diagonal.
 SIMPLIFY = 0.004
 
@@ -161,11 +191,44 @@ _NEIGHBOURS = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1,
 
 
 def shape_layer(page: Page) -> np.ndarray:
-    """The page's drawing ink, text removed, in detector pixels."""
+    """The page's drawing ink, text removed, in detector pixels. 3.2.8's split, as shipped."""
     from src.preprocess.layers import prepare, separate
 
     gray, mask = prepare(page.image)
     return separate(mask, gray).shape
+
+
+def connector_ink(page: Page, *, photo: bool = True, split_text: bool = False) -> np.ndarray:
+    """The ink the walk is given. Two changes from `shape_layer`, both measured.
+
+    **The threshold.** `prepare(photo=True)` is 3.1.5's `PHOTO` setting, chosen on photographs
+    by this module's own F1 rather than on rasterised strokes by 3.1.5's. It is what takes the
+    mean ink fraction from 0.0954 to 0.0314 and the traced-polyline count on 76 train hdBPMN
+    pages from 13,115 to 2,493 against 1,228 real edges.
+
+    **The text layer is not removed.** 3.2.8 warns that a label written across a connector stays
+    welded to it, and its own numbers say the proposal claims 16% of annotated connector ink;
+    taking that ink away cuts the connector. Keeping it costs some false traces and is still
+    ahead - same sample, same boxes:
+
+        text/shape split   recall 0.3697   precision 0.1453   F1 0.2086
+        full ink mask      recall 0.3738   precision 0.1841   F1 0.2467
+
+    Both switches stay exposed rather than hard-coded, because 10.1.3 is not the only reader of
+    an ink mask and the split is right for the phases that want writing on its own.
+    """
+    from src.preprocess.layers import prepare, separate
+
+    gray, mask = prepare(page.image, photo=photo)
+    return separate(mask, gray).shape if split_text else mask
+
+
+def containers(boxes: list[dict], page_area: float, limit: float | None = None) -> set[str]:
+    """The ids of the boxes too large to be nodes - pools and lanes. See `MAX_BOX_AREA`."""
+    limit = MAX_BOX_AREA if limit is None else limit
+    if page_area <= 0:
+        return set()
+    return {b["id"] for b in boxes if float(b["bbox"][2]) * float(b["bbox"][3]) > limit * page_area}
 
 
 def erase_nodes(mask: np.ndarray, boxes: list[dict], pad: float | None = None) -> np.ndarray:
@@ -381,8 +444,11 @@ def trace(page: Page, node_boxes: list[dict], *, mask: np.ndarray | None = None)
     ids the two ends attached to, `None` where an end attached to nothing, and their **order is
     the walk's, not the arrow's** - 10.1.5 owns direction.
     """
-    ink = shape_layer(page) if mask is None else mask
-    remainder = erase_nodes(ink, node_boxes)
+    ink = connector_ink(page) if mask is None else mask
+    # The page's area in the frame the boxes are in, which is the mask's own frame.
+    held = containers(node_boxes, float(ink.shape[0]) * float(ink.shape[1]))
+    usable = [b for b in node_boxes if b["id"] not in held] or node_boxes
+    remainder = erase_nodes(ink, usable)
     if not remainder.any():
         return []
     traces = chain(elementary_paths(_skeleton_pixels(remainder)))
@@ -394,8 +460,8 @@ def trace(page: Page, node_boxes: list[dict], *, mask: np.ndarray | None = None)
         polyline = _simplify(walk, SIMPLIFY * page.diagonal)
         if len(polyline) < 2 or len(walk) < minimum:
             continue
-        src = attach(tuple(polyline[0]), node_boxes, tolerance)
-        dst = attach(tuple(polyline[-1]), node_boxes, tolerance)
+        src = attach(tuple(polyline[0]), usable, tolerance)
+        dst = attach(tuple(polyline[-1]), usable, tolerance)
         attached = (src is not None) + (dst is not None)
         edges.append(
             Edge(
@@ -526,7 +592,7 @@ def run(limit: int | None = None, n_jobs: int = 4) -> dict:
 
     def one(page: Page) -> dict:
         diagram = truth(page)
-        ink = shape_layer(page)
+        ink = connector_ink(page)
         detected = node_boxes(page)
         ideal = [
             {"id": n.id, "bbox": list(n.bbox), "cls": n.shape}
