@@ -512,7 +512,7 @@ def to_diagram(page: Page, boxes: list[dict], edges: list[Edge]) -> Diagram:
 # ------------------------------------------------------------------------------------------
 
 
-def _identify(boxes: list[dict], diagram: Diagram) -> dict[str, str]:
+def identify(boxes: list[dict], diagram: Diagram) -> dict[str, str]:
     """Map each traced box id onto the ground-truth node it overlaps, by IoU."""
     out = {}
     for box in boxes:
@@ -530,7 +530,7 @@ def _identify(boxes: list[dict], diagram: Diagram) -> dict[str, str]:
 
 def score_page(edges: list[Edge], boxes: list[dict], diagram: Diagram) -> dict:
     """Recall/precision of endpoint pairs, matched unordered and one-to-one."""
-    identity = _identify(boxes, diagram)
+    identity = identify(boxes, diagram)
     truth_pairs: list[frozenset] = [
         frozenset((e.src, e.dst))
         for e in diagram.edges
@@ -558,6 +558,10 @@ def score_page(edges: list[Edge], boxes: list[dict], diagram: Diagram) -> dict:
         "ends": ends,
         "dangling": dangling,
     }
+
+
+#: The old private name, kept so nothing that imported it breaks.
+_identify = identify
 
 
 def _totals(rows: list[dict]) -> dict:
