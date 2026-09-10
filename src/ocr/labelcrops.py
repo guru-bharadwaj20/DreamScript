@@ -63,6 +63,9 @@ from src.utils.config import ROOT
 
 OUT = ROOT / "data" / "processed" / "label_crops"
 INDEX = OUT / "index.parquet"
+#: CRAFT line boxes cached per page by `--detect`, so the assignment geometry in
+#: `src.ocr.ownership` can be re-run without paying 2.2 s of detection per page again.
+CRAFT = ROOT / "experiments" / "ocr" / "craft" / "boxes3.json"
 
 #: Element classes whose label is written outside the drawn shape.
 EXTERNAL_PREFIXES = (
@@ -357,51 +360,50 @@ def inset_box(element: dict, inset: float = 0.10) -> list[int]:
     ]
 
 
-def page_labels(image: np.ndarray, elements: list[dict]) -> dict[str, list[int]]:
-    """Label block per element id.
+def cached_lines(page: str) -> list[list[int]] | None:
+    """The page's detected text lines from `CRAFT`, or None if it was never detected."""
+    global _CACHE
+    if _CACHE is None:
+        _CACHE = json.loads(CRAFT.read_text(encoding="utf-8")) if CRAFT.is_file() else {}
+    entry = _CACHE.get(page)
+    return entry["boxes"] if entry else None
 
-    Two rules, because the corpus has two kinds of element and one rule cannot serve both.
-    An activity's label is written *inside* its box, and 9.3.1's inset box already reads at
-    0.0706 CER there - so that is kept unchanged. Blob-finding is applied only where the box
-    provably cannot contain the label, which is what this module exists for. Running blobs over
-    activities as well fragmented a quarter of them (`'receive order by website'` in a 20px
-    crop) and made the class six times worse, so the split is by measurement, not neatness.
+
+_CACHE = None
+
+
+def page_labels(
+    image: np.ndarray, elements: list[dict], lines: list[list[int]] | None = None
+) -> dict[str, list[int]]:
+    """Label block per element id, as `[x, y, w, h, rotate]`.
+
+    The rules moved to `src.ocr.ownership` once there were four of them and they had to be
+    solved against each other rather than in sequence; what is left here is the corpus builder.
+    The functions above are the versions those rules replaced and are kept because each one
+    records a measurement - `stack`, `own_lines` and `assign` are why the current rules are
+    shaped the way they are.
     """
-    internal = [e for e in elements if e["kind"] == "node" and not is_external(e["id"])]
-    external_ = [e for e in elements if e not in internal]
+    from src.ocr import ownership, ownlearn
 
-    out = {e["id"]: inset_box(e) for e in internal}
-
-    # Assign individual text LINES, then merge the lines each element won. Stacking first and
-    # assigning the blocks loses on dense pages: two elements' labels sit close enough to be
-    # merged into one block, and a block can only be given to one of them - which is what held
-    # coverage near 55% on the densest hundred pages while candidates outnumbered labels 2:1.
-    lines = text_boxes(image)
-    # Only a shape small enough to *be* a text box may claim the lines inside it. A Lane, Pool
-    # or Participant is a container spanning the whole diagram: letting one claim its interior
-    # swallowed 24 of 26 detected lines on a lane-heavy page and left 8 of its 9 external labels
-    # with nothing. Container labels live in the header strip, which `inset_box` still covers.
-    page_area = image.shape[0] * image.shape[1]
-    claimed = [
-        [int(v) for v in e["bbox"]]
-        for e in internal
-        if e["bbox"][2] * e["bbox"][3] < 0.20 * page_area
-    ]
-    free = [b for b in lines if not any(inside(c, b) for c in claimed)]
-    # One pass over nodes and edges together. Running nodes first and letting edges take the
-    # remainder was tried and is worse: nodes grab lines that belong to a connector, and edge
-    # coverage falls 68.8% -> 40.9% for a 4-point gain on events.
-    owner = own_lines(external_, free, image.shape[1])
-    for element_id, boxes in owner.items():
-        out[element_id] = union(boxes)
-    return out
+    if lines is None:
+        lines = text_boxes(image)
+    if ownlearn.ranker() is not None:
+        return ownlearn.assign(image, elements, lines)
+    return ownership.blocks(image.shape, elements, lines)
 
 
 def crop(image: np.ndarray, block: list[int]) -> np.ndarray | None:
-    """One label block, padded and normalised to the shared line height."""
-    x, y, w, h = block
-    pad = int(PAD * h)
+    """One label block, padded, de-rotated and normalised to the shared line height.
+
+    A container title runs along its header strip, so its block comes back taller than it is
+    wide with the rotate flag set; BPMN writes those bottom-to-top, which is a clockwise quarter
+    turn back to a reading line.
+    """
+    x, y, w, h = block[:4]
+    pad = int(PAD * max(h, w) if len(block) > 4 and block[4] else PAD * h)
     patch = image[max(0, y - pad) : y + h + pad, max(0, x - pad) : x + w + pad]
+    if len(block) > 4 and block[4] and patch.size:
+        patch = cv2.rotate(patch, cv2.ROTATE_90_CLOCKWISE)
     if patch.size == 0 or patch.shape[0] < 10:
         return None
     scale = HEIGHT / patch.shape[0]
@@ -419,7 +421,11 @@ def elements_of(diagram: dict) -> list[dict]:
     for edge in diagram.get("edges", []):
         points = edge.get("polyline")
         label = edge.get("label") or edge.get("text")
-        if not points or not label:
+        # Unlabelled connectors are kept as competitors and dropped later by `build`, which
+        # writes a crop only where there is a transcript to score it against. Excluding them
+        # here would let a labelled flow claim a line written beside a different arrow, and
+        # would be the pipeline using the answer to decide what to look at.
+        if not points:
             continue
         pts = np.asarray(points, dtype=float).reshape(-1, 2)
         mid = pts[len(pts) // 2]
@@ -429,7 +435,7 @@ def elements_of(diagram: dict) -> list[dict]:
                 "bbox": [float(mid[0]) - 6, float(mid[1]) - 6, 12.0, 12.0],
                 "kind": "edge",
                 "polyline": pts,
-                "text": label,
+                "text": label or "",
             }
         )
     return out
@@ -449,6 +455,20 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
     assignment = {r["page"]: (r["split"], r["scribe"], r["source"]) for _, r in splits.iterrows()}
     (out / "images").mkdir(parents=True, exist_ok=True)
 
+    # Training crops are chosen by which candidate actually reads as the element's own label -
+    # see `ownlearn.best_crops`. Held-out crops never are: they come from `page_labels`, which
+    # sees only geometry, so the reported CER measures a pipeline that could run on a new page.
+    from src.ocr import ownlearn
+    from src.ocr.s3 import dev_writers
+
+    clean = ownlearn.best_crops() if ownlearn.TABLE.is_file() else {}
+    # **The S3 dev writers are inside the train split and must NOT get label-selected crops.**
+    # They are the model-selection set, so if their crops were chosen with the transcript in
+    # hand they would stop predicting anything about val: the first build that did this scored
+    # dev 0.128 against val's own reading-based selection, which is not a generalisation
+    # estimate, it is the oracle measuring itself.
+    held = dev_writers()
+
     rows, pages, missing = [], 0, 0
     for diagram in load_ir(["hdbpmn"], limit=limit):
         meta = assignment.get(diagram["id"])
@@ -461,20 +481,30 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
         if image is None:
             continue
         elements = elements_of(diagram)
-        blocks = page_labels(image, elements)
+        lines = cached_lines(diagram["id"])
+        # Training pages take their crops from `ownlearn.best_crops`, so they never pay for the
+        # reading pass; only the held-out splits, which have to choose without the transcript.
+        if meta[0] == "train" and meta[1] not in held and clean:
+            from src.ocr import ownership
+
+            blocks = ownership.blocks(image.shape, elements, lines or text_boxes(image))
+        else:
+            blocks = page_labels(image, elements, lines)
         for element in elements:
             text = normalise(element["text"])
             if not text:
                 continue
-            block = blocks.get(element["id"])
-            if block is None:
-                missing += 1
-                continue
-            patch = crop(image, block)
+            name = f"hdbpmn__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
+            teachable = meta[0] == "train" and meta[1] not in held
+            source = clean.get((diagram["id"], str(element["id"]))) if teachable else None
+            if source is not None and Path(source).is_file():
+                patch = cv2.imread(source, cv2.IMREAD_GRAYSCALE)
+            else:
+                block = blocks.get(element["id"])
+                patch = crop(image, block) if block is not None else None
             if patch is None:
                 missing += 1
                 continue
-            name = f"hdbpmn__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
             cv2.imwrite(str(out / "images" / name), patch)
             rows.append(
                 {
@@ -485,7 +515,7 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
                     "scribe": meta[1],
                     "kind": element["kind"],
                     "element": str(element["id"]).split("_")[0],
-                    "provenance": "blob",
+                    "provenance": "clean" if (source and Path(source).is_file()) else "blob",
                     "text": element["text"],
                 }
             )

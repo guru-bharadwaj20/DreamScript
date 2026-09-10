@@ -94,10 +94,14 @@ CHECKPOINT = RUNS / "trocr_s3"
 REPORT = ROOT / "reports" / "s3_label_ocr.json"
 PROVENANCE = ("annotated", "derived", "detected")
 
+#: Micro-batch and accumulation are chosen together so the *effective* batch stays 24, which is
+#: what the optimiser sees. 12x2 and 24x1 are the same update; 24x1 issues half as many kernel
+#: launches for it, and the card has the memory. Changing the effective batch would change the
+#: experiment, so it is deliberately held.
 SEED = 42
 EPOCHS = 12
-BATCH = 12
-ACCUMULATE = 2
+BATCH = 24
+ACCUMULATE = 1
 LR = 4e-5
 WARMUP = 0.05
 MAX_LENGTH = 96
@@ -124,6 +128,20 @@ def split(name: str, corpus: str | None = None):
     return label_split(name)
 
 
+def dev_writers(seed: int = SEED, writers: int = DEV_WRITERS) -> set[str]:
+    """The training writers held out for model selection, as a set of scribe ids.
+
+    Exposed because `src.ocr.labelcrops` has to know them too: the crops for these writers must
+    be chosen the way val's are, without the transcript, or dev stops being a check on anything.
+    """
+    from src.ocr.labelcrops import load_index
+
+    frame = load_index()
+    names = sorted(frame.loc[frame["split"] == "train", "scribe"].dropna().unique())
+    rng = np.random.default_rng(seed)
+    return set(rng.permutation(names)[:writers].tolist())
+
+
 def train_dev_split(seed: int = SEED, writers: int = DEV_WRITERS):
     """Carve a model-selection set out of the training writers.
 
@@ -131,9 +149,7 @@ def train_dev_split(seed: int = SEED, writers: int = DEV_WRITERS):
     the choice honest about the thing that actually varies, which is handwriting.
     """
     files, texts, frame = split("train")
-    names = sorted(frame["scribe"].dropna().unique())
-    rng = np.random.default_rng(seed)
-    held = set(rng.permutation(names)[:writers].tolist())
+    held = dev_writers(seed, writers)
     mask = frame["scribe"].isin(held).to_numpy()
     keep = ~mask
     train = (
