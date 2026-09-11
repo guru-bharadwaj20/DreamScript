@@ -340,3 +340,12 @@ def test_split_is_disjoint_deterministic_and_covers_everything() -> None:
     (tr_d, tr_g), (te_d, te_g) = D.split(diagrams, fake)
     assert set(tr_g).isdisjoint(te_g) and len(tr_g) + len(te_g) == 50 and len(te_g) == 10
     assert D.split(diagrams, fake)[1][1] == te_g
+
+
+def test_init_starts_every_member_from_the_given_networks(graphs) -> None:
+    first = D.train_many(graphs, [_cpu(episodes=20, seed=0, warmup=10**6)])
+    x = torch.rand(3, D.FEATURE_WIDTH)
+    again = D.train_many(
+        graphs, [_cpu(episodes=20, seed=9, warmup=10**6)], init=[first[0].net]
+    )  # warmup never reached, so no update moves the loaded weights
+    assert torch.allclose(again[0].net(x), first[0].net(x))

@@ -1,48 +1,73 @@
 """Phase 11.2.6 - curriculum: clean synthetic graphs first, messy real ones after, and the
 ablation that says whether the order mattered.
 
-    python -m src.rl.curriculum            # the four arms, evaluated on the real corpus
-    python -m src.rl.curriculum --quick    # a short run, for the tests
+    python -m src.rl.curriculum --write     # five arms x SEEDS, evaluated on the real corpus
+    python -m src.rl.curriculum --quick     # a short run, for the tests
 
 ## Why a curriculum is even a candidate here
 
-11.2.1's failure has a specific shape: the agent plateaus with a |TD| tail/head ratio of 0.82 and
-never reaches full coverage on the ambiguous set. One standard reading of that shape is that the
-early episodes are almost all failure - a random policy on this corpus emits 6.27% of nodes and
-terminates by its own choice 97.32% of the time (11.1.4) - so the table is mostly learning what
-*not* to do, on pages where the right thing to do is 40 steps away. A curriculum answers that by
-making the first pages ones where success is three steps away.
+11.2.1's agent plateaus: |TD| tail/head 0.82 at 60,000 episodes and 0.82 at 250,000, with greedy
+quality falling over the longer run. One standard reading of that shape is that early episodes are
+almost all failure - on the 993 labelled diagrams a uniform random policy emits 6.27% of nodes
+and ends every one of its 993 episodes by choosing `terminate` - so the table spends its budget
+learning what not to do on pages where the right thing is dozens of steps away. A curriculum
+answers that by making the first pages ones where success is a few steps away.
 
-## The synthetic stages are generated here, not borrowed
+## The synthetic stages come from `src.synth.graphs`, not from a private generator
 
-`src/synth` builds *images*. This needs IR, and it needs IR with a property no real page has:
-being clean. `generate` produces flowcharts with one connected component, no unresolved edges,
-every node reachable from a single entry, real bboxes in reading order, and a shape vocabulary
-drawn from the same `ROLE_VOCAB` the encoder uses - so the state encoder and the abstraction see
-a distribution they will see again in stage 3, only easier. Four families:
+The inherited draft carried its own four-family generator and said `src/synth` "builds images".
+That was already false - `src.synth.graphs` builds IR, for 12.1.4 - and the private generator
+had two measured defects, so it was deleted rather than kept alongside:
 
-    chain     n nodes, one path. The minimum task: emit, follow, emit, terminate.
-    branch    a decision with two arms that rejoin. Introduces `follow-edge-B`.
-    loop      a chain with one back edge. The only stage where `mark-as-loop` is legal at all.
-    nested    a branch inside a branch. Out-degree 2 at two depths.
+    duplicates    `generate(family, size, index)` used `index` only in the id, and `nested`
+                  ignored `size` too, so the draft's two synthetic stages - 96 pages - held
+                  **10 distinct graphs**, and its 24 nested pages were **one graph 24 times**.
+    roles         start/end nodes carried the role `terminator`, which `src.parse.roles` does not
+                  map, so **31.58% of its nodes encoded as `unknown`** against 8.96% on the real
+                  labelled set - the opposite of the draft's claim that its vocabulary was the
+                  encoder's.
 
-**The ceiling on every synthetic stage is 100%**, because they are single-component by
-construction - that is what makes them "clean", and it is also why a number from a synthetic
-stage may never be quoted as a corpus result.
+`src.synth.graphs.random_diagram` samples a program and lowers it (flowcharts) or samples a DFA
+(state machines, the shape of fa_bresler), seeded per page, with start/end roles the encoder
+maps; its flowchart `io` role is still unmapped, so the synthetic stages sit at 15.7-16.2%
+`unknown` - better than the draft, still above real, and stated rather than hidden. A page is
+admitted to a *clean* stage only if it is single-component, has no unresolved edge and gold play
+reaches full coverage on it; `clean_report` measures all three rather than trusting the
+generator's intent, and the filter drops 104 of 1,200 structured pages (state machines whose
+random transitions leave a state unreachable). Measured pools (`--pools`):
 
-## The ablation
+    stage                  pages  distinct  gold full cov  unresolved  multi-comp  max out-deg
+    synthetic_linear         400        43        100.00%           0           0            2
+    synthetic_structured   1,096       816        100.00%           0           0            3
+    real_simple              422       170         94.31%         271           0            5
+    real_all                 993       738         41.69%         530         555            5
 
-Four arms, all with the **same total episode budget**, all evaluated on the real corpus:
+## The stages
 
-    flat            all episodes on the real corpus. 11.2.1's setting, the control.
-    curriculum      synthetic chains -> branch/loop/nested -> single-component real -> all real.
-    synthetic_only  all episodes on synthetic pages. The check that the curriculum's gain, if
-                    any, is transfer and not just "clean pages are easier to learn on".
-    reversed        the curriculum backwards, hard to easy. If this matches `curriculum`, the
-                    gain was extra data and not ordering, and the row should say so.
+    synthetic_linear      linear flowcharts and linear state machines          15% of budget
+    synthetic_structured  branching / looping / nested, both types, clean      20%
+    real_simple           real labelled pages, single-component, <= 12 nodes   25%
+    real_all              all 993 labelled pages                               40%
 
-Equal budgets is the whole design. A curriculum that trains on more episodes than its control is
-not a curriculum result.
+## The ablation, and the control the draft was missing
+
+Five arms, **the same total episode budget**, all evaluated greedily on the real labelled set with
+11.2.1's `play` harness, ranked on terminal reward (the objective), with edge F1 reported beside:
+
+    flat            all episodes on real_all, one epsilon decay. 11.2.1's setting.
+    flat_restarts   all episodes on real_all, but split into the curriculum's four slices with
+                    epsilon restarting at each. **Added**: `train_curriculum` restarts epsilon at
+                    every stage, so `curriculum` against `flat` confounds the ordering of the data
+                    with a four-times-restarted exploration schedule. This arm has the schedule and
+                    not the curriculum.
+    curriculum      the four stages in order.
+    reversed        the four stages backwards, same shares moving with their stages.
+    synthetic_only  both synthetic stages only - the transfer check.
+
+Both learners run the same five arms: 11.2.1's table (`--learner tabular`, 5 seeds, each arm-seed a
+worker process) and 11.2.5's DQN (`--learner dqn`, 3 seeds as one ensemble per arm, weights
+carried across slices while replay, Adam moments and epsilon restart). The measured results are in
+`reports/rl_curriculum.md`, `experiments/rl/curriculum.json` and `curriculum_dqn.json`.
 """
 
 from __future__ import annotations
@@ -51,12 +76,43 @@ import argparse
 import json
 import statistics
 import sys
+import time
 from collections.abc import Sequence
+from concurrent.futures import ProcessPoolExecutor
 from typing import Any
 
-from src.rl.state import DiagramGraph
+from src.rl.state import DiagramGraph, role_index
+from src.utils.config import ROOT
 
-FAMILIES: tuple[str, ...] = ("chain", "branch", "loop", "nested")
+FIGURE = ROOT / "reports" / "figures" / "p11_curriculum.png"
+
+#: Five seeds: the tabular runs are cheap, and a curriculum effect is a small difference.
+SEEDS: tuple[int, ...] = (0, 1, 2, 3, 4)
+
+#: 11.2.1's swept cell. Not re-swept here: the question is the data order, not the step size.
+ALPHA = 0.4
+GAMMA = 1.0
+
+SYNTHETIC_TYPES: tuple[str, ...] = ("flowchart", "state_machine")
+LINEAR: tuple[str, ...] = ("linear",)
+STRUCTURED: tuple[str, ...] = ("branching", "looping", "nested")
+
+#: Pages drawn per (type, structure) cell before the clean filter.
+PER_CELL = 200
+
+#: (stage name, share of the episode budget), easy to hard.
+PLAN: tuple[tuple[str, float], ...] = (
+    ("synthetic_linear", 0.15),
+    ("synthetic_structured", 0.20),
+    ("real_simple", 0.25),
+    ("real_all", 0.40),
+)
+
+ARMS: tuple[str, ...] = ("flat", "flat_restarts", "curriculum", "reversed", "synthetic_only")
+
+#: 11.2.5's swept DQN cell, used unchanged when the curriculum is run on the DQN.
+DQN_CELL: dict[str, Any] = {"inputs": "features", "lr": 3e-4, "gamma": 1.0}
+DQN_SEEDS: tuple[int, ...] = (0, 1, 2)
 
 
 # ------------------------------------------------------------------------------------------
@@ -64,277 +120,456 @@ FAMILIES: tuple[str, ...] = ("chain", "branch", "loop", "nested")
 # ------------------------------------------------------------------------------------------
 
 
-def _node(node_id: str, index: int, shape: str, text: str) -> dict:
-    """Bboxes descend the page in reading order, so `reading` ordering is meaningful here too."""
+def is_clean(graph: DiagramGraph) -> bool:
+    """Single component, no unresolved edge, and gold play reaches full coverage."""
+    from src.rl.qlearning import gold_player
+
+    return (
+        graph.n_nodes > 0
+        and graph.n_components == 1
+        and graph.n_unresolved == 0
+        and gold_player(graph).full_coverage()
+    )
+
+
+def synthetic_pool(
+    structures: Sequence[str],
+    types: Sequence[str] = SYNTHETIC_TYPES,
+    per_cell: int = PER_CELL,
+    seed: int = 0,
+) -> tuple[list[dict], dict[str, Any]]:
+    """Clean synthetic pages from `src.synth.graphs`, and what the clean filter removed."""
+    from src.synth.graphs import random_diagram
+
+    kept: list[dict] = []
+    drawn = 0
+    dropped = 0
+    for diagram_type in types:
+        for structure in structures:
+            for index in range(per_cell):
+                diagram = random_diagram(diagram_type, structure, seed * 100_000 + index)
+                drawn += 1
+                if is_clean(DiagramGraph.from_ir(diagram)):
+                    kept.append(diagram)
+                else:
+                    dropped += 1
+    return kept, {"drawn": drawn, "kept": len(kept), "dropped_unclean": dropped}
+
+
+def signature(graph: DiagramGraph) -> tuple:
+    """Structure-only identity: roles and successor lists. Two pages with equal signatures are
+    the same learning problem whatever their ids and texts say."""
+    return (tuple(role_index(r) for r in graph.roles), graph.successors)
+
+
+def clean_report(diagrams: Sequence[dict]) -> dict[str, Any]:
+    """Measured, not assumed: the properties that make a pool "clean", and how varied it is."""
+    from src.rl.qlearning import gold_player
+
+    graphs = [DiagramGraph.from_ir(d) for d in diagrams]
+    if not graphs:
+        return {"diagrams": 0}
+    nodes = sum(g.n_nodes for g in graphs)
+    unknown = sum(role_index(r) == len_roles() - 1 for g in graphs for r in g.roles)
     return {
-        "id": node_id,
-        "shape": shape,
-        "bbox": [40.0 + 30.0 * (index % 3), 40.0 * index, 60.0, 30.0],
-        "text": text,
-        "semantic_role": shape,
-        "confidence": 1.0,
+        "diagrams": len(graphs),
+        "distinct_structures": len({signature(g) for g in graphs}),
+        "gold_full_coverage": round(
+            statistics.fmean(float(gold_player(g).full_coverage()) for g in graphs), 4
+        ),
+        "multi_component": sum(g.n_components > 1 for g in graphs),
+        "with_unresolved": sum(g.n_unresolved > 0 for g in graphs),
+        "with_back_edge": sum(bool(g.back_edges) for g in graphs),
+        "nodes_median": statistics.median(g.n_nodes for g in graphs),
+        "nodes_max": max(g.n_nodes for g in graphs),
+        "max_out_degree": max(max((len(s) for s in g.successors), default=0) for g in graphs),
+        "unknown_role_share": round(unknown / max(1, nodes), 4),
     }
 
 
-def _edge(index: int, src: str, dst: str, label: str = "") -> dict:
-    return {"id": f"s{index}", "src": src, "dst": dst, "directed": True, "label": label}
+def len_roles() -> int:
+    from src.rl.state import ROLE_VOCAB
 
-
-def generate(family: str, size: int, index: int = 0) -> dict:
-    """One clean synthetic flowchart. Single component, no unresolved edges, one entry point."""
-    size = max(2, size)
-    nodes: list[dict] = []
-    edges: list[dict] = []
-
-    def add(shape: str, text: str) -> str:
-        node_id = f"n{len(nodes)}"
-        nodes.append(_node(node_id, len(nodes), shape, text))
-        return node_id
-
-    if family == "chain":
-        ids = [add("terminator", "start")]
-        ids += [add("process", f"step {i}") for i in range(1, size - 1)]
-        ids.append(add("terminator", "end"))
-        edges = [_edge(i, ids[i], ids[i + 1]) for i in range(len(ids) - 1)]
-    elif family == "branch":
-        start, decision = add("terminator", "start"), add("decision", "ok?")
-        left, right = add("process", "yes"), add("process", "no")
-        tail = [add("process", f"after {i}") for i in range(max(0, size - 5))]
-        end = add("terminator", "end")
-        edges = [_edge(0, start, decision), _edge(1, decision, left, "yes")]
-        edges += [_edge(2, decision, right, "no")]
-        join = tail[0] if tail else end
-        edges += [_edge(3, left, join), _edge(4, right, join)]
-        chain = tail + [end]
-        edges += [_edge(5 + i, chain[i], chain[i + 1]) for i in range(len(chain) - 1)]
-    elif family == "loop":
-        ids = [add("terminator", "start")]
-        ids += [add("process", f"body {i}") for i in range(1, size - 1)]
-        ids.append(add("terminator", "end"))
-        edges = [_edge(i, ids[i], ids[i + 1]) for i in range(len(ids) - 1)]
-        edges.append(_edge(len(edges), ids[-2], ids[1], "again"))  # the back edge
-    elif family == "nested":
-        start = add("terminator", "start")
-        outer = add("decision", "outer?")
-        inner = add("decision", "inner?")
-        a, b = add("process", "a"), add("process", "b")
-        c = add("process", "c")
-        end = add("terminator", "end")
-        edges = [
-            _edge(0, start, outer),
-            _edge(1, outer, inner, "yes"),
-            _edge(2, outer, c, "no"),
-            _edge(3, inner, a, "yes"),
-            _edge(4, inner, b, "no"),
-            _edge(5, a, end),
-            _edge(6, b, end),
-            _edge(7, c, end),
-        ]
-    else:
-        raise ValueError(f"unknown family {family!r}; expected one of {FAMILIES}")
-
-    return {
-        "id": f"syn_{family}_{size}_{index}",
-        "diagram_type": "flowchart",
-        "nodes": nodes,
-        "edges": edges,
-        "meta": {"source": "synthetic"},
-    }
-
-
-def synthetic_pool(families: Sequence[str], sizes: Sequence[int], per_cell: int = 8) -> list[dict]:
-    """A pool of clean pages. Deterministic - the whole point is a reproducible easy stage."""
-    return [
-        generate(family, size, index)
-        for family in families
-        for size in sizes
-        for index in range(per_cell)
-    ]
-
-
-def graphs_of(diagrams: Sequence[dict]) -> list[DiagramGraph]:
-    return [DiagramGraph.from_ir(d) for d in diagrams]
+    return len(ROLE_VOCAB)
 
 
 # ------------------------------------------------------------------------------------------
-# the stages
+# the stages and the arms
 # ------------------------------------------------------------------------------------------
 
 
-def stages(limit: int | None = None) -> list[dict[str, Any]]:
-    """The curriculum, easy to hard. Each stage is a pool and the share of the budget it gets."""
+def stages(limit: int | None = None) -> dict[str, dict[str, Any]]:
+    """Every stage's pool, as raw IR and compiled graphs, plus its clean report."""
     from src.rl.qlearning import training_set
 
     raw, graphs = training_set(limit, ambiguous=False)
-    simple = [g for g in graphs if g.n_components == 1 and g.n_nodes <= 12]
-    return [
-        {
-            "name": "synthetic_chain",
-            "share": 0.15,
-            "graphs": graphs_of(synthetic_pool(("chain",), (3, 4, 6))),
-        },
-        {
-            "name": "synthetic_structured",
-            "share": 0.20,
-            "graphs": graphs_of(synthetic_pool(("branch", "loop", "nested"), (5, 7, 9))),
-        },
-        {
-            "name": "real_simple",
-            "share": 0.25,
-            "graphs": simple or graphs,
-        },
-        {"name": "real_all", "share": 0.40, "graphs": graphs},
-    ]
+    simple = [(d, g) for d, g in zip(raw, graphs, strict=True) if g.n_components == 1]
+    simple = [(d, g) for d, g in simple if g.n_nodes <= 12]
+    linear, linear_drop = synthetic_pool(LINEAR)
+    structured, structured_drop = synthetic_pool(STRUCTURED)
+    pools = {
+        "synthetic_linear": (linear, linear_drop),
+        "synthetic_structured": (structured, structured_drop),
+        "real_simple": ([d for d, _ in simple], None),
+        "real_all": (raw, None),
+    }
+    out: dict[str, dict[str, Any]] = {}
+    for name, (diagrams, drop) in pools.items():
+        compiled = (
+            [g for _, g in simple]
+            if name == "real_simple"
+            else graphs if name == "real_all" else [DiagramGraph.from_ir(d) for d in diagrams]
+        )
+        out[name] = {
+            "graphs": compiled,
+            "report": {**clean_report(diagrams), **({"filter": drop} if drop else {})},
+        }
+    return out
 
 
-def train_curriculum(
-    plan: Sequence[dict[str, Any]],
-    episodes: int,
-    seed: int = 0,
-    alpha: float = 0.4,
-    gamma: float = 1.0,
-):
-    """Train one agent across the stages, carrying the table forward.
+def arm_plan(arm: str, pools: dict[str, dict[str, Any]]) -> list[tuple[str, float]]:
+    """The (pool, share) sequence an arm trains through. Shares always sum to 1."""
+    if arm == "flat":
+        return [("real_all", 1.0)]
+    if arm == "flat_restarts":
+        return [("real_all", share) for _, share in PLAN]
+    if arm == "curriculum":
+        return list(PLAN)
+    if arm == "reversed":
+        return list(reversed(PLAN))
+    if arm == "synthetic_only":
+        total = PLAN[0][1] + PLAN[1][1]
+        return [(PLAN[0][0], PLAN[0][1] / total), (PLAN[1][0], PLAN[1][1] / total)]
+    raise ValueError(f"unknown arm {arm!r}; expected one of {ARMS}")
 
-    Each stage gets its own `TrainConfig` whose `episodes` is that stage's slice, so **epsilon
-    decays within a stage and restarts at the next one**. That is deliberate and it is the part a
-    reader should argue with: a single decay across the whole run would leave the last stage - the
-    only one that resembles the evaluation - played almost greedily by a table trained elsewhere.
-    The `reversed` arm inherits exactly the same schedule, so the comparison is unaffected.
+
+def budgets(plan: Sequence[tuple[str, float]], episodes: int) -> list[int]:
+    """Integer slices of `episodes` that sum to it exactly - the draft's `int()` truncation
+    could drop episodes, and an arm with fewer episodes than its control is not a result."""
+    raw = [episodes * share for _, share in plan]
+    slices = [int(v) for v in raw]
+    for i in sorted(range(len(raw)), key=lambda i: raw[i] - slices[i], reverse=True):
+        if sum(slices) >= episodes:
+            break
+        slices[i] += 1
+    return slices
+
+
+def train_arm(
+    arm: str, pools: dict[str, dict[str, Any]], episodes: int, seed: int
+) -> tuple[Any, list[dict[str, Any]], list[float]]:
+    """Train one tabular agent through an arm's plan, carrying the table forward.
+
+    Each slice gets its own `TrainConfig`, so epsilon decays within a slice and restarts at the
+    next. That is the draft's choice and it is kept, but it is now controlled for by
+    `flat_restarts` rather than argued to be harmless.
     """
     from src.rl.qlearning import TabularAgent, TrainConfig, train
 
     agent = TabularAgent()
     history: list[dict[str, Any]] = []
-    for stage in plan:
-        budget = max(1, int(episodes * stage["share"]))
-        cfg = TrainConfig(alpha=alpha, gamma=gamma, episodes=budget, seed=seed)
-        train(stage["graphs"], cfg, agent=agent)
+    rewards: list[float] = []
+    plan = arm_plan(arm, pools)
+    for (pool, _), budget in zip(plan, budgets(plan, episodes), strict=True):
+        if budget <= 0:
+            continue
+        cfg = TrainConfig(
+            alpha=ALPHA, gamma=GAMMA, episodes=budget, seed=seed + 1000 * len(history)
+        )
+        train(pools[pool]["graphs"], cfg, agent=agent)
+        rewards += agent.history["reward"]
         history.append(
             {
-                "stage": stage["name"],
+                "pool": pool,
                 "episodes": budget,
-                "pool": len(stage["graphs"]),
                 "reward_tail": agent.report["reward_tail"],
                 "td_tail_ratio": agent.report["td_tail_ratio"],
                 "reached_keys": agent.report["reached_keys"],
             }
         )
-    agent.stages = history  # type: ignore[attr-defined]
-    return agent
+    return agent, history, rewards
 
 
-def ablation(
-    episodes: int = 60_000,
-    limit: int | None = None,
-    seeds: Sequence[int] = (0, 1, 2),
-) -> dict[str, Any]:
-    """The four arms at equal budget, all evaluated on the real corpus."""
-    from src.rl.qlearning import TrainConfig, evaluate, references, train, training_set
+def _run_one(arm: str, episodes: int, seed: int, limit: int | None) -> dict[str, Any]:
+    """One (arm, seed) cell, self-contained so it can run in a worker process."""
+    from src.rl.dqn import _trail
+    from src.rl.qlearning import evaluate, training_set
 
+    pools = stages(limit)
     raw, graphs = training_set(limit, ambiguous=False)
     raw_amb, graphs_amb = training_set(limit, ambiguous=True)
-    plan = stages(limit)
-    synthetic = [
-        {"name": "synthetic_only", "share": 1.0, "graphs": plan[0]["graphs"] + plan[1]["graphs"]}
-    ]
+    started = time.perf_counter()
+    agent, history, rewards = train_arm(arm, pools, episodes, seed)
+    return {
+        "arm": arm,
+        "seed": seed,
+        "seconds": round(time.perf_counter() - started, 1),
+        "stages": history,
+        "curve": _trail(rewards),
+        "all": evaluate(agent, graphs, raw),
+        "ambiguous": evaluate(agent, graphs_amb, raw_amb),
+    }
 
-    arms: dict[str, list[dict[str, Any]]] = {}
-    stage_logs: dict[str, Any] = {}
-    for seed in seeds:
-        agents = {
-            "flat": train(graphs, TrainConfig(alpha=0.4, gamma=1.0, episodes=episodes, seed=seed)),
-            "curriculum": train_curriculum(plan, episodes, seed),
-            "reversed": train_curriculum(list(reversed(plan)), episodes, seed),
-            "synthetic_only": train_curriculum(synthetic, episodes, seed),
-        }
-        for name, agent in agents.items():
-            arms.setdefault(name, []).append(
+
+def _run_dqn_arm(
+    arm: str, episodes: int, seeds: Sequence[int], limit: int | None
+) -> list[dict[str, Any]]:
+    """One arm for 11.2.5's DQN: every seed is a member of one ensemble, carried across slices.
+
+    Weights carry forward from slice to slice; the replay buffer, Adam moments and epsilon start
+    afresh at each slice - the DQN analogue of the tabular restart, controlled by the same
+    `flat_restarts` arm.
+    """
+    from dataclasses import replace
+
+    from src.rl import dqn as D
+    from src.rl.qlearning import training_set
+
+    pools = stages(limit)
+    raw, graphs = training_set(limit, ambiguous=False)
+    raw_amb, graphs_amb = training_set(limit, ambiguous=True)
+    base = replace(D.DQNConfig(), **DQN_CELL)
+    plan = arm_plan(arm, pools)
+    started = time.perf_counter()
+    nets = None
+    histories: list[list[dict[str, Any]]] = [[] for _ in seeds]
+    rewards: list[list[float]] = [[] for _ in seeds]
+    agents = []
+    for position, ((pool, _), budget) in enumerate(zip(plan, budgets(plan, episodes), strict=True)):
+        cfgs = [replace(base, episodes=budget, seed=s + 1000 * position) for s in seeds]
+        agents = D.train_many(pools[pool]["graphs"], cfgs, init=nets)
+        nets = [a.net for a in agents]
+        for k, agent in enumerate(agents):
+            rewards[k] += agent.history["reward"]
+            histories[k].append(
                 {
-                    "all": evaluate(agent, graphs, raw),
-                    "ambiguous": evaluate(agent, graphs_amb, raw_amb),
-                    "convergence": agent.report,
+                    "pool": pool,
+                    "episodes": budget,
+                    "reward_tail": agent.report.get("reward_tail"),
+                    "td_tail_ratio": agent.report.get("td_tail_ratio"),
                 }
             )
-            if seed == seeds[0] and hasattr(agent, "stages"):
-                stage_logs[name] = agent.stages
-
-    def summarise(rows: Sequence[dict[str, Any]], scope: str) -> dict[str, Any]:
-        def stat(key: str) -> dict[str, float]:
-            values = [r[scope][key] for r in rows]
-            return {
-                "mean": round(statistics.fmean(values), 4),
-                "sd": round(statistics.stdev(values), 4) if len(values) > 1 else 0.0,
+    seconds = round(time.perf_counter() - started, 1)
+    out = []
+    for k, seed in enumerate(seeds):
+        agent = agents[k]
+        agent.cfg = replace(agent.cfg, seed=seed)
+        out.append(
+            {
+                "arm": arm,
+                "seed": seed,
+                "seconds": seconds,
+                "stages": histories[k],
+                "curve": D._trail(rewards[k]),
+                "all": D.evaluate(agent, graphs, raw),
+                "ambiguous": D.evaluate(agent, graphs_amb, raw_amb),
             }
+        )
+    return out
 
-        return {
-            "mean_terminal_reward": stat("mean_terminal_reward"),
-            "full_coverage": stat("full_coverage"),
-            "mean_emitted_share": stat("mean_emitted_share"),
-            "mean_edge_f1": stat("mean_edge_f1"),
-            "gold_full_coverage_ceiling": rows[0][scope]["gold_full_coverage_ceiling"],
-            "empty_policy_edge_f1": rows[0][scope]["empty_policy_edge_f1"],
+
+def summarise(rows: Sequence[dict[str, Any]], scope: str) -> dict[str, Any]:
+    keys = ("mean_terminal_reward", "full_coverage", "mean_emitted_share", "mean_edge_f1")
+    out: dict[str, Any] = {}
+    for key in keys:
+        values = [r[scope][key] for r in rows]
+        out[key] = {
+            "mean": round(statistics.fmean(values), 4),
+            "sd": round(statistics.stdev(values), 4) if len(values) > 1 else 0.0,
+            "values": values,
         }
-
-    result: dict[str, Any] = {
-        "episodes": episodes,
-        "seeds": list(seeds),
-        "stage_plan": [
-            {"name": s["name"], "share": s["share"], "pool": len(s["graphs"])} for s in plan
-        ],
-        "stage_logs": stage_logs,
-        "arms": {
-            name: {"all": summarise(rows, "all"), "ambiguous": summarise(rows, "ambiguous")}
-            for name, rows in arms.items()
-        },
-        "references": references(graphs, raw),
-    }
-    result["verdict"] = verdict(result)
-    return result
+    return out
 
 
-def verdict(result: dict[str, Any]) -> dict[str, Any]:
-    """Did ordering help, or was it just more data? The `reversed` arm is what separates them."""
-    arms = result["arms"]
-    flat = arms["flat"]["all"]["mean_terminal_reward"]["mean"]
-    curriculum = arms["curriculum"]["all"]["mean_terminal_reward"]["mean"]
-    backwards = arms["reversed"]["all"]["mean_terminal_reward"]["mean"]
+def paired(rows: dict[str, list[dict[str, Any]]], a: str, b: str, key: str, scope: str = "all"):
+    """Per-seed difference `a - b` (same seeds, so paired), with its mean, SD and 2-SE band."""
+    by_seed = {r["seed"]: r for r in rows[b]}
+    diffs = [
+        r[scope][key] - by_seed[r["seed"]][scope][key] for r in rows[a] if r["seed"] in by_seed
+    ]
+    mean = statistics.fmean(diffs)
+    sd = statistics.stdev(diffs) if len(diffs) > 1 else 0.0
+    band = 2 * sd / len(diffs) ** 0.5 if len(diffs) > 1 else 0.0
     return {
-        "curriculum_minus_flat": round(curriculum - flat, 4),
-        "curriculum_minus_reversed": round(curriculum - backwards, 4),
-        "curriculum_helps": curriculum > flat,
-        "ordering_is_what_helped": curriculum > flat and curriculum > backwards,
-        "synthetic_only_transfers": (
-            arms["synthetic_only"]["all"]["mean_terminal_reward"]["mean"] > flat
-        ),
+        "mean": round(mean, 4),
+        "sd": round(sd, 4),
+        "two_se": round(band, 4),
+        "values": [round(d, 4) for d in diffs],
+        "resolved": abs(mean) > band,
     }
+
+
+def verdict(rows: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+    """Ranked on terminal reward. Each comparison is paired over seeds with a 2-SE band."""
+    key = "mean_terminal_reward"
+    out = {
+        "curriculum_minus_flat": paired(rows, "curriculum", "flat", key),
+        "curriculum_minus_flat_restarts": paired(rows, "curriculum", "flat_restarts", key),
+        "flat_restarts_minus_flat": paired(rows, "flat_restarts", "flat", key),
+        "curriculum_minus_reversed": paired(rows, "curriculum", "reversed", key),
+        "synthetic_only_minus_flat": paired(rows, "synthetic_only", "flat", key),
+        "curriculum_minus_flat_edge_f1": paired(rows, "curriculum", "flat", "mean_edge_f1"),
+    }
+    c = out["curriculum_minus_flat_restarts"]
+    out["ordering_helps"] = bool(c["resolved"] and c["mean"] > 0)
+    return out
 
 
 def run(
     episodes: int = 60_000,
     limit: int | None = None,
-    seeds: Sequence[int] = (0, 1, 2),
+    seeds: Sequence[int] = SEEDS,
+    arms: Sequence[str] = ARMS,
+    workers: int = 8,
     write: bool = False,
+    learner: str = "tabular",
 ) -> dict[str, Any]:
-    from src.rl.qlearning import RUNS
+    from src.rl.qlearning import RUNS, references, training_set
 
-    result = ablation(episodes, limit, seeds)
+    pools = stages(limit)
+    raw, graphs = training_set(limit, ambiguous=False)
+    jobs = [(arm, episodes, seed, limit) for arm in arms for seed in seeds]
+    if learner == "dqn":
+        # one process per arm, each an ensemble over the seeds (11.2.5's throughput finding)
+        with ProcessPoolExecutor(max_workers=max(1, min(workers, len(arms)))) as pool:
+            futures = [pool.submit(_run_dqn_arm, arm, episodes, seeds, limit) for arm in arms]
+            results = [row for f in futures for row in f.result()]
+    elif workers > 1:
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            results = list(pool.map(_run_one, *zip(*jobs, strict=True)))
+    else:
+        results = [_run_one(*job) for job in jobs]
+    rows: dict[str, list[dict[str, Any]]] = {}
+    for r in results:
+        rows.setdefault(r["arm"], []).append(r)
+    result: dict[str, Any] = {
+        "learner": learner,
+        "episodes": episodes,
+        "seeds": list(seeds),
+        "dqn_cell": DQN_CELL if learner == "dqn" else None,
+        "alpha": ALPHA,
+        "gamma": GAMMA,
+        "pools": {name: block["report"] for name, block in pools.items()},
+        "plans": {arm: arm_plan(arm, pools) for arm in arms},
+        "arms": {
+            arm: {"all": summarise(rs, "all"), "ambiguous": summarise(rs, "ambiguous")}
+            for arm, rs in rows.items()
+        },
+        "runs": results,
+        "references": references(graphs, raw),
+    }
+    if set(ARMS) <= set(rows):
+        result["verdict"] = verdict(rows)
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "curriculum.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        suffix = "" if learner == "tabular" else f"_{learner}"
+        (RUNS / f"curriculum{suffix}.json").write_text(
+            json.dumps(result, indent=2), encoding="utf-8"
+        )
+        figure = FIGURE.with_name(f"p11_curriculum{suffix}.png")
+        result["figure"] = str(plot(result, figure).relative_to(ROOT))
     return result
+
+
+def plot(result: dict[str, Any], path=FIGURE):
+    """Left: behaviour return per arm (seed 0) with stage boundaries. Right: greedy results."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    colours = {
+        "flat": "#1f77b4",
+        "flat_restarts": "#17becf",
+        "curriculum": "#d62728",
+        "reversed": "#ff7f0e",
+        "synthetic_only": "#9467bd",
+    }
+    fig, axes = plt.subplots(1, 3, figsize=(17, 5.0))
+    first = result["seeds"][0]
+    for run_ in result["runs"]:
+        if run_["seed"] != first or not run_["curve"]:
+            continue
+        xs, ys = zip(*run_["curve"], strict=True)
+        axes[0].plot(xs, ys, color=colours[run_["arm"]], lw=1.1, label=run_["arm"])
+    edge = 0
+    for _, share in PLAN[:-1]:
+        edge += share * result["episodes"]
+        axes[0].axvline(edge, color="#999999", lw=0.8, ls=":")
+    axes[0].set_title(
+        f"training return (trailing mean 1,000, seed {first}); dotted = curriculum stage edges",
+        fontsize=9,
+    )
+    axes[0].set_xlabel("episode", fontsize=9)
+    axes[0].set_ylabel("return (on that stage's pool)", fontsize=9)
+    axes[0].legend(fontsize=8, frameon=False)
+
+    names = [a for a in ARMS if a in result["arms"]]
+    refs = result["references"]
+    for ax, key, label in (
+        (axes[1], "mean_terminal_reward", "greedy terminal reward"),
+        (axes[2], "mean_edge_f1", "greedy edge F1"),
+    ):
+        block = [result["arms"][a]["all"][key] for a in names]
+        ax.bar(
+            range(len(names)),
+            [b["mean"] for b in block],
+            yerr=[b["sd"] for b in block],
+            capsize=4,
+            color=[colours[a] for a in names],
+        )
+        for i, b in enumerate(block):
+            ax.scatter([i] * len(b["values"]), b["values"], color="black", s=8, zorder=3)
+        ax.axhline(refs["gold"][key], color="#2ca02c", ls="--", lw=1, label="gold in action space")
+        ax.axhline(refs["random"][key], color="#7f7f7f", ls="--", lw=1, label="random")
+        ax.set_xticks(range(len(names)))
+        ax.set_xticklabels(names, fontsize=8, rotation=15)
+        ax.set_title(
+            f"{label}, 993 labelled (mean ± sd, dots = {len(result['seeds'])} seeds)",
+            fontsize=9,
+        )
+        ax.legend(fontsize=8, frameon=False)
+    if refs["random"]["mean_terminal_reward"] < 0:
+        low = min(refs["random"]["mean_terminal_reward"], axes[1].get_ylim()[0])
+        axes[1].set_ylim(low - 0.2, 0)
+    for ax in axes:
+        ax.tick_params(labelsize=8)
+        ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    return path
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Phase 11.2.6 curriculum ablation")
     ap.add_argument("--episodes", type=int, default=60_000)
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--seeds", type=int, default=len(SEEDS))
+    ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--pools", action="store_true", help="only the clean reports of the pools")
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--learner", choices=("tabular", "dqn"), default="tabular")
     ap.add_argument("--quick", action="store_true")
     args = ap.parse_args(argv)
-    episodes = 1200 if args.quick else args.episodes
-    seeds = (0,) if args.quick else (0, 1, 2)
-    print(json.dumps(run(episodes, args.limit, seeds, write=args.write), indent=2)[:20000])
+    if args.pools:
+        print(json.dumps({k: v["report"] for k, v in stages(args.limit).items()}, indent=2))
+        return 0
+    if args.quick:
+        out = run(600, limit=60, seeds=(0,), workers=1)
+    else:
+        seeds = (SEEDS if args.learner == "tabular" else DQN_SEEDS)[: args.seeds]
+        out = run(
+            args.episodes,
+            args.limit,
+            seeds,
+            workers=args.workers,
+            write=args.write,
+            learner=args.learner,
+        )
+    out.pop("runs", None)
+    print(json.dumps(out, indent=2)[:20000])
     return 0
 
 
