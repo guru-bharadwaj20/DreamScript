@@ -49,6 +49,7 @@ from src.utils.config import ROOT
 
 OUT_DIR = ROOT / "data" / "processed" / "codegen"
 PAIRS_DIR = OUT_DIR / "pairs"
+REJECT_DIR = OUT_DIR / "rejected"
 IR_DIR = ROOT / "data" / "processed" / "ir"
 
 #: The name every emitter is given in place of the diagram id (see module docstring, step 4).
@@ -131,14 +132,35 @@ def build_real(sources: Iterable[str] = REAL_SOURCES, workers: int | None = None
         jobs = [(str(p), source) for p in paths]
         with Pool(workers or max(1, (os.cpu_count() or 2) - 2)) as pool:
             records = pool.map(_real_pair, jobs, chunksize=16)
-        records = assign_splits(records)
-        written = schema.write_jsonl(records, PAIRS_DIR / f"{source}.jsonl")
-        report[source] = {
-            "pairs": written,
-            "splits": dict(Counter(r["split"] for r in records)),
-            "modes": dict(Counter(r["meta"].get("flowchart_mode") for r in records)),
-        }
+        report[source] = write_shard(source, assign_splits(records))
     return report
+
+
+def write_shard(source: str, records: list[dict]) -> dict:
+    """12.1.7's filter, its postcondition, then the shard. Rejections go to `rejected/`.
+
+    Nothing reaches `pairs/<source>.jsonl` without passing `quality.filter_pairs`, and the kept
+    set is re-checked from scratch by `assert_all_compile` before a byte is written.
+    """
+    from src.codegen import quality
+
+    kept, rejected = quality.filter_pairs(records)
+    quality.assert_all_compile(kept)
+    written = schema.write_jsonl(kept, PAIRS_DIR / f"{source}.jsonl")
+    rejects = REJECT_DIR / f"{source}.jsonl"
+    rejects.parent.mkdir(parents=True, exist_ok=True)
+    with rejects.open("w", encoding="utf-8", newline="\n") as handle:
+        for entry in rejected:
+            row = {k: entry[k] for k in ("diagram_id", "kind", "detail", "language")}
+            handle.write(json.dumps({**row, "record": entry["record"]}, ensure_ascii=False) + "\n")
+    return {
+        "candidates": len(records),
+        "pairs": written,
+        "rejected": len(rejected),
+        "reject_kinds": dict(Counter(entry["kind"] for entry in rejected)),
+        "splits": dict(Counter(r["split"] for r in kept)),
+        "types": dict(Counter(r["diagram_type"] for r in kept)),
+    }
 
 
 # -- merge and load ---------------------------------------------------------------------------

@@ -1,77 +1,53 @@
-"""Phase 12.1.7 - the filter that makes "100% of targets compile" true rather than hoped for.
+"""Phase 12.1.7 - the filter that makes "100% of targets compile" a postcondition, not a hope.
 
     python -m src.codegen.quality --self-test
-    python -m src.codegen.quality --pairs data/processed/codegen/pairs.jsonl
+    python -m src.codegen.quality --pairs data/processed/codegen/pairs/train.jsonl
 
 A training pair whose target does not compile teaches the model to emit code that does not
-compile. The row asks for "100% of targets compile", and the only way a percentage like that is
-ever 100 is if it is a *postcondition of a filter*, not a property someone measured once and
-hoped would hold. So this module is built the other way round from a report: `filter_pairs`
-partitions, and `assert_all_compile` re-runs every check on the survivors and raises if a single
-one fails. The tests assert that postcondition on a corpus that is deliberately half-invalid.
+compile. The only way a rate like that is ever 100% is if it is the postcondition of a filter:
+`filter_pairs` partitions, and `assert_all_compile` re-runs every check on the survivors from
+scratch and raises on a single miss. `src.codegen.pairs` calls both before any shard is written.
 
-## What each language is checked with, and why that check and not a weaker one
+## What each language is checked with - the strongest checker available here, not a proxy
 
-    python   ast.parse *and* compile(). ast.parse alone accepts code the compiler rejects -
-             `return` outside a function and duplicate parameter names both parse and both fail
-             to compile. Measured on the self-test corpus: 2 of the 3 invalid Python cases
-             are ast-clean and caught only by compile().
-    sql      executed on a fresh in-memory sqlite3, not regex-matched. A DDL script that parses
-             is not the same as one that builds: `REFERENCES nosuchtable` and a duplicate column
-             name are both syntactically fine and both fail at execution. At least one CREATE
-             TABLE must survive, so an empty-but-valid script cannot pass as an ER target.
-    react    structural parse in Python. This is the one compromise in the module and it is
-             documented rather than hidden: node v22.20.0 is installed but has **no JSX parser
-             offline** - `require('@babel/parser')` fails and `npm ls -g` holds only corepack
-             and npm. Shelling out per pair would also cost ~40ms of process start against
-             ~0.1ms in-process. So JSX is checked by balance and structure (tags matched with
-             the HTML void-element set honoured, self-closing tags, expression braces, exactly
-             one root element in each `return`, a component that is defined and exported) with
-             strings and comments masked first so a `<` inside a className cannot unbalance it.
-             This catches unclosed tags, stray braces and missing exports; it does **not** catch
-             an undefined identifier. Stated as a limit, not sold as a compiler.
-    html      html.parser with a strict tag stack - the verbatim Sketch2Code targets are HTML,
-             not JSX, and get the same balance discipline.
-    spice     documented structural check. There is no netlist simulator in this environment and
-             adding ngspice for a syntax check would be a heavy dependency for a light job, so
-             the rules are spelled out here and enforced literally: every non-comment,
-             non-directive line is a device card whose first character is a known device letter;
-             the card carries at least that device's node count (R/L/C/V/I/E/G 2, D 2, Q 3,
-             J 3, M 4, X >=1) plus a value or model token; node names are alphanumeric; ground
-             node `0` appears at least once; the netlist ends with `.end`; and every node
-             appears on at least two cards, because a node touched once is a dangling wire and
-             a netlist of dangling wires is not a circuit.
+    python   `ast.parse` **and** `compile()`. Measured: `return 1` at module level and
+             `def f(a, a)` both pass `ast.parse` and are rejected only by `compile()`.
+    sql      12.3.7's `src.eval.sql.check`: statement-by-statement execution on in-memory
+             SQLite with `PRAGMA foreign_keys=ON`, then every FK's parent table / column /
+             uniqueness resolved statically, invented type names rejected, empty schema
+             rejected. The inherited draft used `executescript` alone, which 12.3.7 measured
+             accepting `REFERENCES nosuch(id)` and `CREATE TABLE t(x BANANA)`; both are now
+             rejections in the self-test.
+    react    the structural parse below as a fast first gate, then **a real build and render in
+             node** (`src.eval.react`: esbuild JSX transform, then `react-dom/server`
+             `renderToString` in a `vm` sandbox with a timeout). The inherited draft stopped at
+             the structural parse and said so; with node 22 and a pinned esbuild/react install
+             that limit no longer applies, and the render stage catches what the parse cannot -
+             an undefined identifier, an import of a module that is not there, an infinite loop.
+    html     `html.parser` with a strict tag stack - Sketch2Code's source pages (12.1.5) are
+             HTML before conversion.
+    spice    the structural rules below, then **ngspice 47 in batch mode** (`src.eval.spice`):
+             the deck must parse *and* its `.op` operating point must solve. A structurally clean
+             deck can be physically unsolvable - two ideal inductors in parallel, or a node that
+             only capacitors touch, is a singular DC matrix - and the structural check cannot
+             see it.
 
-## What it measured
+A checker whose tool is missing (`react.unavailable`, `spice.unavailable`) **rejects**: an
+environment without node must not be able to produce a shard that claims to render.
 
-No pair generator had written `data/processed/codegen/pairs.jsonl` when this module was built
-(12.1.1-12.1.6 are still open), so the numbers below are from `self_test_corpus()` - 30
-hand-written targets, 15 valid and 15 invalid, three of each per language - and they are the
-filter's behaviour, not the corpus's:
+Structural SPICE rules, enforced before the simulator: every non-comment, non-directive line is a
+device card with a known device letter and at least that device's node count plus a value;
+node names are alphanumeric; ground `0` appears; the deck ends with `.end`; and every node
+appears on at least two cards.
 
-    language   valid  kept   invalid  rejected
-    python         3     3         3         3
-    sql            3     3         3         3
-    react          3     3         3         3
-    html           3     3         3         3
-    spice          3     3         3         3
+## Rejected as approaches
 
-    kept 15/30, rejected 15/30, false accepts 0, false rejects 0
-
-Run with `--pairs` once real pairs exist and the same table is printed over them.
-
-## What was rejected as an approach
-
-- **Trusting the emitter.** `src/ir/targets.py` already compiles what it emits and reports
-  993/993. That is a property of one emitter on one day; a filter that assumes it would pass
-  through anything a *different* generator (12.1.4's synthetic pairs, 12.1.5's converted React)
-  produces. Every record is re-checked here regardless of provenance.
-- **Reporting a compile rate instead of filtering.** A 99.4% number in a report does not stop
-  the 0.6% from entering the fine-tune.
-- **`exec()`-ing Python targets.** Compiling proves syntax; executing arbitrary generated code
-  in the filter is a sandbox problem, and the emitters that want execution semantics already do
-  it in `src/ir/targets.py` where the inputs are known.
-- **Regexing SQL.** Tried first and dropped: it accepted `CREATE TABLE t (a INT, a INT)`.
+- **Trusting the emitter.** 12.1.6 reports 1.0000 per emitter; that is a property of those
+  emitters on those inputs. Every record is re-checked regardless of provenance.
+- **Reporting a compile rate instead of filtering.** A 99.4% in a report does not stop the 0.6%
+  entering the fine-tune.
+- **`exec()`-ing Python targets here.** Compiling proves syntax; executing generated code is the
+  sandbox's job (11.2.9, used by 12.3.2's helper in `src.eval.codecheck`).
 """
 
 from __future__ import annotations
@@ -80,7 +56,6 @@ import argparse
 import ast
 import json
 import re
-import sqlite3
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
@@ -90,18 +65,6 @@ from typing import Any
 
 #: Languages this filter knows how to check. Anything else is rejected, loudly.
 LANGUAGES = ("python", "sql", "react", "html", "spice")
-
-#: Required keys of a training pair (the Phase 12.1.1 record contract).
-REQUIRED_KEYS = (
-    "diagram_id",
-    "diagram_type",
-    "ir_text",
-    "traversal",
-    "target_code",
-    "language",
-    "source",
-    "split",
-)
 
 #: HTML elements that never take a closing tag.
 VOID_ELEMENTS = frozenset(
@@ -134,7 +97,7 @@ class QualityError(AssertionError):
 
 
 # ----------------------------------------------------------------------------------------
-# per-language checks: each returns (ok, kind, detail)
+# per-language static checks: each returns (ok, kind, detail)
 # ----------------------------------------------------------------------------------------
 
 
@@ -152,28 +115,15 @@ def check_python(code: str) -> tuple[bool, str, str]:
 
 
 def check_sql(code: str) -> tuple[bool, str, str]:
-    """Execute the DDL on a throwaway in-memory database. Nothing is written to disk."""
-    connection = sqlite3.connect(":memory:")
-    try:
-        connection.executescript(code)
-        tables = connection.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table'"
-        ).fetchall()
-        if not tables:
-            return False, "sql_no_tables", "script ran but created no table"
-        connection.execute("PRAGMA foreign_key_check")
-        return True, "ok", f"executed, {len(tables)} table(s)"
-    except sqlite3.Error as exc:
-        return False, "sql_execute", str(exc)
-    finally:
-        connection.close()
+    """12.3.7's executing, FK-resolving checker."""
+    from src.eval import sql
+
+    result = sql.check(code)
+    return bool(result["ok"]), "ok" if result["ok"] else result["kind"], result["detail"]
 
 
 def _mask_literals(code: str) -> str:
-    """Blank out string literals, JS comments and JSX text so structure can be counted.
-
-    Everything replaced keeps its length, so reported offsets stay meaningful.
-    """
+    """Blank out string literals and JS comments so structure can be counted. Length-preserving."""
     out = list(code)
     i, n = 0, len(code)
     quote: str | None = None
@@ -254,7 +204,7 @@ _RETURN_JSX_RE = re.compile(r"\breturn\s*\(", re.S)
 
 
 def check_react(code: str) -> tuple[bool, str, str]:
-    """Structural JSX check. See the module docstring for exactly what this does not catch."""
+    """Structural JSX gate. The real build + render runs in `check_records`."""
     if not code.strip():
         return False, "empty", "no code"
     masked = _mask_literals(code)
@@ -339,11 +289,8 @@ def check_html(code: str) -> tuple[bool, str, str]:
     if not code.strip():
         return False, "empty", "no code"
     parser = _StrictHTML()
-    try:
-        parser.feed(code)
-        parser.close()
-    except Exception as exc:  # pragma: no cover - html.parser is lenient by design
-        return False, "html_parse", str(exc)
+    parser.feed(code)
+    parser.close()
     if parser.error:
         return False, "html_tags", parser.error
     if parser.stack:
@@ -354,7 +301,7 @@ def check_html(code: str) -> tuple[bool, str, str]:
 
 
 def check_spice(code: str) -> tuple[bool, str, str]:
-    """The documented structural check. Rules are in the module docstring."""
+    """The structural SPICE rules (module docstring). ngspice runs in `check_records`."""
     lines = [line.strip() for line in code.splitlines()]
     lines = [line for line in lines if line and not line.startswith("*")]
     if not lines:
@@ -377,10 +324,9 @@ def check_spice(code: str) -> tuple[bool, str, str]:
             return (
                 False,
                 "spice_arity",
-                (f"{tokens[0]} needs {want} node(s) and a value, got {len(tokens) - 1} token(s)"),
+                f"{tokens[0]} needs {want} node(s) and a value, got {len(tokens) - 1} token(s)",
             )
-        nodes = tokens[1 : 1 + want]
-        for node in nodes:
+        for node in tokens[1 : 1 + want]:
             if not _NODE_RE.match(node):
                 return False, "spice_node_name", f"{tokens[0]}: bad node {node!r}"
             node_uses[node] += 1
@@ -404,82 +350,91 @@ CHECKS: dict[str, Callable[[str], tuple[bool, str, str]]] = {
 }
 
 
+def check_code(code: str, language: str) -> dict:
+    """Static check plus the real tool for one target. See `check_many_code` for batches."""
+    return check_many_code([(code, language)])[0]
+
+
+def check_many_code(items: list[tuple[str, str]]) -> list[dict]:
+    """`[{ok, kind, detail, language}]` for `(code, language)` items, tool stages batched.
+
+    Static checks first; React survivors then go through one node batch and SPICE survivors
+    through the ngspice pool, so 2,500 components cost a few node processes, not 2,500.
+    """
+    from src.eval import react, spice
+
+    results: list[dict] = []
+    for code, language in items:
+        language = str(language).lower()
+        checker = CHECKS.get(language)
+        if not isinstance(code, str) or not code.strip():
+            results.append({"ok": False, "kind": "empty", "detail": "blank", "language": language})
+        elif checker is None:
+            results.append(
+                {
+                    "ok": False,
+                    "kind": "unsupported_language",
+                    "detail": language,
+                    "language": language,
+                }
+            )
+        else:
+            ok, kind, detail = checker(code)
+            results.append({"ok": ok, "kind": kind, "detail": detail, "language": language})
+
+    for language, tool in (("react", react.check_many), ("spice", spice.check_many)):
+        todo = [i for i, r in enumerate(results) if r["ok"] and r["language"] == language]
+        if not todo:
+            continue
+        for index, verdict in zip(todo, tool([items[i][0] for i in todo]), strict=True):
+            if not verdict["ok"]:
+                results[index].update(ok=False, kind=verdict["kind"], detail=verdict["detail"])
+            else:
+                results[index]["detail"] += f"; {verdict['detail']}"
+    return results
+
+
 # ----------------------------------------------------------------------------------------
 # the record-level filter
 # ----------------------------------------------------------------------------------------
 
 
-def _schema_complaint(record: Any) -> str | None:
-    """Structural validation, deferring to 12.1.1's schema module when it exists."""
-    try:  # another agent owns src/codegen/schema.py; never block on it
-        from src.codegen import schema as _schema  # type: ignore
+def check_records(records: list[dict]) -> list[dict]:
+    """`{ok, kind, detail, language, diagram_id}` per pair record: schema, then code."""
+    from src.codegen import schema
 
-        validate = getattr(_schema, "validate", None)
-        if callable(validate):
-            problem = validate(record)
-            if problem:
-                return str(problem)
-    except Exception:
-        pass
-    if not isinstance(record, dict):
-        return f"record is {type(record).__name__}, not a dict"
-    missing = [key for key in REQUIRED_KEYS if key not in record]
-    if missing:
-        return f"missing key(s): {', '.join(missing)}"
-    if not isinstance(record.get("target_code"), str):
-        return "target_code is not a string"
-    if not isinstance(record.get("traversal"), list | tuple):
-        return "traversal is not a list"
-    return None
-
-
-def check(record: Any) -> dict:
-    """Is this training pair fit to fine-tune on?
-
-    Returns `{ok, kind, detail, language, diagram_id}`. `kind` is `"ok"` on success and
-    otherwise names the failure precisely enough to aggregate on - `python_compile`,
-    `sql_execute`, `react_tags`, `spice_dangling`, `schema`, `unsupported_language`, `empty`.
-    """
-    diagram_id = record.get("diagram_id") if isinstance(record, dict) else None
-    language = record.get("language") if isinstance(record, dict) else None
-    result = {"ok": False, "kind": "schema", "detail": "", "language": language}
-    result["diagram_id"] = diagram_id
-
-    complaint = _schema_complaint(record)
-    if complaint:
-        result["detail"] = complaint
-        return result
-
-    language = str(record["language"]).lower()
-    result["language"] = language
-    code = record["target_code"]
-    if not code.strip():
-        result.update(kind="empty", detail="target_code is blank")
-        return result
-    checker = CHECKS.get(language)
-    if checker is None:
-        result.update(
-            kind="unsupported_language",
-            detail=f"{language!r} is not one of {', '.join(LANGUAGES)}",
-        )
-        return result
-
-    ok, kind, detail = checker(code)
-    result.update(ok=ok, kind=kind, detail=detail)
-    return result
+    out: list[dict] = [{} for _ in records]
+    todo: list[int] = []
+    for i, record in enumerate(records):
+        problems = schema.validate(record)
+        if problems:
+            out[i] = {
+                "ok": False,
+                "kind": "schema",
+                "detail": "; ".join(problems),
+                "language": record.get("language") if isinstance(record, dict) else None,
+            }
+        else:
+            todo.append(i)
+    verdicts = check_many_code([(records[i]["target_code"], records[i]["language"]) for i in todo])
+    for i, verdict in zip(todo, verdicts, strict=True):
+        out[i] = verdict
+    for i, record in enumerate(records):
+        out[i]["diagram_id"] = record.get("diagram_id") if isinstance(record, dict) else None
+    return out
 
 
-def filter_pairs(records: Iterable[Any]) -> tuple[list[Any], list[dict]]:
-    """Partition pairs into (kept, rejected).
+def check(record: dict) -> dict:
+    """Is this one training pair fit to fine-tune on?"""
+    return check_records([record])[0]
 
-    `kept` are the records themselves, unmodified. `rejected` are the check results with the
-    offending record attached under `"record"`, so a rejection can be explained without
-    re-running anything.
-    """
-    kept: list[Any] = []
+
+def filter_pairs(records: Iterable[dict]) -> tuple[list[dict], list[dict]]:
+    """Partition pairs into (kept, rejected). Rejections carry the record under `"record"`."""
+    records = list(records)
+    kept: list[dict] = []
     rejected: list[dict] = []
-    for record in records:
-        result = check(record)
+    for record, result in zip(records, check_records(records), strict=True):
         if result["ok"]:
             kept.append(record)
         else:
@@ -487,14 +442,10 @@ def filter_pairs(records: Iterable[Any]) -> tuple[list[Any], list[dict]]:
     return kept, rejected
 
 
-def assert_all_compile(kept: Iterable[Any]) -> int:
-    """The postcondition of 12.1.7, re-checked from scratch. Raises `QualityError` on any miss.
-
-    Deliberately not a report: this is the assertion that turns "100% of targets compile" from
-    a measurement into a guarantee, and it is called by the tests and by `main`.
-    """
+def assert_all_compile(kept: Iterable[dict]) -> int:
+    """12.1.7's postcondition, re-checked from scratch. Raises `QualityError` on any miss."""
     kept = list(kept)
-    failures = [result for result in map(check, kept) if not result["ok"]]
+    failures = [result for result in check_records(kept) if not result["ok"]]
     if failures:
         first = failures[0]
         raise QualityError(
@@ -504,41 +455,39 @@ def assert_all_compile(kept: Iterable[Any]) -> int:
     return len(kept)
 
 
-def rates(records: Iterable[Any]) -> dict:
-    """Per-language pass/reject counts, plus the rejection reasons that produced them."""
-    records = list(records)
+def rates(results: Iterable[dict]) -> dict:
+    """Per-language kept/rejected counts and rejection kinds, from `check_records` output."""
+    results = list(results)
     per_language: dict[str, Counter] = defaultdict(Counter)
     reasons: Counter[str] = Counter()
-    for record in records:
-        result = check(record)
+    for result in results:
         language = str(result.get("language") or "unknown")
         per_language[language]["total"] += 1
         per_language[language]["kept" if result["ok"] else "rejected"] += 1
         if not result["ok"]:
             reasons[result["kind"]] += 1
-    summary = {}
-    for language, counts in sorted(per_language.items()):
-        total = counts["total"]
-        summary[language] = {
-            "total": total,
-            "kept": counts["kept"],
-            "rejected": counts["rejected"],
-            "pass_rate": round(counts["kept"] / total, 4) if total else 0.0,
+    summary = {
+        language: {
+            "total": c["total"],
+            "kept": c["kept"],
+            "rejected": c["rejected"],
+            "pass_rate": round(c["kept"] / c["total"], 4) if c["total"] else 0.0,
         }
-    total = len(records)
+        for language, c in sorted(per_language.items())
+    }
     kept = sum(entry["kept"] for entry in summary.values())
     return {
-        "total": total,
+        "total": len(results),
         "kept": kept,
-        "rejected": total - kept,
-        "pass_rate": round(kept / total, 4) if total else 0.0,
+        "rejected": len(results) - kept,
+        "pass_rate": round(kept / len(results), 4) if results else 0.0,
         "by_language": summary,
         "reject_kinds": dict(reasons.most_common()),
     }
 
 
 # ----------------------------------------------------------------------------------------
-# the self-test corpus: valid and deliberately-invalid targets, three of each per language
+# the self-test corpus: valid and deliberately-invalid targets per language
 # ----------------------------------------------------------------------------------------
 
 _VALID: dict[str, list[str]] = {
@@ -549,41 +498,19 @@ _VALID: dict[str, list[str]] = {
     ],
     "sql": [
         "CREATE TABLE customer (id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
-        (
-            "CREATE TABLE a (id INTEGER PRIMARY KEY);\n"
-            "CREATE TABLE b (id INTEGER PRIMARY KEY, a_id INTEGER REFERENCES a(id));"
-        ),
-        "CREATE TABLE t (x REAL);\nCREATE INDEX t_x ON t (x);",
+        "CREATE TABLE a (id INTEGER PRIMARY KEY);\n"
+        "CREATE TABLE b (id INTEGER PRIMARY KEY, a_id INTEGER REFERENCES a(id));",
+        # The draft's version had no primary key; 12.3.7 rejects that as a cardinality error.
+        "CREATE TABLE t (id INTEGER PRIMARY KEY, x REAL);\nCREATE INDEX t_x ON t (x);",
     ],
     "react": [
-        (
-            "export default function Page() {\n"
-            "  return (\n"
-            '    <div className="p-4">\n'
-            '      <h1 className="text-xl">Title</h1>\n'
-            "    </div>\n"
-            "  );\n"
-            "}\n"
-        ),
-        (
-            "const Card = () => {\n"
-            "  return (\n"
-            '    <section className="rounded border">\n'
-            '      <img src="a.png" alt="a" />\n'
-            "    </section>\n"
-            "  );\n"
-            "};\n"
-            "export default Card;\n"
-        ),
-        (
-            "export function Nav() {\n"
-            "  return (\n"
-            '    <nav className="flex gap-2">{["a", "b"].map((x) => (\n'
-            "      <a key={x}>{x}</a>\n"
-            "    ))}</nav>\n"
-            "  );\n"
-            "}\n"
-        ),
+        'export default function Page() {\n  return (\n    <div className="p-4">\n'
+        '      <h1 className="text-xl">Title</h1>\n    </div>\n  );\n}\n',
+        'const Card = () => {\n  return (\n    <section className="rounded border">\n'
+        '      <img src="a.png" alt="a" />\n    </section>\n  );\n};\nexport default Card;\n',
+        "export default function Nav() {\n  return (\n"
+        '    <nav className="flex gap-2">{["a", "b"].map((x) => (\n'
+        "      <a key={x}>{x}</a>\n    ))}</nav>\n  );\n}\n",
     ],
     "html": [
         '<div class="p-4"><h1>Title</h1></div>',
@@ -591,143 +518,138 @@ _VALID: dict[str, list[str]] = {
         "<ul><li>a</li><li>b</li></ul>",
     ],
     "spice": [
-        "* divider\nV1 in 0 5\nR1 in out 1k\nR2 out 0 1k\n.end\n",
-        "* rc\nV1 1 0 DC 1\nR1 1 2 1k\nC1 2 0 1u\n.tran 1u 1m\n.end\n",
-        "* diode\nV1 a 0 5\nR1 a b 220\nD1 b 0 DMOD\n.model DMOD D\n.end\n",
+        "* divider\nV1 in 0 5\nR1 in out 1k\nR2 out 0 1k\n.op\n.end\n",
+        "* rc\nV1 1 0 DC 1\nR1 1 2 1k\nC1 2 0 1u\n.op\n.end\n",
+        "* diode\nV1 a 0 5\nR1 a b 220\nD1 b 0 DMOD\n.model DMOD D\n.op\n.end\n",
     ],
 }
 
-_INVALID: dict[str, list[tuple[str, str]]] = {
+#: (code, why, the stage expected to catch it: "static" or "tool")
+_INVALID: dict[str, list[tuple[str, str, str]]] = {
     "python": [
-        ("def broken(:\n    pass\n", "syntax error in the signature"),
-        ("return 1\n", "ast-clean, compile() rejects return outside a function"),
-        ("def f(a, a):\n    pass\n", "ast-clean, compile() rejects duplicate parameters"),
+        ("def broken(:\n    pass\n", "syntax error in the signature", "static"),
+        ("return 1\n", "ast-clean, compile() rejects return outside a function", "static"),
+        ("def f(a, a):\n    pass\n", "ast-clean, compile() rejects duplicate parameters", "static"),
     ],
     "sql": [
-        ("CREATE TABEL t (id INT);", "misspelled keyword"),
-        ("CREATE TABLE t (a INT, a INT);", "parses, fails at execution: duplicate column"),
-        ("SELECT 1;", "runs but creates no table, so it is not a DDL target"),
+        ("CREATE TABEL t (id INT);", "misspelled keyword", "static"),
+        ("CREATE TABLE t (a INT, a INT);", "duplicate column fails at execution", "static"),
+        ("SELECT 1;", "runs but creates no table", "static"),
+        (
+            "CREATE TABLE a (id INTEGER PRIMARY KEY, b_id INTEGER REFERENCES nosuch(id));",
+            "executescript accepts an FK to a missing table",
+            "static",
+        ),
+        ("CREATE TABLE t (x BANANA);", "executescript accepts an invented type", "static"),
     ],
     "react": [
         (
             'export default function P() {\n  return (\n    <div className="p">\n  );\n}\n',
             "unclosed <div>",
+            "static",
         ),
         (
             "function P() {\n  return (\n    <div>{x</div>\n  );\n}\nexport default P;\n",
             "unbalanced expression brace",
+            "static",
         ),
         (
-            "export default function P() {\n  return (\n    <a />\n    <b />\n  );\n}\n",
-            "two root elements in one return",
+            "export default function P() {\n  return (\n    <div>{items.map((i) => <b>{i}</b>)}</div>\n"
+            "  );\n}\n",
+            "structurally clean, `items` is undefined at render",
+            "tool",
+        ),
+        (
+            "import Chart from 'chart-lib';\nexport default function P() {\n  return (\n"
+            "    <div><Chart /></div>\n  );\n}\n",
+            "structurally clean, imports a module that does not exist",
+            "tool",
+        ),
+        (
+            "export default function P() {\n  const n = 1 +;\n  return (\n    <div />\n  );\n}\n",
+            "structurally clean, invalid JavaScript expression",
+            "tool",
         ),
     ],
     "html": [
-        ("<div><p>text</div>", "</div> closes <p>"),
-        ("<ul><li>a</li>", "unclosed <ul>"),
-        ("just words", "no elements at all"),
+        ("<div><p>text</div>", "</div> closes <p>", "static"),
+        ("<ul><li>a</li>", "unclosed <ul>", "static"),
+        ("just words", "no elements at all", "static"),
     ],
     "spice": [
-        ("V1 in 0 5\nR1 in out 1k\nR2 out 0 1k\n", "no .end"),
-        ("* x\nZ1 a b 1k\nR1 a 0 1k\n.end\n", "unknown device letter Z"),
-        ("* x\nV1 in 0 5\nR1 in out 1k\n.end\n", "node 'out' is dangling"),
+        ("V1 in 0 5\nR1 in out 1k\nR2 out 0 1k\n", "no .end", "static"),
+        ("* x\nZ1 a b 1k\nR1 a 0 1k\n.end\n", "unknown device letter Z", "static"),
+        ("* x\nV1 in 0 5\nR1 in out 1k\n.end\n", "node 'out' is dangling", "static"),
+        (
+            "* x\nV1 1 0 DC 5\nR1 1 2 1k\nL1 2 0 1m\nL2 2 0 1m\n.op\n.end\n",
+            "structurally clean, parallel ideal inductors: singular DC matrix",
+            "tool",
+        ),
+        (
+            "* x\nV1 1 0 DC 5\nR1 1 2 1k\nC1 2 3 1n\nC2 3 0 1n\n.op\n.end\n",
+            "structurally clean, node 3 has no DC path",
+            "tool",
+        ),
+        (
+            "* x\nV1 1 0 DC 5\nR1 1 2 1k\nD1 2 0 NOMODEL\n.op\n.end\n",
+            "structurally clean, diode model never defined",
+            "tool",
+        ),
     ],
 }
 
 
-def self_test_corpus() -> tuple[list[dict], list[dict]]:
-    """(valid, invalid) pair records covering all five languages. Used by `--self-test`."""
-
-    def record(language: str, index: int, code: str, tag: str) -> dict:
-        return {
-            "diagram_id": f"selftest/{language}/{tag}{index}",
-            "diagram_type": {
-                "python": "flowchart",
-                "sql": "er_diagram",
-                "react": "wireframe",
-                "html": "wireframe",
-                "spice": "circuit",
-            }[language],
-            "ir_text": f"node n0 [{language}]",
-            "traversal": ["n0"],
-            "target_code": code,
-            "language": language,
-            "source": "selftest",
-            "split": "train",
-        }
-
-    valid = [
-        record(language, i, code, "ok")
-        for language, codes in _VALID.items()
-        for i, code in enumerate(codes)
-    ]
-    invalid = []
+def self_test() -> dict:
+    """Run every valid and invalid case through `check_many_code`; report the confusion."""
+    items: list[tuple[str, str]] = []
+    expected: list[tuple[bool, str, str]] = []
+    for language, codes in _VALID.items():
+        for code in codes:
+            items.append((code, language))
+            expected.append((True, language, ""))
     for language, cases in _INVALID.items():
-        for i, (code, why) in enumerate(cases):
-            entry = record(language, i, code, "bad")
-            entry["expected_failure"] = why
-            invalid.append(entry)
-    return valid, invalid
+        for code, _why, stage in cases:
+            items.append((code, language))
+            expected.append((False, language, stage))
+    results = check_many_code(items)
+    table: dict[str, Counter] = defaultdict(Counter)
+    errors = []
+    for (code, _), (want, language, stage), result in zip(items, expected, results, strict=True):
+        static_ok = CHECKS[language](code)[0]
+        row = table[language]
+        row["valid" if want else "invalid"] += 1
+        if want and result["ok"]:
+            row["kept"] += 1
+        elif not want and not result["ok"]:
+            row["rejected"] += 1
+            row["caught_only_by_tool"] += int(static_ok)
+        else:
+            errors.append({"language": language, "code": code, "result": result})
+        if not want and stage == "tool" and not static_ok:
+            errors.append({"language": language, "code": code, "note": "static check caught it"})
+    return {"by_language": {k: dict(v) for k, v in table.items()}, "errors": errors}
 
 
 def load_pairs(path: Path) -> list[dict]:
-    """Read a JSONL pair file. Blank lines are skipped; a bad line is an error, not a warning."""
-    records = []
-    with Path(path).open(encoding="utf-8") as handle:
-        for number, line in enumerate(handle, 1):
-            if not line.strip():
-                continue
-            try:
-                records.append(json.loads(line))
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"{path}:{number}: {exc}") from exc
-    return records
+    """Read a JSONL pair file. Blank lines are skipped; a bad line is an error."""
+    from src.codegen import schema
 
-
-def _print_table(summary: dict) -> None:
-    print(f"{'language':<10}{'total':>8}{'kept':>8}{'rejected':>10}{'pass':>8}")
-    for language, entry in summary["by_language"].items():
-        print(
-            f"{language:<10}{entry['total']:>8}{entry['kept']:>8}"
-            f"{entry['rejected']:>10}{entry['pass_rate']:>8.4f}"
-        )
-    print(
-        f"{'TOTAL':<10}{summary['total']:>8}{summary['kept']:>8}"
-        f"{summary['rejected']:>10}{summary['pass_rate']:>8.4f}"
-    )
-    if summary["reject_kinds"]:
-        print("reject kinds: " + json.dumps(summary["reject_kinds"]))
+    return list(schema.read_jsonl(path))
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Phase 12.1.7 target quality filter")
     parser.add_argument("--pairs", type=Path, help="JSONL of training pairs to filter")
-    parser.add_argument(
-        "--self-test",
-        action="store_true",
-        help="run the built-in valid/invalid corpus (the default when --pairs is absent)",
-    )
+    parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args(argv)
-
     if args.pairs:
         records = load_pairs(args.pairs)
-        kept, rejected = filter_pairs(records)
-        assert_all_compile(kept)
-        _print_table(rates(records))
-        print(f"kept {len(kept)} / {len(records)}; rejected {len(rejected)}")
-        return 0
-
-    valid, invalid = self_test_corpus()
-    kept, rejected = filter_pairs(valid + invalid)
-    assert_all_compile(kept)
-    _print_table(rates(valid + invalid))
-    false_rejects = [entry for entry in rejected if entry["record"] in valid]
-    kept_ids = {r["diagram_id"] for r in kept}
-    false_accepts = [r for r in invalid if r["diagram_id"] in kept_ids]
-    print(f"false accepts: {len(false_accepts)}   false rejects: {len(false_rejects)}")
-    for entry in rejected:
-        print(f"  reject {entry['diagram_id']:<28} [{entry['kind']}] {entry['detail']}")
-    return 0 if not (false_accepts or false_rejects) else 1
+        results = check_records(records)
+        print(json.dumps(rates(results), indent=2))
+        return 0 if all(r["ok"] for r in results) else 1
+    report = self_test()
+    print(json.dumps(report, indent=2))
+    return 0 if not report["errors"] else 1
 
 
 if __name__ == "__main__":
