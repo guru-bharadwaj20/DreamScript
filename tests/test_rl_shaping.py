@@ -72,11 +72,22 @@ def test_potential_based_shaping_telescopes_over_an_episode(graphs):
             assert total == pytest.approx(gamma**steps * phi_prev - start, abs=1e-9)
 
 
-def test_the_shaped_and_unshaped_loops_differ_only_in_the_reward(graphs):
-    plain = Q.train(graphs, Q.TrainConfig(episodes=200, seed=4))
-    shaped = Q.train(graphs, Q.TrainConfig(episodes=200, seed=4, potential=S.phi_emitted))
-    assert plain.history["epsilon"] == shaped.history["epsilon"]
-    assert plain.history["length"] != shaped.history["length"] or not (plain.q == shaped.q).all()
+@pytest.mark.parametrize("name", sorted(S.POTENTIALS))
+def test_the_training_loop_pays_exactly_minus_phi_s0_per_episode(name, graphs):
+    """The identity checked on the loop itself, not on a re-implementation of it.
+
+    With alpha 0 the table never moves, so a shaped and an unshaped run take identical actions
+    from the same seed, and at gamma 1 with Phi = 0 at the terminal each episode's return must
+    differ by exactly -Phi(s_0), whatever path it took.
+    """
+    phi = S.POTENTIALS[name]
+    common = {"alpha": 0.0, "gamma": 1.0, "episodes": 60, "seed": 9}
+    plain = Q.train(graphs, Q.TrainConfig(**common))
+    shaped = Q.train(graphs, Q.TrainConfig(**common, potential=phi))
+    assert plain.history["length"] == shaped.history["length"]
+    starts = {round(phi(g, g.initial_state()), 9) for g in graphs}
+    for p, q in zip(plain.history["reward"], shaped.history["reward"], strict=True):
+        assert any(abs((q - p) + s0) < 1e-6 for s0 in starts)
 
 
 # ------------------------------------------------------------------------------------------
@@ -109,13 +120,37 @@ def test_a_step_bonus_is_actually_added_to_the_reward(graphs):
     assert not (plain.q == bribed.q).all()
 
 
-def test_the_loop_bonus_is_inert_on_an_acyclic_diagram(graphs):
-    """`mark-as-loop` is only legal at a back edge (11.1.2), so on these three fixtures the
-    exploit cannot fire at all - which is why the study has to run on the real corpus, where
-    34.79% of nodes sit behind one."""
-    bribed = Q.train(graphs, Q.TrainConfig(episodes=150, seed=6, step_bonus=S.loop_bonus))
-    plain = Q.train(graphs, Q.TrainConfig(episodes=150, seed=6))
-    assert (plain.q == bribed.q).all()
+def test_the_visit_bonus_is_farmable_past_n_and_the_loop_bonus_is_not(graphs):
+    """The inherited draft had these reversed. A follow/backtrack cycle collects the visit bonus
+    on every follow until the cap; `mark-as-loop` is refused on an already-marked node."""
+    graph = graphs[0]  # LINE: a -> b -> c
+    episode = Episode(graph)
+    paid = 0.0
+    while not episode.done():
+        action = 0 if not episode.state.stack else A.BACKTRACK
+        outcome = episode.apply(action, strict=True)
+        paid += S.visit_bonus(graph, outcome, episode.state)
+    assert episode.truncated()
+    assert paid > S.BONUS * graph.n_nodes * 2
+
+
+def test_the_loop_bonus_is_bounded_by_the_mask(graphs):
+    raw = {
+        "id": "loop",
+        "diagram_type": "flowchart",
+        "nodes": [dict(RAW[0]["nodes"][0], id=i) for i in ("a", "b")],
+        "edges": [
+            {"id": "e1", "src": "a", "dst": "b", "directed": True, "label": ""},
+            {"id": "e2", "src": "b", "dst": "a", "directed": True, "label": ""},
+        ],
+        "meta": {"source": "test"},
+    }
+    graph = DiagramGraph.from_ir(raw)
+    episode = Episode(graph)
+    episode.apply(0, strict=True)  # a -> b, b has a back edge to a
+    assert episode.mask()[A.MARK_AS_LOOP]
+    episode.apply(A.MARK_AS_LOOP, strict=True)
+    assert not episode.mask()[A.MARK_AS_LOOP]
 
 
 def test_the_config_records_which_hooks_were_set():
@@ -135,39 +170,56 @@ def test_behaviour_reports_the_indicators_an_exploit_would_move(graphs):
     report = S.behaviour(agent, graphs)
     assert set(report) == {
         "marks_per_node",
+        "follows_per_node",
+        "revisit_step_share",
         "emitted_share",
         "mean_length",
         "truncation_rate",
-        "illegal_action_share",
     }
     assert 0.0 <= report["marks_per_node"] <= 1.0
     assert 0.0 <= report["emitted_share"] <= 1.0
 
 
-def test_gold_behaviour_is_the_scale_marks_are_read_against(graphs):
+def test_gold_behaviour_never_hits_the_cap(graphs):
     report = S.gold_behaviour(graphs)
     assert report["emitted_share"] > 0.0
     assert report["truncation_rate"] == 0.0  # 11.1.4: 0 of 3,993 gold episodes hit the cap
 
 
-def test_the_study_covers_the_control_every_potential_and_every_bonus(graphs):
-    result = S.study(graphs, RAW, episodes=80, seeds=(0,))
+def test_the_study_covers_every_variant_and_scores_them_unshaped(graphs, tmp_path):
+    sets = {"all": (RAW, graphs), "ambiguous": (RAW, graphs)}
+    result = S.study(sets, episodes=80, seeds=(0, 1), workers=1)
     expected = {"none"} | {f"potential_{n}" for n in S.POTENTIALS} | set(S.BONUSES)
     assert set(result["variants"]) == expected
-    assert result["verdict"]["control_reward"] == result["variants"]["none"]["mean_terminal_reward"]
-
-
-def test_every_variant_is_scored_on_the_unshaped_reward(graphs):
-    """The audit: a shaped agent is priced by `RewardConfig()`, which knows nothing about it."""
-    result = S.study(graphs, RAW, episodes=80, seeds=(0,))
+    plain = Q.train(graphs, Q.TrainConfig(**S.BASE, episodes=80, seed=0))
+    assert result["variants"]["none"]["all"]["mean_terminal_reward"]["values"][0] == (
+        Q.evaluate(plain, graphs, RAW)["mean_terminal_reward"]
+    )
     for block in result["variants"].values():
-        assert block["mean_terminal_reward"] <= 12.0  # nothing inflated by its own bonus
-        assert "behaviour" in block
+        assert set(block["behaviour"]) == {"all", "ambiguous"}
+    refs = {name: Q.references(g, raw) for name, (raw, g) in sets.items()}
+    assert S.plot(result, refs, tmp_path / "p11_shaping.png").stat().st_size > 5000
 
 
-def test_the_verdict_names_an_exploit_only_on_evidence(graphs):
-    result = S.study(graphs, RAW, episodes=80, seeds=(0,))
-    for row in result["verdict"]["rows"]:
-        if row["exploit"]:
-            assert not row["beats_control"]
-            assert row["marks_per_node"] > 0.0
+def _block(reward, sd, shaped):
+    return {
+        "all": {"mean_terminal_reward": {"mean": reward, "sd": sd}},
+        "shaped_training_return_last_10pct": {"mean": shaped},
+    }
+
+
+def test_the_verdict_needs_the_gap_to_clear_the_seed_noise():
+    result = {
+        "variants": {
+            "none": _block(-3.0, 0.2, -3.0),
+            "small_win": _block(-2.9, 0.1, -3.0),
+            "real_win": _block(-2.0, 0.1, -2.0),
+            "farm": _block(-4.0, 0.3, 5.0),
+            "honest_loss": _block(-4.0, 0.3, -4.0),
+        }
+    }
+    rows = {r["variant"]: r for r in S.verdict(result)["rows"]}
+    assert not rows["small_win"]["justified"]
+    assert rows["real_win"]["justified"] and not rows["real_win"]["exploit"]
+    assert rows["farm"]["exploit"]
+    assert not rows["honest_loss"]["exploit"] and not rows["honest_loss"]["justified"]
