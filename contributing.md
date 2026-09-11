@@ -513,7 +513,7 @@ becomes the code structure.
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
 | 12.2.1 | Base model choice | 7B code model (Qwen2.5-Coder-7B / CodeLlama-7B / DeepSeek-Coder-6.7B) — benchmark zero-shot first | Base selected with evidence | ❌ |
-| 12.2.2 | Quantization | 4-bit NF4 QLoRA to fit RTX 4500 Ada (24 GB) | Fits with headroom | ❌ |
+| 12.2.2 | Quantization | 4-bit NF4 QLoRA to fit RTX 4500 Ada (24 GB) | `src/llm/quant.py` + `src/llm/train.py` + `tests/test_llm_quant.py` + `tests/test_llm_train.py` (11 tests, CPU only) + `reports/llm_quant.md`: `load_model` (NF4, double quant, bf16 compute, SDPA) is the one loader every 12.2 row uses, `profile` runs real forward/backward/AdamW steps over sequence length x micro-batch x arm under a **20 GiB process cap** so the WDDM cliff raises OOM instead of spilling to host memory, and `runtime_checks` reads the flags back from the objects. Qwen2.5-Coder-7B-Instruct: **196 `Linear4bit` nf4 modules, 5.60 GB on device, 40.37 M LoRA parameters (r=16, all seven projections)**. **Measured flags**: SDPA resolves, but torch 2.5.1's Windows build has the flash kernel compiled out (mem-efficient and cuDNN run) and `flash-attn`/`xformers` are absent. **Gradient checkpointing was silently off**: `from_pretrained` returns an eval-mode model and HF checkpoints only when `training`, so the flag read True while 512 tokens x2 took **19.08 GB vs 8.54 GB** in train mode; the profile now records `gradient_checkpointing_effective`. **Saturation is micro-batch 1 at every length** (1024: x1 968, x2 989, x4 938 tokens/s, x8 OOM; 2048: 967 / 918 / OOM; 4096: 888 / OOM) - the step is compute-bound on 4-bit dequantisation, so effective batch comes from accumulation, not VRAM. **Rejected on measurement**: `peft.prepare_model_for_kbit_training` upcasts the 1.09 B-parameter embedding/`lm_head` and norms to fp32 and runs **2.9x slower** (336 vs 968 tokens/s); no checkpointing is 1.41x faster but fits only 1024 x1 at 18.71 GB while real pairs reach 3,696 tokens; unquantised bf16 LoRA is +7% (981 vs 916 tokens/s) at 20.61 GB reserved, over the cap. **The trained configuration fits with headroom**: `train.selected_loss` applies `lm_head` only at completion positions and packs rows first-fit-decreasing into 2,048-token bins with a block-diagonal causal mask and restarted position ids - on real packed train rows **916 tokens/s at 8.41 GB allocated / 10.83 GB reserved of 24 GiB (~13 GB free)**, against 10.30 GB with full logits. **Packing isolation was verified, not assumed**: three examples packed score 0.7206 vs 0.7191 apart, and the same row under a plain causal mask scores 2.4969; a tiny-Qwen2 CPU test pins packed == apart and mutation-tests the mask. Examples longer than the bin get their own uncut row (97 of 655), 0 truncated | ✅ |
 | 12.2.3 | **LoRA config** | r ∈ {8,16,32,64}, α, dropout, target modules (q,k,v,o,gate,up,down) | Best config chosen | ❌ |
 | 12.2.4 | Prompt template | System + diagram type + IR + traversal + output-format contract | Template frozen | ❌ |
 | 12.2.5 | Training run | bf16, gradient accumulation, cosine LR, sequence packing; log VRAM and wall time | Adapter trained | ❌ |
@@ -719,10 +719,10 @@ Units 1-3 and the classical half of Unit 4 (clustering, CNN) are fully covered -
 | 9 — CNN & OCR | 22 | 22 | ✅ |
 | 10 — Graph Assembly | 14 | 14 | ✅ |
 | 11 — RL Traversal | 16 | 13 | ❌ |
-| 12 — LLM Fine-Tuning | 26 | 6 | ❌ |
+| 12 — LLM Fine-Tuning | 26 | 7 | ❌ |
 | 13 — Orchestration | 10 | 0 | ❌ |
 | 14 — Evaluation | 11 | 0 | ❌ |
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **222** | ❌ |
+| **Total** | **302** | **223** | ❌ |
