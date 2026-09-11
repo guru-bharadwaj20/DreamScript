@@ -270,7 +270,9 @@ def train(epochs: int = EPOCHS, batch: int = BATCH, checkpoint: Path = CHECKPOIN
         curve.append(round(total / max(1, seen), 4))
 
         # Greedy on the held-out training writers - the only signal that sees generalisation.
-        dev_cer = score(dev_texts, predict(model, proc, dev_files, device, beams=1))["cer"]
+        dev_cer = score(dev_texts, predict(model, proc, dev_files, device, beams=1, cache=True))[
+            "cer"
+        ]
         dev_curve.append(round(float(dev_cer), 4))
         marker = ""
         if dev_cer < best_cer:
@@ -295,8 +297,18 @@ def train(epochs: int = EPOCHS, batch: int = BATCH, checkpoint: Path = CHECKPOIN
     }
 
 
-def predict(model, proc, files, device, batch: int = 24, beams: int = BEAMS) -> list[str]:
-    """Beam-search transcripts for every crop, in the order given."""
+def predict(
+    model, proc, files, device, batch: int = 24, beams: int = BEAMS, cache: bool = False
+) -> list[str]:
+    """Beam-search transcripts for every crop, in the order given.
+
+    `cache` turns the decoder's KV cache on. **The checkpoint ships with `use_cache: false`**, so
+    the default path recomputes the whole prefix at every step - O(n^2) attention instead of
+    O(n) - and on `trocr-large` that made the per-epoch dev check cost several times the epoch it
+    was checking. It is not bit-identical (cached and uncached take different bf16 kernels, and 2
+    of 512 transcripts differed on the base model), so the headline `evaluate` deliberately stays
+    on the shipped path and only the in-training dev check opts in.
+    """
     import torch
 
     model.eval()
@@ -306,7 +318,10 @@ def predict(model, proc, files, device, batch: int = 24, beams: int = BEAMS) -> 
             chunk = files[start : start + batch]
             with torch.autocast("cuda", dtype=torch.bfloat16, enabled=device.type == "cuda"):
                 generated = model.generate(
-                    pixels(proc, chunk, device), max_length=MAX_LENGTH, num_beams=beams
+                    pixels(proc, chunk, device),
+                    max_length=MAX_LENGTH,
+                    num_beams=beams,
+                    use_cache=cache,
                 )
             out.extend(proc.batch_decode(generated, skip_special_tokens=True))
     return out

@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: dreamscript
+Version: 0.1.0
+Summary: Converting rough hand-drawn diagrams into executable, runnable code
+Author-email: Guru Bharadwaj <gururb20@gmail.com>
+Requires-Python: ==3.11.*
+Description-Content-Type: text/markdown
+Requires-Dist: easyocr>=1.7.2
+
+# DreamScript
+
+Converting Rough Hand-Drawn Diagrams into Executable, Runnable Code
+
+Photograph a messy hand-drawn diagram — flowchart, UI wireframe, state machine, ER diagram, or
+circuit — and DreamScript classifies the diagram type, detects its components despite bad
+handwriting and broken arrows, parses it into a semantic graph, and generates runnable code:
+Python, React, or SQL.
+
+The full phase-by-phase build plan lives in [plan.md](plan.md).
+
+**Author:** Guru Bharadwaj

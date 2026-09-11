@@ -1,0 +1,15 @@
+{
+  "criterion": "S2",
+  "target_map50": 0.8,
+  "protocol": "raw-prediction AP evaluation at IoU 0.5 on the held-out validation split",
+  "model": "YOLO detector selected by Phase 9.1",
+  "split": "val",
+  "pages": 308,
+  "predictions": 39548,
+  "map50": 0.921,
+  "hand_drawn_map50": 0.8907,
+  "hand_drawn_pages": 128,
+  "classes": 8,
+  "passes": true,
+  "artifact": "experiments\\detect\\report.json"
+}
