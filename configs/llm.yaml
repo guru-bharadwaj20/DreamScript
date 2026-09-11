@@ -1,0 +1,41 @@
+# Phase 12.2 - QLoRA fine-tuning. python -m src.llm.run --config configs/llm.yaml [key=value ...]
+defaults:
+  - base
+
+logging:
+  run_name: p12-qwen7b-lora16-s42
+
+paths:
+  experiments: experiments/llm/runs
+
+model:
+  id: Qwen/Qwen2.5-Coder-7B-Instruct
+  quantize: true            # 12.2.2: NF4, bf16 compute
+  vram_cap_gib: 20.0
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+data:
+  # Validation/test are hdbpmn + fa_bresler only (the scribed sources, 12.1.8).
+  sources: [hdbpmn, fa_bresler, didi, sketch2code, synthetic]
+  # Synthetic tokens as a multiple of real tokens; null keeps every synthetic pair.
+  synthetic_ratio: null
+  # Examples longer than this are dropped, never truncated (a cut target teaches a cut program).
+  max_example_tokens: 4096
+  val_sources: [hdbpmn, fa_bresler]
+
+train:
+  lr: 2.0e-4
+  epochs: 1.0
+  token_budget: null        # reduced-step sweep arms set this; every arm of a sweep shares it
+  bin_tokens: 2048          # 12.2.2's measured packing bin
+  tokens_per_step: 32768    # effective batch in tokens (gradient accumulation)
+  warmup_frac: 0.03
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  eval_every: 50
+  save_adapter: true

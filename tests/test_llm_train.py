@@ -105,3 +105,34 @@ def test_selected_loss_matches_the_full_logits_loss(tiny_model) -> None:
         ours, _ = train.selected_loss(tiny_model, row)
         ref = tiny_model(input_ids=row["input_ids"], labels=row["labels"]).loss
     assert float(ours) == pytest.approx(float(ref), rel=1e-5)
+
+
+def test_train_loop_runs_logs_and_lowers_loss(tiny_model, tmp_path) -> None:
+    """The whole loop on CPU: packing, accumulation, cosine LR, val loss, summary."""
+    import copy
+    import json
+
+    from peft import LoraConfig, get_peft_model
+
+    model = get_peft_model(
+        copy.deepcopy(tiny_model),
+        LoraConfig(r=4, lora_alpha=8, target_modules=["q_proj", "v_proj"], task_type="CAUSAL_LM"),
+    )
+    ex = [Example([1, 2, 3, i % 7 + 4], [10 + i % 5, 20, 30, 40]) for i in range(40)]
+    model.train()
+    summary = train.train(
+        model,
+        ex,
+        ex[:8],
+        run_dir=tmp_path,
+        lr=5e-2,
+        epochs=3.0,
+        max_len=32,
+        tokens_per_step=64,
+        eval_every=5,
+        log_every=1000,
+    )
+    lines = [json.loads(x) for x in (tmp_path / "train.jsonl").read_text().splitlines()]
+    assert lines[0]["step"] == 0 and summary["total_steps"] == lines[-1]["step"]
+    assert summary["best_val_loss"] < summary["val_loss_start"]
+    assert (tmp_path / "summary.json").is_file()

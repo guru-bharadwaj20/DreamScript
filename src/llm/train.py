@@ -246,7 +246,8 @@ def train(
     torch.manual_seed(seed)
     model.train()
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay, fused=True)
+    fused = all(p.is_cuda for p in params)
+    optimizer = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay, fused=fused)
 
     bins = pack(train_examples, max_len)
     stats = pack_stats(train_examples, bins, max_len)
@@ -276,7 +277,9 @@ def train(
         "lr": lr,
         "max_len": max_len,
     }
-    torch.cuda.reset_peak_memory_stats()
+    cuda = torch.cuda.is_available()
+    if cuda:
+        torch.cuda.reset_peak_memory_stats()
     began = time.perf_counter()
     seen_tokens = 0
     history = []
@@ -312,7 +315,9 @@ def train(
             "tokens": seen_tokens,
             "wall_s": round(time.perf_counter() - began, 1),
             "tokens_per_s": round(seen_tokens / (time.perf_counter() - began), 1),
-            "peak_allocated_gb": round(torch.cuda.max_memory_allocated() / 1e9, 3),
+            "peak_allocated_gb": (
+                round(torch.cuda.max_memory_allocated() / 1e9, 3) if cuda else None
+            ),
         }
         if (step + 1) % eval_every == 0 or step + 1 == total_steps:
             record["val_loss"] = round(evaluate_loss(model, val_rows), 5)
@@ -332,8 +337,8 @@ def train(
         val_loss_final=history[-1].get("val_loss"),
         best_val_loss=best[0],
         best_step=best[1],
-        peak_allocated_gb=round(torch.cuda.max_memory_allocated() / 1e9, 3),
-        peak_reserved_gb=round(torch.cuda.max_memory_reserved() / 1e9, 3),
+        peak_allocated_gb=round(torch.cuda.max_memory_allocated() / 1e9, 3) if cuda else None,
+        peak_reserved_gb=round(torch.cuda.max_memory_reserved() / 1e9, 3) if cuda else None,
     )
     (run_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary

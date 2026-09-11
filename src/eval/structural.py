@@ -1,817 +1,805 @@
-"""Phase 12.3.4 - structural fidelity: does the generated code's control flow match the IR?
+"""Phase 12.3.4 - structural fidelity: do the generated branches / states / tables match the IR?
 
-    python -m src.eval.structural            # corpus sweep + corruption-detection study
+    python -m src.eval.structural --study          # reference sweep + corruption detection
 
-A number called "structural fidelity" is undefined until somebody names the rule that decides
-which AST construct *corresponds to* which IR node or edge, exactly as `src.assemble.irdiff`
-argues for node F1: correspondence is a choice, and the choice moves the answer. This module
-names one rule, defends it, and measures what it detects on code whose damage is known.
+    from src.eval.structural import fidelity, hallucination
+    fidelity(record, code)       # {"structural": 0..1, sub-metrics..., "style": ...}
+    hallucination(record, code)  # {"dropped": [...], "invented": [...], rates}   (12.3.8 helper)
 
-## The rule: node-anchored, representation-disjunctive correspondence
+`record` is a 12.1.1 pair (only `diagram_type`, `language` and `ir_text` are read) and `code` is a
+candidate program - a reference target or a model output. **Everything expected is derived from
+`ir_text`, the text the model was shown**, never from the IR file's `attrs`, so the metric cannot
+reward a model for reproducing information it could not see.
 
-**Anchors.** Every IR node carries an anchor set - its `id`, and `src.ir.targets.slug()` of its
-text (falling back to its role). A code symbol *is* that node iff it equals one of its anchors.
-Nothing softer: no substring matching, no edit-distance nearest neighbour. A soft rule would
-make "process" match nine different boxes on one page, which is the false-positive mode 12.3.8
-measures directly.
+## The correspondence rule, per language
 
-**Where a symbol counts.** Only at a *definition or table site*: `def`/`class` names, assignment
-targets, and string constants used as keys of a dict literal. A name in a docstring or a comment
-is not a realisation of a node - the emitters write the node id into the module docstring, and a
-metric that counted that would score a program with no code at all a perfect 1.0. Docstrings are
-excised by node identity before any constant is read.
+A structure metric is undefined until the rule deciding which code construct *is* which IR
+element is named. Each rule below is the convention the 12.1.6 targets follow, because that is
+the convention a fine-tuned model is trained to reproduce; each is exact-match on 12.1.6's own
+identifier function (`targets._ident` / `_sql_ident`) - a fuzzy rule lets `process` match nine
+boxes on one page, which is the false-positive mode 12.3.8 has to count.
 
-**The disjunction, which is the whole design.** Correct code for a cyclic labelled graph comes in
-two shapes and a metric that assumes one scores the other zero:
+    flowchart -> Python (AST)
+        node_f1       distinct called names vs node anchors (`slug(text)`, `read_/write_` + slug
+                      for io); start/end/fork/join/event/container are comments or `return`, and
+                      are not anchors
+        branch_score  if/while tests that call something vs IR nodes with >= 2 distinct
+                      successors, scored min/max so over- and under-branching both lose
+        loop_score    `while` loops vs DFS back-edge headers (structured style only)
+        edge_f1       `state == "a"` ... `state = "b"` transitions vs IR edges (dispatch style
+                      only - the structured form has no explicit edges to compare)
+    state_machine -> Python class (AST of class-level literals)
+        state_f1, transition_f1 (src, symbol, dst), initial (0/1), accepting_f1
+    er_diagram -> SQL (executed on in-memory SQLite, schema read back with PRAGMAs)
+        table_f1, column_f1 (table.column from `attribute` nodes), relationship_f1 (unordered
+        table pairs: a foreign key, or two FKs from one junction table)
+    wireframe -> React (tag scan of the JSX)
+        widget_f1 (button / img / input multiset), text_f1 (label and button strings multiset)
+    circuit -> SPICE (card parse)
+        part_f1 (ref, value), connection_f1 (ref, +net, -net) when the IR has `wire` nets
 
-    structured   `if`/`elif` per outgoing edge, `while` per cycle, one `def` per node.
-    tabular      a `TRANSITIONS` dict literal holding the edges, one bounded driver loop.
+`structural` is the unweighted mean of the sub-metrics that are *defined* (`nan` otherwise - a
+graph with no branch point contributes no free 1.0). Code that does not parse scores 0.
 
-This repo's own reference targets (`src/ir/targets.py`, 1,477 pairs) are **tabular**. Measured on
-the 993 Python targets: the mean count of `ast.If` chains with arity >= 2 is **0.0** against a
-mean of 1.02 gateways per diagram, so a structured-only branch rule scores the ground truth
-**0.0** - not because the reference is wrong, but because the rule assumed a representation. So
-each sub-metric accepts *either* realisation and takes the better of the two, and `detect_style()`
-reports which one the code used, so no headline can be quoted without it.
+## What it cannot see, measured rather than assumed
 
-## The three sub-metrics
+Structural fidelity measures shape. `corruption_study` includes controls that change meaning
+without changing shape - swapping the `yes`/`no` branches of an `if`, or swapping the targets of
+two state transitions that share a symbol set - and reports how often the metric notices. It is a
+complement to 12.3.3's functional tests, not a substitute; see the 12.3.4 row for the numbers.
 
-    node_f1        realisation of nodes as definitions/table keys. Roles `container` and
-                   `unknown` are excluded from recall - the emitters deliberately never emit
-                   them (`src/ir/targets.py`), so counting them would measure a decision, not a
-                   failure.
-    branch_score   per gateway (out-degree >= 2, or role `decision`/`fork`), the arity the code
-                   actually expresses vs the out-degree drawn, as min/max so both an under- and
-                   an over-branching generator lose points. A gateway with no branch point at
-                   all scores 0.
-    loop_recall    cyclic components from `src.assemble.loops.loops()` - Tarjan, entries, and
-                   the `self_loop`/`simple_cycle`/`complex` classification - **reused, not
-                   reimplemented**, so this metric and 10.2.3 can never disagree about what a
-                   loop is. Structured code must show one `While`/`For` per reducible loop;
-                   tabular code must show at least one bounded driver loop when the IR has any
-                   cycle, because one driver walks every cycle in the graph and demanding n
-                   loops of it would be demanding a different program.
+## Replaced
 
-`structural_fidelity()` is the unweighted mean of the sub-metrics that are *defined* for the
-diagram - a graph with no gateway contributes no branch term rather than a free 1.0, and `nan`
-marks the undefined ones so a corpus mean skips them instead of averaging in a fiction.
-
-## What it measured - all 993 Python reference targets, each against its own IR
-
-    metric                  mean
-    parsed                 1.0000
-    style_tabular          1.0000
-    node_recall            1.0000
-    node_precision         0.9970
-    node_precision_raw     0.7005
-    node_f1                0.9983
-    branch_score           0.9922
-    gateway_recall         0.9922
-    loop_recall            1.0000
-    structural             0.9968
-
-`node_recall` is 1.0 because the emitter defines a function per node by construction - that is a
-self-consistency check, and it passing is the floor, not the achievement. The interesting number
-is the **0.2965 gap between raw and allowlisted precision**: `run`, `accepts`, `TRANSITIONS`,
-`STEPS`, `START`, `END` are real definitions corresponding to no node, and they are a large share
-of a small program's definitions. Both are reported. **The `SCAFFOLD` allowlist is tuned to this
-repo's emitters**, so on an unseen generator's style the raw number is the safe one and the
-allowlisted number is optimistic - the single largest known weakness in this module.
-
-## Detection rates on deliberately-corrupted code (`corruption_study`, 300 Python pairs)
-
-Each corruption is applied to a *correct* target and the metric is asked whether it noticed. A
-detection is the watched sub-metric falling below its value on the same clean pair.
-
-    corruption      what it does                                  applicable  detected  mean drop
-    drop_branch     removes one outgoing edge from the table          247       100.0%    0.1215
-    drop_node       deletes one node's def and its table row          300       100.0%    0.0876
-    invent_node     adds a def + table row for a node not in the IR   300       100.0%    0.0296
-    rename_table    renames the TRANSITIONS dict                      300       100.0%    0.3327
-    drop_loop       deletes the driver `for` loop                     161       100.0%    0.3333
-    shuffle_labels  permutes branch labels, structure untouched       112         0.0%    0.0000
-
-**The last row is the point.** `shuffle_labels` rewires which branch goes where without changing
-any count, and structural fidelity is **blind to it, by design**: it measures shape, not
-semantics. Anyone quoting 0.9968 as "the code is right" is quoting a number that cannot see a
-fully-miswired program. 12.3.3's functional correctness is the metric that catches that; this one
-is not a substitute for it and must never be reported as one.
-
-`drop_branch` is applicable to 247 of 300 because the other 53 diagrams have no node with two
-drawn outgoing arrows at all; `drop_loop` to 161 because the rest are acyclic and the emitter's
-driver loop is then the only loop, whose removal `loop_recall` correctly declines to judge
-(`nan`, not 0).
-
-## What was rejected
-
-**Tree-edit distance between the AST and the IR graph.** The natural-sounding metric, and it is
-undefined: an AST is an ordered tree, an IR is an unordered cyclic graph, and any embedding of
-one in the other is itself a correspondence rule - the same choice, hidden inside a distance so
-it can no longer be reported. Named sub-metrics beat one opaque number.
-
-**Fuzzy anchor matching** at 0.8 normalised similarity. Measured on the same 993 targets: node
-recall could not improve (already 1.0) and raw precision fell **0.7005 -> 0.6161**, because short
-slugs (`end`, `no`, `ok`, `yes`) fuzzy-match each other and each others' scaffolding. Exact
-anchors only.
-
-**Requiring one `While` per loop in tabular code.** Scored the correct reference 0.0 on every
-cyclic flowchart. Replaced by the style disjunction above.
-
-**Executing the code to observe control flow.** Answers a better question, and belongs to
-12.3.2/12.3.3; it also cannot score a program that does not run, which is exactly the population
-this metric most needs to be able to describe.
-
-**Model-output numbers do not exist yet.** 12.2.x has not produced a fine-tuned model, so every
-number above is over reference targets and over corruptions of them. That is what demonstrates
-the metric detects what it claims; it is not a claim about any model.
+The inherited draft scored the Phase 2.2.6 `src/ir/targets.py` references (tabular Python and
+HTML), which are not the 12.1.x training targets, had no SQL, React or SPICE arm beyond a regex,
+and its corruption table could not be reproduced against the 12.1 pairs; its numbers are not
+carried forward.
 """
 
 from __future__ import annotations
 
 import argparse
 import ast
+import builtins
+import contextlib
 import json
 import random
 import re
+import sqlite3
 import sys
 from collections import Counter
-from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
-from src.utils.config import ROOT
+from src.codegen import serialise
+from src.codegen.targets import _ident, _sql_ident
 
-TARGETS = ROOT / "data" / "processed" / "targets"
-INDEX = TARGETS / "index.json"
-RUNS = ROOT / "experiments" / "eval"
-OUT = RUNS / "structural.json"
-
-#: Roles the reference emitters deliberately never emit, so their absence is a decision rather
-#: than a miss (the `container`/`unknown` skip in `src/ir/targets.py`).
-NON_EMITTED_ROLES = frozenset({"container", "unknown"})
-
-#: Roles that are a branch point regardless of out-degree. Out-degree >= 2 also qualifies, so
-#: this only adds decisions drawn with a single arrow actually reaching them.
-GATEWAY_ROLES = frozenset({"decision", "fork"})
-
-#: Names a generated program needs that correspond to no node. Precision is reported both with
-#: and without this allowlist because the list is tuned to *this* repo's emitters: on a
-#: different generator's style the raw number is the honest one.
-SCAFFOLD = frozenset(
-    {
-        "TRANSITIONS",
-        "STEPS",
-        "START",
-        "END",
-        "ACCEPTING",
-        "STATES",
-        "ALPHABET",
-        "run",
-        "main",
-        "accepts",
-        "choose",
-        "state",
-        "current",
-        "step",
-        "options",
-        "word",
-        "symbol",
-        "nxt",
-        "max_steps",
-        "annotations",
-    }
-)
-
-#: Roles that become a table in the SQL branch of this row ("do generated tables match the IR?").
-ENTITY_ROLES = frozenset({"entity", "component"})
-
-_SLUG_KEYWORDS = frozenset(
-    "False None True and as assert async await break class continue def del elif else except "
-    "finally for from global if import in is lambda nonlocal not or pass raise return try "
-    "while with yield".split()
-)
+NAN = float("nan")
+_COMMENT_ROLES = frozenset({"start", "end", "fork", "join", "event", "container"})
+_BUILTINS = frozenset(dir(builtins))
 
 
-# ------------------------------------------------------------------------------------------
-# Anchors: the correspondence rule's left-hand side
-# ------------------------------------------------------------------------------------------
+def _f1(expected, observed) -> float:
+    """F1 over multisets (Counters) or sets. Both empty -> nan (undefined, not perfect)."""
+    exp = expected if isinstance(expected, Counter) else Counter(set(expected))
+    obs = observed if isinstance(observed, Counter) else Counter(set(observed))
+    if not exp and not obs:
+        return NAN
+    hit = sum((exp & obs).values())
+    if hit == 0:
+        return 0.0
+    p, r = hit / sum(obs.values()), hit / sum(exp.values())
+    return 2 * p * r / (p + r)
 
 
-def slug(text: str, fallback: str = "step") -> str:
-    """A readable Python identifier from arbitrary handwriting.
-
-    Deliberately a copy of `src.ir.targets.slug`, used only when that module is not importable,
-    so this metric scores code from *any* generator rather than depending on the one that
-    happens to live in this repo.
-    """
-    cleaned = re.sub(r"[^0-9a-zA-Z]+", "_", (text or "").strip().lower()).strip("_")
-    cleaned = re.sub(r"_+", "_", cleaned)[:40].strip("_")
-    if not cleaned or cleaned[0].isdigit():
-        cleaned = f"{fallback}_{cleaned}" if cleaned else fallback
-    if cleaned in _SLUG_KEYWORDS:
-        cleaned += "_"
-    return cleaned
+def _ratio(expected: int, observed: int) -> float:
+    if expected == 0 and observed == 0:
+        return NAN
+    return min(expected, observed) / max(expected, observed)
 
 
-def _slug() -> Any:
-    try:  # the repo's own slug when present; src/codegen is another agent's, never a blocker.
-        from src.ir.targets import slug as repo_slug
-
-        return repo_slug
-    except Exception:  # pragma: no cover - only on a partially-checked-out tree
-        return slug
+def _mean(values) -> float:
+    live = [v for v in values if v == v]
+    return sum(live) / len(live) if live else NAN
 
 
-def anchors(node: dict) -> set[str]:
-    """The strings that, appearing at a definition site, mean "this node".
-
-    The node id, and the slug of its text (or of its role, which is what the emitters name an
-    unlabelled box). Exact match only - see the module docstring on why fuzzy was rejected.
-    """
-    fn = _slug()
-    role = str(node.get("semantic_role") or "unknown")
-    out = {str(node["id"])}
-    text = (node.get("text") or "").strip()
-    out.add(fn(text or role, role.replace("-", "_")))
-    return {a for a in out if a}
+def _ir(record: dict) -> dict:
+    return serialise.parse(record["ir_text"])
 
 
-def node_anchor_map(diagram: dict) -> dict[str, set[str]]:
-    """`{node id: anchors}` for every node, including the non-emitted roles."""
-    return {str(n["id"]): anchors(n) for n in diagram.get("nodes", [])}
+# ------------------------------------------------------------------------------------------------
+# flowchart
+# ------------------------------------------------------------------------------------------------
 
 
-# ------------------------------------------------------------------------------------------
-# Code symbols: the correspondence rule's right-hand side
-# ------------------------------------------------------------------------------------------
+def _flow_anchor(node: dict) -> set[str]:
+    text = node.get("text") or ""
+    role = node.get("semantic_role") or ""
+    if role in _COMMENT_ROLES:
+        return set()
+    anchors = {_ident(text, "step")}
+    if role == "decision":
+        # a decision with one successor is emitted as a statement, so both spellings count
+        anchors.add(_ident(text.rstrip("?"), "condition"))
+    if role == "io":
+        slug = _ident(text, "value")
+        anchors |= {f"read_{slug}", f"write_{slug}"}
+        verb, _, rest = text.partition(" ")
+        if verb in ("read", "write") and rest:
+            anchors.add(f"{verb}_{_ident(rest, 'value')}")
+    return anchors
 
 
-@dataclass
-class CodeSymbols:
-    """Everything the AST offers as a possible realisation of a node, kept by site."""
-
-    definitions: set[str] = field(default_factory=set)
-    table_keys: set[str] = field(default_factory=set)
-    mentions: set[str] = field(default_factory=set)
-    #: `[(names mentioned anywhere in an if/elif chain's tests, branch count)]`.
-    if_chains: list[tuple[set[str], int]] = field(default_factory=list)
-    #: `{dict-literal string key: arity of its value}` - a tabular branch point.
-    dict_arity: dict[str, int] = field(default_factory=dict)
-    loop_count: int = 0
-    parse_error: str = ""
-
-    @property
-    def definition_sites(self) -> set[str]:
-        return self.definitions | self.table_keys
-
-
-def _docstring_nodes(tree: ast.AST) -> set[int]:
-    """`id()` of every string constant that is a docstring, so it can be excluded by identity."""
-    out: set[int] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Module | ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
-            body = getattr(node, "body", [])
-            if (
-                body
-                and isinstance(body[0], ast.Expr)
-                and isinstance(body[0].value, ast.Constant)
-                and isinstance(body[0].value.value, str)
-            ):
-                out.add(id(body[0].value))
+def _successors(ir: dict) -> dict[str, set[str]]:
+    out: dict[str, set[str]] = {n["id"]: set() for n in ir["nodes"]}
+    for edge in ir["edges"]:
+        if edge["src"] in out and edge["dst"] in out:
+            out[edge["src"]].add(edge["dst"])
     return out
 
 
-def _chain_arity(node: ast.If) -> tuple[set[str], int]:
-    """Branch count of a whole if/elif/else chain, and every name its tests mention."""
-    names: set[str] = set()
-    branches = 0
-    current: ast.stmt | None = node
-    while isinstance(current, ast.If):
-        branches += 1
-        for sub in ast.walk(current.test):
-            if isinstance(sub, ast.Name):
-                names.add(sub.id)
-            elif isinstance(sub, ast.Attribute):
-                names.add(sub.attr)
-            elif isinstance(sub, ast.Constant) and isinstance(sub.value, str):
-                names.add(sub.value)
-        if len(current.orelse) == 1 and isinstance(current.orelse[0], ast.If):
-            current = current.orelse[0]
-        else:
-            if current.orelse:
-                branches += 1
-            current = None
-    return names, branches
+def _loop_headers(ir: dict) -> set[str]:
+    from src.parse.sequences import traversal
+
+    doc = {"nodes": [dict(n, bbox=None) for n in ir["nodes"]], "edges": ir["edges"]}
+    return {dst for _src, dst in traversal(doc)[1]}
 
 
-def code_symbols(code: str, language: str = "python") -> CodeSymbols:
-    """Parse `code` and collect every candidate realisation site.
-
-    Code that does not parse yields an empty `CodeSymbols` with `parse_error` set, which scores
-    0 everywhere - correctly: 12.3.1 already reports syntactic validity, and a program that does
-    not parse has no structure to be faithful with.
-    """
-    sym = CodeSymbols()
-    if language != "python":
-        sym.parse_error = f"no AST available for language {language!r}"
-        return sym
+def _flowchart(record: dict, code: str) -> dict:
+    ir = _ir(record)
     try:
         tree = ast.parse(code)
     except SyntaxError as exc:
-        sym.parse_error = f"{type(exc).__name__}: {exc}"
-        return sym
-
-    docstrings = _docstring_nodes(tree)
-    nested_if: set[int] = set()
+        return {"parsed": 0.0, "detail": f"syntax: {exc.msg}"}
+    anchors = [a for n in ir["nodes"] if (a := _flow_anchor(n))]
+    calls, branch_tests, loops, transitions = set(), 0, 0, set()
+    dispatch = False
     for node in ast.walk(tree):
         if (
-            isinstance(node, ast.If)
-            and len(node.orelse) == 1
-            and isinstance(node.orelse[0], ast.If)
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id not in _BUILTINS
         ):
-            nested_if.add(id(node.orelse[0]))
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
-            sym.definitions.add(node.name)
-        elif isinstance(node, ast.Assign):
-            for tgt in node.targets:
-                for sub in ast.walk(tgt):
-                    if isinstance(sub, ast.Name):
-                        sym.definitions.add(sub.id)
-        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-            sym.definitions.add(node.target.id)
-        elif isinstance(node, ast.Dict):
-            for key, value in zip(node.keys, node.values, strict=False):
-                if isinstance(key, ast.Constant) and isinstance(key.value, str):
-                    sym.table_keys.add(key.value)
-                    if isinstance(value, ast.List | ast.Tuple | ast.Set):
-                        sym.dict_arity[key.value] = len(value.elts)
-                    elif isinstance(value, ast.Dict):
-                        sym.dict_arity[key.value] = sum(
-                            len(v.elts) if isinstance(v, ast.List | ast.Tuple | ast.Set) else 1
-                            for v in value.values
-                        )
-        elif isinstance(node, ast.While | ast.For | ast.AsyncFor):
-            sym.loop_count += 1
-        elif isinstance(node, ast.If) and id(node) not in nested_if:
-            names, branches = _chain_arity(node)
-            if branches >= 2:
-                sym.if_chains.append((names, branches))
-
-        if isinstance(node, ast.Name):
-            sym.mentions.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            sym.mentions.add(node.attr)
-        elif isinstance(node, ast.arg):
-            sym.mentions.add(node.arg)
-        elif (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) not in docstrings
-        ):
-            sym.mentions.add(node.value)
-    sym.mentions |= sym.definitions
-    return sym
-
-
-def detect_style(diagram: dict, code: str, language: str = "python") -> str:
-    """`"structured"`, `"tabular"` or `"none"` - which representation the code chose.
-
-    Decided by which site realises more of the graph's nodes, not by looking for a magic variable
-    name, so a generator that calls its table something else is still recognised.
-    """
-    sym = code_symbols(code, language)
-    if sym.parse_error:
-        return "none"
-    amap = node_anchor_map(diagram)
-    by_def = sum(1 for a in amap.values() if a & sym.definitions)
-    by_key = sum(1 for a in amap.values() if a & sym.table_keys)
-    if by_key > by_def:
-        return "tabular"
-    if by_def or by_key:
-        return "structured"
-    return "none"
-
-
-# ------------------------------------------------------------------------------------------
-# The sub-metrics
-# ------------------------------------------------------------------------------------------
-
-
-def _expected_nodes(diagram: dict) -> list[dict]:
-    return [
-        n
-        for n in diagram.get("nodes", [])
-        if str(n.get("semantic_role") or "unknown") not in NON_EMITTED_ROLES
-    ]
-
-
-def _out_degree(diagram: dict) -> Counter:
-    deg: Counter = Counter()
-    for edge in diagram.get("edges", []):
-        if edge.get("src") is not None and edge.get("dst") is not None:
-            deg[str(edge["src"])] += 1
-    return deg
-
-
-def gateways(diagram: dict) -> list[tuple[str, int]]:
-    """`[(node id, out-degree)]` for every branch point: out-degree >= 2, or a branching role."""
-    deg = _out_degree(diagram)
-    out = []
-    for node in _expected_nodes(diagram):
-        nid = str(node["id"])
-        role = str(node.get("semantic_role") or "unknown")
-        degree = deg.get(nid, 0)
-        if degree >= 2 or (role in GATEWAY_ROLES and degree >= 1):
-            out.append((nid, degree))
-    return out
-
-
-def ir_loops(diagram: dict) -> tuple[int, int]:
-    """`(reducible loops, total loops)` from `src.assemble.loops` - Tarjan, reused not rewritten.
-
-    Imported lazily and defensively: a tree without the assemble package still scores the other
-    two sub-metrics, with `loop_recall` reported as undefined rather than as zero.
-    """
-    try:
-        from src.assemble.loops import loops as find_loops
-        from src.ir.model import Diagram
-    except Exception:  # pragma: no cover - partially-checked-out tree
-        return (0, 0)
-    try:
-        found = find_loops(Diagram.from_dict(diagram))
-    except Exception:
-        return (0, 0)
-    return (sum(1 for lp in found if lp.reducible), len(found))
-
-
-def node_correspondence(diagram: dict, sym: CodeSymbols) -> dict[str, float]:
-    """Recall/precision/F1 of IR nodes realised as definitions or table keys."""
-    expected = _expected_nodes(diagram)
-    sites = sym.definition_sites
-    hit = [n for n in expected if anchors(n) & sites]
-    recall = len(hit) / len(expected) if expected else 1.0
-
-    amap = node_anchor_map(diagram)
-    every_anchor: set[str] = set().union(*amap.values()) if amap else set()
-    attributable = {s for s in sites if s in every_anchor}
-    raw_denominator = len(sites)
-    allow_denominator = len({s for s in sites if s not in SCAFFOLD})
-    precision_raw = len(attributable) / raw_denominator if raw_denominator else 1.0
-    precision = len(attributable) / allow_denominator if allow_denominator else 1.0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
-    return {
-        "node_recall": recall,
-        "node_precision": precision,
-        "node_precision_raw": precision_raw,
-        "node_f1": f1,
-        "nodes_expected": float(len(expected)),
-        "nodes_realised": float(len(hit)),
-    }
-
-
-def branch_correspondence(diagram: dict, sym: CodeSymbols) -> dict[str, float]:
-    """Per gateway: the arity the code expresses vs the out-degree drawn.
-
-    Either representation counts, and the better of the two wins:
-      structured - an `if`/`elif` chain whose tests mention one of the gateway's anchors;
-      tabular    - a dict-literal entry keyed by one of its anchors, arity = len(value).
-    Scored `min/max` so an over-branching generator loses as much as an under-branching one; a
-    gateway the code never branches on at all scores 0.
-    """
-    gws = gateways(diagram)
-    if not gws:
-        return {"branch_score": float("nan"), "gateway_recall": float("nan"), "gateways": 0.0}
-    amap = node_anchor_map(diagram)
-    scores: list[float] = []
-    found = 0
-    for nid, degree in gws:
-        anc = amap.get(nid, set())
-        arity = 0
-        for names, branches in sym.if_chains:
-            if names & anc:
-                arity = max(arity, branches)
-        for key, value_arity in sym.dict_arity.items():
-            if key in anc:
-                arity = max(arity, value_arity)
-        if arity:
-            found += 1
-        want = max(degree, 1)
-        scores.append(min(arity, want) / max(arity, want) if arity else 0.0)
-    return {
-        "branch_score": sum(scores) / len(scores),
-        "gateway_recall": found / len(gws),
-        "gateways": float(len(gws)),
-    }
-
-
-def loop_correspondence(diagram: dict, sym: CodeSymbols, style: str) -> dict[str, float]:
-    """Cycles the IR marks vs loops the code writes, judged per representation."""
-    reducible, total = ir_loops(diagram)
-    if total == 0:
-        return {
-            "loop_recall": float("nan"),
-            "loops_expected": 0.0,
-            "loops_reducible": 0.0,
-            "loops_in_code": float(sym.loop_count),
-        }
-    if style == "tabular":
-        # One driver walks every cycle in the table; demanding n loops demands another program.
-        recall = 1.0 if sym.loop_count >= 1 else 0.0
+            calls.add(node.func.id)
+        if isinstance(node, ast.If | ast.While):
+            if any(isinstance(sub, ast.Call) for sub in ast.walk(node.test)):
+                branch_tests += 1
+            if isinstance(node, ast.While) and not (
+                isinstance(node.test, ast.Constant) and node.test.value is True and _is_driver(node)
+            ):
+                loops += 1
+            src = _state_compare(node.test)
+            if src is not None:
+                dispatch = True
+                for sub in ast.walk(ast.Module(body=node.body, type_ignores=[])):
+                    dst = _state_assign(sub)
+                    if dst is not None:
+                        transitions.add((src, dst))
+    all_anchors = set().union(*anchors) if anchors else set()
+    realised = [a for a in anchors if a & calls]
+    precision_hits = {c for c in calls if c in all_anchors}
+    recall = len(realised) / len(anchors) if anchors else NAN
+    precision = len(precision_hits) / len(calls) if calls else NAN
+    if recall != recall and precision != precision:
+        node_f1 = NAN
+    elif not recall or not precision or recall != recall or precision != precision:
+        node_f1 = 0.0
     else:
-        want = max(reducible, 1)
-        recall = min(sym.loop_count, want) / want
-    return {
-        "loop_recall": recall,
-        "loops_expected": float(total),
-        "loops_reducible": float(reducible),
-        "loops_in_code": float(sym.loop_count),
+        node_f1 = 2 * recall * precision / (recall + precision)
+    succ = _successors(ir)
+    gateways = sum(1 for targets in succ.values() if len(targets) >= 2)
+    edges = {(e["src"], e["dst"]) for e in ir["edges"]}
+    out = {
+        "parsed": 1.0,
+        "style": "dispatch" if dispatch else "structured",
+        "node_f1": node_f1,
+        "branch_score": _ratio(gateways, branch_tests),
+        "loop_score": NAN if dispatch else _ratio(len(_loop_headers(ir)), loops),
+        "edge_f1": _f1(edges, transitions) if dispatch else NAN,
     }
-
-
-def structural_fidelity(diagram: dict, code: str, language: str = "python") -> dict[str, float]:
-    """The headline metric plus every component that produced it.
-
-    `structural` is the unweighted mean of the sub-metrics *defined* for this diagram: a graph
-    with no gateway contributes no branch term rather than a free 1.0. `nan` marks an undefined
-    component so a corpus mean can skip it instead of averaging in a fiction.
-    """
-    sym = code_symbols(code, language)
-    style = detect_style(diagram, code, language)
-    out: dict[str, float] = {"parsed": 0.0 if sym.parse_error else 1.0}
-    out["style_tabular"] = 1.0 if style == "tabular" else 0.0
-    out.update(node_correspondence(diagram, sym))
-    out.update(branch_correspondence(diagram, sym))
-    out.update(loop_correspondence(diagram, sym, style))
-    live = [p for p in (out["node_f1"], out["branch_score"], out["loop_recall"]) if p == p]
-    out["structural"] = sum(live) / len(live) if live else 0.0
     return out
 
 
-def structural_detail(diagram: dict, code: str, language: str = "python") -> dict[str, Any]:
-    """`structural_fidelity` plus the strings behind it - which nodes missed, which invented."""
-    sym = code_symbols(code, language)
-    amap = node_anchor_map(diagram)
-    sites = sym.definition_sites
-    every: set[str] = set().union(*amap.values()) if amap else set()
+def _is_driver(node: ast.While) -> bool:
+    return any(_state_compare(sub.test) is not None for sub in node.body if isinstance(sub, ast.If))
+
+
+def _state_compare(test: ast.AST) -> str | None:
+    if (
+        isinstance(test, ast.Compare)
+        and isinstance(test.left, ast.Name)
+        and test.left.id == "state"
+        and len(test.comparators) == 1
+        and isinstance(test.comparators[0], ast.Constant)
+        and isinstance(test.comparators[0].value, str)
+    ):
+        return test.comparators[0].value
+    return None
+
+
+def _state_assign(node: ast.AST) -> str | None:
+    if (
+        isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id == "state"
+        and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    ):
+        return node.value.value
+    return None
+
+
+# ------------------------------------------------------------------------------------------------
+# state machine
+# ------------------------------------------------------------------------------------------------
+
+
+def _state_names(ir: dict) -> dict[str, str]:
+    names, taken = {}, set()
+    for node in ir["nodes"]:
+        name = _ident(node.get("text") or node["id"], "q")
+        while name in taken:
+            name = f"{name}_b"
+        taken.add(name)
+        names[node["id"]] = name
+    return names
+
+
+def _literal(node: ast.AST) -> Any:
+    try:
+        return ast.literal_eval(node)
+    except (ValueError, SyntaxError, TypeError):
+        return None
+
+
+def _state_machine(record: dict, code: str) -> dict:
+    ir = _ir(record)
+    try:
+        tree = ast.parse(code)
+    except SyntaxError as exc:
+        return {"parsed": 0.0, "detail": f"syntax: {exc.msg}"}
+    names = _state_names(ir)
+    want_states = set(names.values())
+    want_trans = {
+        (names[e["src"]], _ident(e["label"] or "epsilon", "sym"), names[e["dst"]])
+        for e in ir["edges"]
+        if e["src"] in names and e["dst"] in names
+    }
+    want_initial = {names[n["id"]] for n in ir["nodes"] if n["semantic_role"] == "initial-state"}
+    want_accept = {names[n["id"]] for n in ir["nodes"] if n["semantic_role"] == "final-state"}
+
+    values: dict[str, Any] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                values[target.id] = _literal(node.value)
+            if isinstance(node.value, ast.Call) and getattr(node.value.func, "id", "") == "set":
+                values[target.id] = set()
+    states = set(values.get("STATES") or [])
+    got_trans = set()
+    table = values.get("TABLE")
+    if isinstance(table, dict):  # the table `step` executes is the behaviour; prefer it
+        for src, row in table.items():
+            if isinstance(row, dict):
+                got_trans |= {(src, sym, dst) for sym, dst in row.items()}
+    else:
+        for item in values.get("TRANSITIONS") or []:
+            if isinstance(item, dict) and {"trigger", "source", "dest"} <= set(item):
+                got_trans.add((item["source"], item["trigger"], item["dest"]))
+    initial = values.get("INITIAL")
+    accepting = values.get("ACCEPTING") or set()
     return {
-        "scores": structural_fidelity(diagram, code, language),
-        "style": detect_style(diagram, code, language),
-        "parse_error": sym.parse_error,
-        "missing_nodes": sorted(
-            str(n["id"]) for n in _expected_nodes(diagram) if not anchors(n) & sites
+        "parsed": 1.0,
+        "style": "class",
+        "state_f1": _f1(want_states, states),
+        "transition_f1": _f1(want_trans, got_trans),
+        "initial": NAN if not want_initial else float(initial in want_initial),
+        "accepting_f1": _f1(
+            want_accept, set(accepting) if isinstance(accepting, set | list) else set()
         ),
-        "unattributable_definitions": sorted(
-            s for s in sites if s not in every and s not in SCAFFOLD
-        ),
-        "gateways": [nid for nid, _ in gateways(diagram)],
     }
 
 
-# ------------------------------------------------------------------------------------------
-# The SQL branch: "do generated tables match the IR?"
-# ------------------------------------------------------------------------------------------
-
-_CREATE_TABLE = re.compile(r"create\s+table\s+(?:if\s+not\s+exists\s+)?[`\"\[]?(\w+)", re.I)
-_REFERENCES = re.compile(r"references\s+[`\"\[]?(\w+)", re.I)
+# ------------------------------------------------------------------------------------------------
+# ER -> SQL
+# ------------------------------------------------------------------------------------------------
 
 
-def sql_table_fidelity(diagram: dict, sql: str) -> dict[str, float]:
-    """Tables and foreign keys in DDL vs entities and relationships in the IR.
+def _er_expected(ir: dict) -> tuple[set, set, set]:
+    nodes = {n["id"]: n for n in ir["nodes"]}
+    entities = [n for n in ir["nodes"] if n["semantic_role"] == "entity"]
+    table_of, used = {}, set()
+    for node in entities:
+        name = _sql_ident(node["text"] or node["id"], "entity")
+        while name in used:
+            name = f"{name}_x"
+        used.add(name)
+        table_of[node["id"]] = name
+    columns = set()
+    for edge in ir["edges"]:
+        src, dst = nodes.get(edge["src"]), nodes.get(edge["dst"])
+        if src and dst and edge["src"] in table_of and dst["semantic_role"] == "attribute":
+            columns.add((table_of[edge["src"]], _sql_ident(dst["text"].split(":")[0], "col")))
+    relations = set()
+    for node in ir["nodes"]:
+        if node["semantic_role"] != "relationship":
+            continue
+        left = [e["src"] for e in ir["edges"] if e["dst"] == node["id"] and e["src"] in table_of]
+        right = [e["dst"] for e in ir["edges"] if e["src"] == node["id"] and e["dst"] in table_of]
+        if left and right:
+            relations.add(frozenset((table_of[left[0]], table_of[right[0]])))
+    return set(table_of.values()), columns, relations
 
-    **Regex, not a parser.** There is no SQL AST in this environment and adding a dependency for
-    a two-pattern job was rejected; the consequence is that a `CREATE TABLE` inside a string
-    literal or a block comment counts, and a quoted identifier containing a space does not. Both
-    are honest limitations of a line-level rule rather than accidents. No ER corpus has reached
-    target-generation yet, so this arm is **untested against real DDL** - unlike the Python arm,
-    it carries no measured numbers.
-    """
-    fn = _slug()
-    entities = [
-        n
-        for n in diagram.get("nodes", [])
-        if str(n.get("semantic_role") or "unknown") in ENTITY_ROLES
-    ]
-    want = {fn(n.get("text") or "", "table").lower() for n in entities}
-    got = {m.lower() for m in _CREATE_TABLE.findall(sql)}
-    fks = {m.lower() for m in _REFERENCES.findall(sql)}
-    edges = sum(
-        1 for e in diagram.get("edges", []) if e.get("src") is not None and e.get("dst") is not None
+
+def _er(record: dict, code: str) -> dict:
+    from src.eval.sql import split_statements
+
+    ir = _ir(record)
+    con = sqlite3.connect(":memory:")
+    try:
+        for statement in split_statements(code):
+            try:
+                con.execute(statement)
+            except sqlite3.Error:
+                continue
+        tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if not tables:
+            return {"parsed": 0.0, "detail": "no table was created"}
+        columns, fks, relations = set(), {}, set()
+        for table in tables:
+            for row in con.execute(f'PRAGMA table_info("{table}")'):
+                columns.add((table, row[1]))
+            fks[table] = [row[2] for row in con.execute(f'PRAGMA foreign_key_list("{table}")')]
+        for table, parents in fks.items():
+            pk = [r[1] for r in con.execute(f'PRAGMA table_info("{table}")') if r[5]]
+            if len(parents) >= 2 and len(pk) >= 2:
+                relations.add(frozenset(parents[:2]))
+            else:
+                relations |= {frozenset((table, p)) for p in parents}
+    finally:
+        con.close()
+    want_tables, want_columns, want_relations = _er_expected(ir)
+    junctions = {t for t, parents in fks.items() if len(parents) >= 2}
+    entity_tables = tables - (junctions - want_tables)
+    columns = {c for c in columns if c[0] in entity_tables and not c[1].endswith("_id")}
+    columns = {c for c in columns if "_fk_" not in c[1]}
+    return {
+        "parsed": 1.0,
+        "style": "ddl",
+        "table_f1": _f1(want_tables, entity_tables),
+        "column_f1": _f1(want_columns, columns),
+        "relationship_f1": _f1(want_relations, relations),
+    }
+
+
+# ------------------------------------------------------------------------------------------------
+# wireframe -> React
+# ------------------------------------------------------------------------------------------------
+
+_WIDGET_OF_ROLE = {"ui-button": "button", "ui-image": "img", "ui-input": "input"}
+_TAG = re.compile(r"<\s*([A-Za-z][\w.]*)")
+_STRING_CHILD = re.compile(r'\{\s*"((?:[^"\\]|\\.)*)"\s*\}')
+
+
+def _wireframe(record: dict, code: str) -> dict:
+    ir = _ir(record)
+    from src.codegen.quality import _balanced_brackets, _mask_literals
+
+    if not _balanced_brackets(_mask_literals(code))[0]:
+        return {"parsed": 0.0, "detail": "unbalanced brackets"}
+    want_widgets = Counter(
+        _WIDGET_OF_ROLE[n["semantic_role"]]
+        for n in ir["nodes"]
+        if n["semantic_role"] in _WIDGET_OF_ROLE
     )
+    want_text = Counter(
+        n["text"]
+        for n in ir["nodes"]
+        if n["semantic_role"] in ("ui-label", "ui-button") and n["text"]
+    )
+    tags = Counter(t.lower() for t in _TAG.findall(_mask_literals(code)))
+    got_widgets = Counter({k: tags[k] for k in ("button", "img", "input") if tags[k]})
+    got_text = Counter()
+    for match in _STRING_CHILD.finditer(code):
+        try:
+            got_text[json.loads(f'"{match.group(1)}"')] += 1
+        except json.JSONDecodeError:
+            continue
     return {
-        "table_recall": len(want & got) / len(want) if want else float("nan"),
-        "table_precision": len(want & got) / len(got) if got else float("nan"),
-        "tables_expected": float(len(want)),
-        "tables_found": float(len(got)),
-        "fk_targets_resolved": len(fks & got) / len(fks) if fks else float("nan"),
-        "fk_count": float(len(fks)),
-        "edges_expected": float(edges),
+        "parsed": 1.0,
+        "style": "jsx",
+        "widget_f1": _f1(want_widgets, got_widgets),
+        "text_f1": _f1(want_text, got_text),
     }
 
 
-# ------------------------------------------------------------------------------------------
-# Corruptions: code whose damage we know, so the metric can be asked whether it noticed
-# ------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------
+# circuit -> SPICE
+# ------------------------------------------------------------------------------------------------
 
 
-def corrupt(code: str, kind: str, rng: random.Random) -> str | None:
-    """Damage `code` in one named way, or return None when it offers no such site.
-
-    These are the ground truth for "does the metric detect what it claims": each corruption
-    changes exactly one structural fact, and a metric that does not move on it is blind to that
-    fact - which `shuffle_labels` demonstrates, by design.
-    """
-    lines = code.splitlines()
-    if kind == "drop_node":
-        idx = [i for i, ln in enumerate(lines) if ln.startswith("def ") and "(state" in ln]
-        idx = idx or [i for i, ln in enumerate(lines) if ln.startswith("def ")]
-        if not idx:
-            return None
-        start = rng.choice(idx)
-        end = start
-        while end + 1 < len(lines) and (
-            not lines[end + 1] or lines[end + 1].startswith((" ", ")"))
-        ):
-            end += 1
-        name = lines[start][4:].split("(")[0]
-        kept = lines[:start] + lines[end + 1 :]
-        return "\n".join(ln for ln in kept if f": {name}," not in ln) + "\n"
-    if kind == "drop_branch":
-        idx = [i for i, ln in enumerate(lines) if ln.strip().startswith("'") and "), (" in ln]
-        if not idx:
-            return None
-        i = rng.choice(idx)
-        lines[i] = lines[i][: lines[i].rindex("), (")] + ")],"
-        return "\n".join(lines) + "\n"
-    if kind == "invent_node":
-        anchor = next((i for i, ln in enumerate(lines) if ln.startswith("TRANSITIONS")), None)
-        if anchor is None:
-            return None
-        block = [
-            "def phantom_step(state: dict) -> dict:",
-            "    'process: phantom'",
-            "    return state",
-            "",
-            "",
-        ]
-        lines = lines[:anchor] + block + lines[anchor:]
-        for i, ln in enumerate(lines):
-            if ln.startswith("STEPS = {"):
-                lines.insert(i + 1, "    'phantom_node': phantom_step,")
-                break
-        else:
-            return None
-        return "\n".join(lines) + "\n"
-    if kind == "rename_table":
-        if "TRANSITIONS" not in code:
-            return None
-        return code.replace("TRANSITIONS", "EDGE_MAP")
-    if kind == "drop_loop":
-        idx = [i for i, ln in enumerate(lines) if ln.strip().startswith(("for ", "while "))]
-        if not idx:
-            return None
-        i = rng.choice(idx)
-        indent = len(lines[i]) - len(lines[i].lstrip())
-        end = i
-        while end + 1 < len(lines) and (
-            not lines[end + 1].strip()
-            or len(lines[end + 1]) - len(lines[end + 1].lstrip()) > indent
-        ):
-            end += 1
-        return "\n".join(lines[:i] + lines[end + 1 :]) + "\n"
-    if kind == "shuffle_labels":
-        labels = re.findall(r"\('([^']*)', '", code)
-        if len(set(labels)) < 2:
-            return None
-        pool = labels[:]
-        rng.shuffle(pool)
-        it = iter(pool)
-        return re.sub(r"\('([^']*)', '", lambda _m: f"('{next(it)}', '", code)
-    raise ValueError(f"unknown corruption {kind!r}")
+def _circuit(record: dict, code: str) -> dict:
+    ir = _ir(record)
+    nodes = {n["id"]: n for n in ir["nodes"]}
+    parts, connections = Counter(), set()
+    nets: dict[str, dict[str, str]] = {}
+    for edge in ir["edges"]:
+        dst = nodes.get(edge["dst"])
+        if dst and dst["semantic_role"] == "wire" and edge["label"] in ("+", "-"):
+            nets.setdefault(edge["src"], {})[edge["label"]] = dst["text"]
+    for node in ir["nodes"]:
+        if node["semantic_role"] == "wire":
+            continue
+        words = (node["text"] or "").split()
+        if not words:
+            continue
+        ref = words[0].upper()
+        value = words[1] if len(words) > 1 else ""
+        parts[(ref, value)] += 1
+        if node["id"] in nets and len(nets[node["id"]]) == 2:
+            connections.add((ref, nets[node["id"]]["+"], nets[node["id"]]["-"]))
+    got_parts, got_conn = Counter(), set()
+    cards = 0
+    for line in code.splitlines():
+        tokens = line.split()
+        if not tokens or tokens[0][0] in "*." or not tokens[0][0].isalpha():
+            continue
+        cards += 1
+        ref = tokens[0].upper()
+        rest = [t for t in tokens[3:] if t.upper() != "DC"]
+        got_parts[(ref, rest[0] if rest else "")] += 1
+        if len(tokens) >= 3:
+            got_conn.add((ref, tokens[1], tokens[2]))
+    if cards == 0:
+        return {"parsed": 0.0, "detail": "no device cards"}
+    return {
+        "parsed": 1.0,
+        "style": "netlist",
+        "part_f1": _f1(parts, got_parts),
+        "connection_f1": _f1(connections, got_conn) if connections else NAN,
+    }
 
 
-CORRUPTIONS = (
-    "drop_branch",
-    "drop_node",
-    "invent_node",
-    "rename_table",
-    "drop_loop",
-    "shuffle_labels",
-)
-
-#: Which sub-metric each corruption is expected to move. Named here so the study cannot quietly
-#: be rescored against whichever number happened to react.
-WATCHED = {
-    "drop_branch": "branch_score",
-    "drop_node": "node_recall",
-    "invent_node": "node_precision_raw",
-    "rename_table": "structural",
-    "drop_loop": "loop_recall",
-    "shuffle_labels": "structural",
+_ARMS = {
+    "flowchart": _flowchart,
+    "state_machine": _state_machine,
+    "er_diagram": _er,
+    "wireframe": _wireframe,
+    "circuit": _circuit,
+}
+SUBMETRICS = {
+    "flowchart": ("node_f1", "branch_score", "loop_score", "edge_f1"),
+    "state_machine": ("state_f1", "transition_f1", "initial", "accepting_f1"),
+    "er_diagram": ("table_f1", "column_f1", "relationship_f1"),
+    "wireframe": ("widget_f1", "text_f1"),
+    "circuit": ("part_f1", "connection_f1"),
 }
 
 
-# ------------------------------------------------------------------------------------------
-# Corpus sweep
-# ------------------------------------------------------------------------------------------
-
-
-def reference_pairs(limit: int | None = None, language: str = "python") -> list[tuple[dict, str]]:
-    """`(ir dict, code)` for every reference target of `language`, or `[]` if none are built."""
-    if not INDEX.is_file():
-        return []
-    rows = [r for r in json.loads(INDEX.read_text(encoding="utf-8")) if r["language"] == language]
-    out: list[tuple[dict, str]] = []
-    for row in rows[:limit] if limit else rows:
-        ir_path, code_path = ROOT / row["ir"], ROOT / row["target"]
-        if ir_path.is_file() and code_path.is_file():
-            out.append(
-                (
-                    json.loads(ir_path.read_text(encoding="utf-8")),
-                    code_path.read_text(encoding="utf-8"),
-                )
-            )
+def fidelity(record: dict, code: str) -> dict:
+    """Sub-metrics plus `structural`, the mean of the defined ones (0 when the code has no form)."""
+    arm = _ARMS.get(record["diagram_type"])
+    if arm is None:
+        return {"parsed": NAN, "structural": NAN, "detail": "no arm for this diagram type"}
+    out = arm(record, code)
+    if not out.get("parsed"):
+        out["structural"] = 0.0
+        return out
+    out["structural"] = _mean(out.get(k, NAN) for k in SUBMETRICS[record["diagram_type"]])
     return out
 
 
-def _mean(values: list[float]) -> float:
-    live = [v for v in values if v == v]
-    return sum(live) / len(live) if live else float("nan")
+# ------------------------------------------------------------------------------------------------
+# 12.3.8 helper: which IR elements were dropped, which code elements were invented
+# ------------------------------------------------------------------------------------------------
 
 
-def corpus_study(limit: int | None = None) -> dict[str, Any]:
-    """Score every reference Python target against its own IR. The floor, not the achievement."""
-    rows = [structural_fidelity(d, c) for d, c in reference_pairs(limit)]
-    keys = [
-        "parsed",
-        "style_tabular",
-        "node_recall",
-        "node_precision",
-        "node_precision_raw",
-        "node_f1",
-        "branch_score",
-        "gateway_recall",
-        "loop_recall",
-        "structural",
-    ]
-    return {
-        "pairs": len(rows),
-        "means": {k: _mean([r.get(k, float("nan")) for r in rows]) for k in keys},
-    }
-
-
-def corruption_study(limit: int = 300, seed: int = 0) -> dict[str, Any]:
-    """For each corruption: how often the metric noticed, and by how much."""
-    rng = random.Random(seed)
-    pairs = reference_pairs(limit)
-    out: dict[str, Any] = {}
-    for kind in CORRUPTIONS:
-        key = WATCHED[kind]
-        detected, applicable = 0, 0
-        drops: list[float] = []
-        for diagram, code in pairs:
-            damaged = corrupt(code, kind, rng)
-            if damaged is None:
-                continue
-            before = structural_fidelity(diagram, code).get(key, float("nan"))
-            after = structural_fidelity(diagram, damaged).get(key, float("nan"))
-            if before != before or after != after:
-                continue
-            applicable += 1
-            if after < before - 1e-9:
-                detected += 1
-                drops.append(before - after)
-        out[kind] = {
-            "watched": key,
-            "applicable": applicable,
-            "detected": detected,
-            "detection_rate": detected / applicable if applicable else float("nan"),
-            "mean_drop_when_detected": _mean(drops) if drops else 0.0,
+def elements(record: dict, code: str) -> tuple[Counter, Counter]:
+    """(expected, observed) node-level elements for the hallucination audit, per diagram type."""
+    ir, kind = _ir(record), record["diagram_type"]
+    if kind == "flowchart":
+        anchors = [a for n in ir["nodes"] if (a := _flow_anchor(n))]
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return Counter(min(a) for a in anchors), Counter()
+        calls = {
+            n.func.id
+            for n in ast.walk(tree)
+            if isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Name)
+            and n.func.id not in _BUILTINS
         }
-    return out
+        expected = Counter({(sorted(a & calls) or [min(a)])[0] for a in anchors})
+        return expected, Counter(calls)
+    if kind == "state_machine":
+        want = Counter(set(_state_names(ir).values()))
+        try:
+            values = {
+                n.targets[0].id: _literal(n.value)
+                for n in ast.walk(ast.parse(code))
+                if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)
+            }
+        except SyntaxError:
+            return want, Counter()
+        return want, Counter(set(values.get("STATES") or []))
+    if kind == "er_diagram":
+        tables, columns, _rel = _er_expected(ir)
+        want = Counter(set(tables) | {f"{t}.{c}" for t, c in columns})
+        scored = _er(record, code)
+        if not scored.get("parsed"):
+            return want, Counter()
+        con = sqlite3.connect(":memory:")
+        from src.eval.sql import split_statements
+
+        for statement in split_statements(code):
+            with contextlib.suppress(sqlite3.Error):
+                con.execute(statement)
+        got = set()
+        for (table,) in con.execute("SELECT name FROM sqlite_master WHERE type='table'"):
+            fk_count = len(list(con.execute(f'PRAGMA foreign_key_list("{table}")')))
+            if fk_count >= 2 and table not in tables:
+                continue
+            got.add(table)
+            for row in con.execute(f'PRAGMA table_info("{table}")'):
+                if not row[1].endswith("_id") and "_fk_" not in row[1]:
+                    got.add(f"{table}.{row[1]}")
+        con.close()
+        return want, Counter(got)
+    if kind == "wireframe":
+        want = Counter(
+            f"text:{n['text']}"
+            for n in ir["nodes"]
+            if n["semantic_role"] in ("ui-label", "ui-button") and n["text"]
+        )
+        want += Counter(
+            f"widget:{_WIDGET_OF_ROLE[n['semantic_role']]}"
+            for n in ir["nodes"]
+            if n["semantic_role"] in _WIDGET_OF_ROLE
+        )
+        from src.codegen.quality import _mask_literals
+
+        tags = Counter(t.lower() for t in _TAG.findall(_mask_literals(code)))
+        got = Counter({f"widget:{k}": tags[k] for k in ("button", "img", "input") if tags[k]})
+        for match in _STRING_CHILD.finditer(code):
+            try:
+                got[f"text:{json.loads(chr(34) + match.group(1) + chr(34))}"] += 1
+            except json.JSONDecodeError:
+                continue
+        return want, got
+    if kind == "circuit":
+        want = Counter(
+            (n["text"] or "").split()[0].upper()
+            for n in ir["nodes"]
+            if n["semantic_role"] != "wire" and (n["text"] or "").split()
+        )
+        got = Counter(
+            line.split()[0].upper()
+            for line in code.splitlines()
+            if line.split() and line.split()[0][0].isalpha()
+        )
+        return want, got
+    return Counter(), Counter()
 
 
-def run(limit: int | None = None, corrupt_limit: int = 300) -> dict[str, Any]:
+def hallucination(record: dict, code: str) -> dict:
+    """Dropped (in the IR, not in the code) and invented (in the code, not in the IR) elements."""
+    expected, observed = elements(record, code)
+    dropped = expected - observed
+    invented = observed - expected
     return {
-        "corpus": corpus_study(limit),
-        "corruptions": corruption_study(corrupt_limit),
-        "note": "reference targets only; model-output numbers await the 12.2 fine-tune",
+        "expected": sum(expected.values()),
+        "observed": sum(observed.values()),
+        "dropped": sorted(map(str, dropped.elements())),
+        "invented": sorted(map(str, invented.elements())),
+        "dropped_rate": sum(dropped.values()) / max(1, sum(expected.values())),
+        "invented_rate": sum(invented.values()) / max(1, sum(observed.values())),
     }
+
+
+# ------------------------------------------------------------------------------------------------
+# validation study: references, then code whose damage is known
+# ------------------------------------------------------------------------------------------------
+
+
+def corrupt(record: dict, code: str, kind: str, rng: random.Random) -> str | None:
+    """One named defect, or None when the code offers no site for it."""
+    lines = code.splitlines()
+    t = record["diagram_type"]
+
+    def drop(pred) -> str | None:
+        idx = [i for i, ln in enumerate(lines) if pred(ln)]
+        if not idx:
+            return None
+        i = rng.choice(idx)
+        return "\n".join(lines[:i] + lines[i + 1 :]) + "\n"
+
+    if t == "flowchart":
+        if kind == "drop_node":
+            return drop(lambda ln: re.match(r"\s+ctx = \w+\(ctx\)$", ln) is not None)
+        if kind == "invent_node":
+            idx = [i for i, ln in enumerate(lines) if re.match(r"\s+ctx = \w+\(ctx\)$", ln)]
+            if not idx:
+                return None
+            i = rng.choice(idx)
+            indent = lines[i][: len(lines[i]) - len(lines[i].lstrip())]
+            return (
+                "\n".join(lines[: i + 1] + [f"{indent}ctx = phantom_step(ctx)"] + lines[i + 1 :])
+                + "\n"
+            )
+        if kind == "drop_branch":
+            for i, ln in enumerate(lines):
+                if re.match(r"\s+if \w+\(ctx\):$", ln):
+                    return (
+                        "\n".join(
+                            lines[:i]
+                            + [ln.replace("if ", "if True or ", 1).replace("(ctx):", "_x:")]
+                            + lines[i + 1 :]
+                        )
+                        + "\n"
+                    )
+            return None
+        if kind == "drop_loop":
+            for i, ln in enumerate(lines):
+                if re.match(r"\s+while \w+\(ctx\):$", ln):
+                    return (
+                        "\n".join(lines[:i] + [ln.replace("while", "if", 1)] + lines[i + 1 :])
+                        + "\n"
+                    )
+            return None
+        if kind == "swap_branches":  # control: meaning changes, shape does not
+            for i, ln in enumerate(lines):
+                m = re.match(r"(\s+)if (\w+)\(ctx\):$", ln)
+                if m:
+                    return (
+                        "\n".join(
+                            lines[:i] + [f"{m.group(1)}if not {m.group(2)}(ctx):"] + lines[i + 1 :]
+                        )
+                        + "\n"
+                    )
+            return None
+    if t == "state_machine":
+        if kind == "drop_node":
+            return drop(lambda ln: re.match(r'\s{8}"[^"]+",$', ln) is not None)
+        if kind == "invent_node":
+            return code.replace("    STATES = [\n", '    STATES = [\n        "phantom",\n', 1)
+        if kind == "drop_branch":  # one symbol out of the executed TABLE
+            idx = [i for i, ln in enumerate(lines) if re.match(r'\s{8}"[^"]+": \{".+\},$', ln)]
+            if not idx:
+                return None
+            i = rng.choice(idx)
+            lines[i] = re.sub(r'\{"[^"]*": "[^"]*"(, )?', "{", lines[i], count=1)
+            return "\n".join(lines) + "\n"
+        if kind == "swap_branches":  # swap the destinations of two executed TABLE entries
+            pattern = re.compile(r'("[^"]*": )("[^"]*")')
+            sites = [
+                (i, m.start(2), m.group(2))
+                for i, ln in enumerate(lines)
+                if re.match(r'\s{8}"[^"]+": \{".+\},$', ln)
+                for m in pattern.finditer(ln.split(": ", 1)[1])
+            ]
+            if len(sites) < 2:
+                return None
+            (ia, _sa, da), (ib, _sb, db) = rng.sample(sites, 2)
+            if da == db or ia == ib:
+                return None
+            head_a, row_a = lines[ia].split(": ", 1)
+            head_b, row_b = lines[ib].split(": ", 1)
+            lines[ia] = f"{head_a}: {row_a.replace(da, db, 1)}"
+            lines[ib] = f"{head_b}: {row_b.replace(db, da, 1)}"
+            return "\n".join(lines) + "\n"
+    if t == "er_diagram":
+        if kind == "drop_node":
+            return drop(
+                lambda ln: re.match(r"\s{4}\w+ (TEXT|REAL|INTEGER|NUMERIC|BLOB),?$", ln) is not None
+                and "PRIMARY" not in ln
+            )
+        if kind == "invent_node":
+            return code + "\nCREATE TABLE phantom (\n    phantom_id INTEGER PRIMARY KEY\n);\n"
+        if kind == "drop_branch":
+            return drop(lambda ln: ln.startswith("ALTER TABLE"))
+    if t == "wireframe":
+        if kind == "drop_node":
+            return drop(lambda ln: re.match(r'\s+\{".*"\}$', ln) is not None)
+        if kind == "invent_node":
+            return code.replace(
+                '<div className="min-h-screen bg-white p-6">',
+                '<div className="min-h-screen bg-white p-6">\n      <button className="x">{"Phantom"}</button>',
+                1,
+            )
+    if t == "circuit":
+        if kind == "drop_node":
+            return drop(lambda ln: re.match(r"[RCL]\d+ ", ln) is not None)
+        if kind == "invent_node":
+            return code.replace(".op", "R99 1 0 1k\n.op", 1)
+        if kind == "drop_branch":
+            idx = [i for i, ln in enumerate(lines) if re.match(r"[RCL]\d+ \S+ \S+ ", ln)]
+            if not idx:
+                return None
+            i = rng.choice(idx)
+            parts = lines[i].split()
+            parts[2] = "99"
+            lines[i] = " ".join(parts)
+            return "\n".join(lines) + "\n"
+    return None
+
+
+CORRUPTIONS = ("drop_node", "invent_node", "drop_branch", "drop_loop", "swap_branches")
+
+
+def study(per_type: int = 300, seed: int = 0) -> dict:
+    """Reference scores over real + synthetic pairs, then detection rates per corruption."""
+    from src.codegen.pairs import load_pairs
+
+    rng = random.Random(seed)
+    by_type: dict[str, list[dict]] = {}
+    for record in load_pairs():
+        by_type.setdefault(record["diagram_type"], []).append(record)
+    report: dict = {"references": {}, "corruptions": {}}
+    for kind, records in sorted(by_type.items()):
+        per_source: dict[str, list[dict]] = {}
+        for record in records:
+            per_source.setdefault(record["source"], []).append(
+                fidelity(record, record["target_code"])
+            )
+        report["references"][kind] = {
+            source: {
+                "pairs": len(rows),
+                **{
+                    k: round(_mean(r.get(k, NAN) for r in rows), 4)
+                    for k in ("structural", *SUBMETRICS[kind])
+                },
+                "perfect": sum(r["structural"] >= 0.9999 for r in rows),
+                "styles": dict(Counter(r.get("style") for r in rows)),
+            }
+            for source, rows in sorted(per_source.items())
+        }
+        sample = rng.sample(records, min(per_type, len(records)))
+        for corruption in CORRUPTIONS:
+            applied = detected = 0
+            drops = []
+            hall = 0
+            for record in sample:
+                damaged = corrupt(record, record["target_code"], corruption, rng)
+                if damaged is None or damaged == record["target_code"]:
+                    continue
+                before = fidelity(record, record["target_code"])["structural"]
+                after = fidelity(record, damaged)["structural"]
+                applied += 1
+                if after < before - 1e-9:
+                    detected += 1
+                    drops.append(before - after)
+                if corruption in ("drop_node", "invent_node"):
+                    h = hallucination(record, damaged)
+                    base = hallucination(record, record["target_code"])
+                    key = "dropped" if corruption == "drop_node" else "invented"
+                    hall += len(h[key]) > len(base[key])
+            if applied:
+                report["corruptions"].setdefault(kind, {})[corruption] = {
+                    "applied": applied,
+                    "detected": detected,
+                    "rate": round(detected / applied, 4),
+                    "mean_drop": round(_mean(drops), 4) if drops else 0.0,
+                    **(
+                        {"hallucination_audit_detected": hall}
+                        if corruption in ("drop_node", "invent_node")
+                        else {}
+                    ),
+                }
+    return report
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    ap.add_argument("--limit", type=int, default=None)
-    ap.add_argument("--corrupt-limit", type=int, default=300)
-    ap.add_argument("--out", type=Path, default=OUT)
-    args = ap.parse_args(argv)
-    report = run(args.limit, args.corrupt_limit)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps(report, indent=2))
+    parser = argparse.ArgumentParser(description="Phase 12.3.4 structural fidelity")
+    parser.add_argument("--study", action="store_true")
+    parser.add_argument("--per-type", type=int, default=300)
+    args = parser.parse_args(argv)
+    if args.study:
+        json.dump(study(args.per_type), sys.stdout, indent=2, default=lambda x: None)
+        sys.stdout.write("\n")
     return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())
