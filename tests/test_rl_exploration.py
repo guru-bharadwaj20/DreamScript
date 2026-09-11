@@ -170,17 +170,62 @@ def test_the_three_rules_do_not_produce_the_same_table(graphs):
     assert not (tables[1] == tables[2]).all()
 
 
-def test_the_study_reports_every_rule_with_a_curve(graphs):
-    result = X.study(graphs, RAW, episodes=120, seeds=(0, 1))
+def test_the_greedy_probe_fires_on_schedule_and_on_the_last_episode(graphs):
+    probe = X.GreedyProbe(graphs, every=40, episodes=100)
+    Q.train(graphs, Q.TrainConfig(episodes=100, seed=0, on_episode=probe))
+    assert [p["episode"] for p in probe.result()] == [40, 80, 100]
+
+
+def test_the_probe_does_not_perturb_training(graphs):
+    """It reads the table between episodes; the trained table must be bit-identical without it."""
+    plain = Q.train(graphs, Q.TrainConfig(episodes=150, seed=3))
+    probed = Q.train(
+        graphs, Q.TrainConfig(episodes=150, seed=3, on_episode=X.GreedyProbe(graphs, every=25))
+    )
+    assert (plain.q == probed.q).all()
+
+
+def test_the_final_probe_point_is_the_final_greedy_evaluation(graphs):
+    probe = X.GreedyProbe(graphs, every=1000, episodes=120)
+    agent = Q.train(graphs, Q.TrainConfig(episodes=120, seed=1, on_episode=probe))
+    final = Q.evaluate(agent, graphs)
+    assert probe.result()[-1]["mean_terminal_reward"] == final["mean_terminal_reward"]
+
+
+def test_best_parameters_rank_on_reward_within_each_rule():
+    def row(rule, value, reward):
+        return {
+            "spec": {"cfg": {"explore": rule, X.PARAMETER[rule]: value}},
+            "eval": {"all": {"mean_terminal_reward": reward}},
+        }
+
+    rows = [
+        row("egreedy", 0.01, -3.0),
+        row("egreedy", 0.1, -2.0),
+        row("softmax", 0.5, -9.0),
+        row("ucb", 1.0, -4.0),
+        row("ucb", 4.0, -5.0),
+    ]
+    assert X.best_parameters(rows) == {"egreedy": 0.1, "softmax": 0.5, "ucb": 1.0}
+
+
+def test_the_sweep_covers_every_rule_grid():
+    specs = X.sweep_specs(episodes=10)
+    assert len(specs) == sum(len(X.GRID[r]) for r in X.RULES)
+    for spec in specs:
+        rule = spec["cfg"]["explore"]
+        assert spec["cfg"][X.PARAMETER[rule]] in X.GRID[rule]
+
+
+def test_the_study_reports_every_rule_with_curves_probes_and_seeds(graphs, tmp_path):
+    sets = {"all": (RAW, graphs), "ambiguous": (RAW, graphs)}
+    params = {"egreedy": 0.05, "softmax": 0.5, "ucb": 1.0}
+    result = X.study(sets, params, episodes=120, seeds=(0, 1), probe_every=60, workers=1)
     assert set(result["rules"]) == set(X.RULES)
     for block in result["rules"].values():
-        assert len(block["curve"]) == 120
-        assert block["reached_keys"] > 0
-
-
-def test_the_parameter_sweep_covers_both_grids(graphs):
-    result = X.sweep_parameters(
-        graphs, RAW, episodes=80, temperatures=(0.5, 1.0), constants=(0.5, 1.0)
-    )
-    assert [r["temperature"] for r in result["softmax"]] == [0.5, 1.0]
-    assert [r["ucb_c"] for r in result["ucb"]] == [0.5, 1.0]
+        assert [p["episode"] for p in block["probe"]] == [60, 120]
+        assert len(block["all"]["mean_terminal_reward"]["values"]) == 2
+        assert block["reached_keys"]["mean"] > 0
+    refs = {name: Q.references(g, raw) for name, (raw, g) in sets.items()}
+    path = X.plot(result, refs, tmp_path / "p11_exploration.png")
+    assert path.exists() and path.stat().st_size > 5000
