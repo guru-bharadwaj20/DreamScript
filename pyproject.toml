@@ -5,6 +5,7 @@ description = "Converting rough hand-drawn diagrams into executable, runnable co
 authors = [{ name = "Guru Bharadwaj", email = "gururb20@gmail.com" }]
 requires-python = "==3.11.*"
 readme = "README.md"
+license = { text = "MIT" }
 
 [build-system]
 requires = ["setuptools>=68"]
