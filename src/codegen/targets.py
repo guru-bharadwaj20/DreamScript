@@ -760,7 +760,11 @@ _DEVICE_LETTER = {"resistor": "R", "capacitor": "C", "inductor": "L", "source": 
 
 def emit_circuit_spice(diagram: dict, traversal: list[str]) -> str:
     """Circuit IR -> a SPICE netlist. Ground is net 0; every card is `<ref> <n+> <n-> <value>`."""
-    nodes = {node["id"]: node for node in diagram.get("nodes", [])}
+    # `wire` is the role vocabulary's name for a net / junction (2.1.5). It is connectivity, not
+    # a part, and emitting it as a card turned every drawn junction into a phantom 1k resistor.
+    nodes = {
+        node["id"]: node for node in diagram.get("nodes", []) if node.get("semantic_role") != "wire"
+    }
     order = [n for n in traversal if n in nodes] or list(nodes)
 
     title = str(diagram.get("id") or "circuit")
