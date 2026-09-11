@@ -263,6 +263,7 @@ def train(
     emitted: list[float] = []
     lengths: list[float] = []
     epsilons: list[float] = []
+    truncations: list[float] = []
     q = agent.q
 
     for ep in range(cfg.episodes):
@@ -327,6 +328,7 @@ def train(
         emitted.append(episode.state.n_emitted() / max(1, graph.n_nodes))
         lengths.append(steps)
         epsilons.append(eps)
+        truncations.append(1.0 if episode.truncated() else 0.0)
         if progress and (ep + 1) % 2000 == 0:
             print(
                 f"  episode {ep + 1}/{cfg.episodes}  eps={eps:.3f}  "
@@ -342,6 +344,8 @@ def train(
         "emitted_share": emitted,
         "length": lengths,
         "epsilon": epsilons,
+        #: 1.0 when the behaviour policy ran into the step cap - 11.2.2's cliff, during training.
+        "truncated": truncations,
     }
     agent.report = convergence(agent)
     return agent
