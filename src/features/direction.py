@@ -18,7 +18,7 @@ Angles are length-weighted. An unweighted histogram counts a 12-pixel fragment t
 A line has no arrowhead. 3.2.6 established that the arrowhead detector runs at precision 0.11,
 so there is nothing available to tell "down" from "up" - only "vertical" from "horizontal".
 `dir_flow_axis` is therefore an *axis*, not a *flow*: it says a flowchart is laid out vertically
-and cannot say it runs downward. plan.md names this feature "dominant flow axis" and the axis is
+and cannot say it runs downward. contributing.md names this feature "dominant flow axis" and the axis is
 what is delivered; the direction needs 9.1, and Phase 10 is where it becomes an ordering.
 
 ## What it measures, per type

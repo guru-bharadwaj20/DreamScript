@@ -95,7 +95,7 @@ def rectify(image: np.ndarray, quad: np.ndarray | None = None) -> Rectified:
 
 
 def qa_grid(limit: int = 12) -> object:
-    """A before/after grid over corpus photos, for the visual check plan.md 3.1.3 asks for."""
+    """A before/after grid over corpus photos, for the visual check contributing.md 3.1.3 asks for."""
     from src.ir.model import SUFFIX, Diagram
 
     ir_dir = ROOT / "data" / "processed" / "ir" / "hdbpmn"

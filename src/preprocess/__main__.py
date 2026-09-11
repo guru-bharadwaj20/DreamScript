@@ -11,7 +11,7 @@ from src.utils.logging import Run
 
 
 def run(cfg: DictConfig, active: Run) -> int:
-    raise StageNotImplemented("stage not implemented yet; see plan.md for the owning phase")
+    raise StageNotImplemented("stage not implemented yet; see contributing.md for the owning phase")
 
 
 if __name__ == "__main__":

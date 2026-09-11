@@ -1,7 +1,7 @@
 """Phase 2.2.2 - the converters.
 
 Every test here that touches a dataset skips when the dataset is absent, so the suite still
-runs on a clone that has not pulled the data. The round-trip requirement from plan.md 2.2.2 is
+runs on a clone that has not pulled the data. The round-trip requirement from contributing.md 2.2.2 is
 `test_<source>_roundtrips`: convert, write, read back, and get the same object.
 """
 

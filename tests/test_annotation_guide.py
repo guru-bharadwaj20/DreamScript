@@ -43,7 +43,7 @@ def test_every_shape_in_the_vocabulary_appears_in_the_shape_table(text):
 
 
 def test_the_hard_cases_named_in_the_plan_are_covered(text):
-    """plan.md 2.2.3 names two by hand; both must have their own rule."""
+    """contributing.md 2.2.3 names two by hand; both must have their own rule."""
     lowered = text.lower()
     assert "broken arrow" in lowered
     assert "overlapping" in lowered

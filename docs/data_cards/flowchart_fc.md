@@ -5,7 +5,7 @@ turned out to be unobtainable, and the substitute actually acquired in its place
 
 ---
 
-## Part 1 — FC-A / FC-B (named in plan.md, NOT acquired)
+## Part 1 — FC-A / FC-B (named in contributing.md, NOT acquired)
 
 | Field | Value |
 | :--- | :--- |

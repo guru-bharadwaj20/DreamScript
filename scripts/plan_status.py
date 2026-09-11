@@ -1,8 +1,8 @@
-"""Flip a plan.md task row to done and keep the progress table consistent.
+"""Flip a contributing.md task row to done and keep the progress table consistent.
 
     python scripts/plan_status.py 2.1.1 [--dod "new definition-of-done text"]
 
-Editing plan.md by hand across 302 rows is how the progress table drifts away from the rows
+Editing contributing.md by hand across 302 rows is how the progress table drifts away from the rows
 it summarises. This does both edits at once, so they cannot disagree.
 """
 
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PLAN = ROOT / "plan.md"
+PLAN = ROOT / "contributing.md"
 
 
 def main(argv: list[str] | None = None) -> int:

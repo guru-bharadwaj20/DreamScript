@@ -32,7 +32,7 @@ CHAOS = ROOT / "data" / "raw" / "chaos"
 
 DIAGRAM_TYPES = ("flowchart", "wireframe", "state_machine", "er_diagram", "circuit")
 
-# Phase 1.2.1 - 1.2.5 targets, straight from plan.md.
+# Phase 1.2.1 - 1.2.5 targets, straight from contributing.md.
 TARGETS: dict[str, int] = {
     "flowchart": 60,
     "wireframe": 60,

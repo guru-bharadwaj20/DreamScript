@@ -16,7 +16,7 @@ Four cuts, all from 5.2.1's out-of-fold predictions so every model is judged on 
 
 ## The plan made a prediction here, and it is checked rather than quietly dropped
 
-The task's own line in `plan.md` reads *"expect flowchart <-> state"*. That is a hypothesis
+The task's own line in `contributing.md` reads *"expect flowchart <-> state"*. That is a hypothesis
 written before any of Phase 5 was measured, and this module reports where that pair actually
 ranks instead of describing the errors that were found as though they had been expected. A plan
 that records its guesses is only useful if the guesses are scored.
@@ -90,7 +90,7 @@ from src.utils.config import ROOT
 
 REPORT = ROOT / "reports" / "error_taxonomy.md"
 
-#: The pair `plan.md` predicted would dominate, written down before Phase 5 was measured.
+#: The pair `contributing.md` predicted would dominate, written down before Phase 5 was measured.
 PREDICTED_PAIR = ("flowchart", "state_machine")
 
 #: Above this, a wrong prediction is "confident" - the model was not hedging, it was mistaken.
@@ -237,7 +237,7 @@ def by_source(dataset: Dataset, runs: dict) -> dict:
 
 
 def hypothesis(pairs: list[dict], predicted_pair=PREDICTED_PAIR) -> dict:
-    """Where the pair `plan.md` predicted actually ranks, in both directions."""
+    """Where the pair `contributing.md` predicted actually ranks, in both directions."""
     a, b = predicted_pair
     found = {}
     for position, cell in enumerate(pairs, start=1):
@@ -261,7 +261,7 @@ def to_markdown(result: dict, dataset: Dataset) -> str:
         f"All three models' out-of-fold predictions over the {len(dataset.y)} real photographs, "
         "from 5.2.1's partition at seed 42 - so every model is judged on identical rows.",
         "",
-        "## The prediction `plan.md` made",
+        "## The prediction `contributing.md` made",
         "",
         f"The task line reads *expect {result['hypothesis']['predicted']}*. "
         + (

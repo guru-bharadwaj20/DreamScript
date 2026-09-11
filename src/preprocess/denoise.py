@@ -51,7 +51,7 @@ DEFAULT_MEDIAN = 3
 #:   1e-4           92.3%                89.2%                 99.6%
 #:   5e-4           98.7%                83.1%                 95.1%
 #:
-#: 5e-5 is the smallest threshold that clears the 80% bar plan.md 3.1.6 sets, and it costs
+#: 5e-5 is the smallest threshold that clears the 80% bar contributing.md 3.1.6 sets, and it costs
 #: nothing measurable in true ink: the 7.6% of photo ink pixels it discards are debris, which
 #: is exactly what the two columns being different is telling us. Past 1e-4 the true-ink column
 #: starts to move, and that is the point at which it would be eating strokes.

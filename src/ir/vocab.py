@@ -23,7 +23,7 @@ from src.utils.config import ROOT
 # Shapes - what was drawn
 # ---------------------------------------------------------------------------------------
 
-#: Frozen. Ten of these are the vocabulary named in plan.md 2.1.4. Two were added because the
+#: Frozen. Ten of these are the vocabulary named in contributing.md 2.1.4. Two were added because the
 #: corpus contains them in quantity and mapping them onto a neighbour would destroy the one
 #: feature that distinguishes them:
 #:
@@ -106,7 +106,7 @@ def canonical_shape(raw: str) -> str:
 # Roles - what it means. Filled in by Phase 2.1.5.
 # ---------------------------------------------------------------------------------------
 
-#: Frozen. Seventeen of these are the vocabulary named in plan.md 2.1.5. Six were added, each
+#: Frozen. Seventeen of these are the vocabulary named in contributing.md 2.1.5. Six were added, each
 #: because a real count in the corpus showed that folding it into a neighbour would make the
 #: generated code wrong rather than merely coarse:
 #:

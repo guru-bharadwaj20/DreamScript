@@ -34,7 +34,7 @@ usually zero hides everything:
     state_machine        1.0 / 0.90             0.156           0.546
     wireframe            0.0 / 0.95             0.164           0.602
 
-The claim in plan.md is "wireframes nest; flowcharts don't", and half of it holds exactly:
+The claim in contributing.md is "wireframes nest; flowcharts don't", and half of it holds exactly:
 **flowcharts and circuits never nest, on any of the 600 pages, on any of the three features.**
 A feature that is identically zero for two of five classes is a strong negative signal, which is
 worth as much to a classifier as a strong positive one.

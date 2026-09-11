@@ -5,7 +5,7 @@ and the one actually acquired.
 
 ---
 
-## Part 1 — Microsoft Sketch2Code (named in plan.md, NOT acquired)
+## Part 1 — Microsoft Sketch2Code (named in contributing.md, NOT acquired)
 
 | Field | Value |
 | :--- | :--- |

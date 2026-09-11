@@ -1,4 +1,4 @@
-# Config for python -m src.rl — see plan.md for the owning phase.
+# Config for python -m src.rl — see contributing.md for the owning phase.
 defaults:
   - base
 

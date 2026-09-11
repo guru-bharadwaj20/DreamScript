@@ -2,7 +2,7 @@
 
 All three models' out-of-fold predictions over the 1340 real photographs, from 5.2.1's partition at seed 42 - so every model is judged on identical rows.
 
-## The prediction `plan.md` made
+## The prediction `contributing.md` made
 
 The task line reads *expect flowchart <-> state_machine*. **It does not hold.** The largest confusion is `circuit -> flowchart`, and the predicted pair appears at no rank at all inside the top ten.
 

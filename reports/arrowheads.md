@@ -1,6 +1,6 @@
 # Phase 3.2.6 — arrowhead detection, and why the rule does not reach its bar
 
-plan.md asks for precision ≥ 0.80. The geometric detector reaches 0.11. This is the
+contributing.md asks for precision ≥ 0.80. The geometric detector reaches 0.11. This is the
 record of four attempts to lift it, each measured against hdBPMN's annotated arrow
 positions on the same 20 pages, so the comparison is like for like.
 

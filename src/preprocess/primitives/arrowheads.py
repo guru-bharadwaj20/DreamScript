@@ -23,7 +23,7 @@ labelled evaluation rather than a visual impression.
 
 ## The measured result, and why it is what it is
 
-**plan.md 3.2.6 asks for precision >= 0.80. This detector reaches 0.11, with recall 0.22, over
+**contributing.md 3.2.6 asks for precision >= 0.80. This detector reaches 0.11, with recall 0.22, over
 20 pages and 265 annotated arrows.** The bar is not met, and the reason is worth more than the
 number.
 
@@ -457,7 +457,7 @@ def report(results: dict) -> Path:
     lines = [
         "# Phase 3.2.6 — arrowhead detection, and why the rule does not reach its bar",
         "",
-        "plan.md asks for precision ≥ 0.80. The geometric detector reaches 0.11. This is the ",
+        "contributing.md asks for precision ≥ 0.80. The geometric detector reaches 0.11. This is the ",
         "record of four attempts to lift it, each measured against hdBPMN's annotated arrow ",
         "positions on the same 20 pages, so the comparison is like for like.",
         "",

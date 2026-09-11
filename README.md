@@ -7,6 +7,6 @@ circuit — and DreamScript classifies the diagram type, detects its components 
 handwriting and broken arrows, parses it into a semantic graph, and generates runnable code:
 Python, React, or SQL.
 
-The full phase-by-phase build plan lives in [plan.md](plan.md).
+The full phase-by-phase build plan lives in [contributing.md](contributing.md).
 
 **Author:** Guru Bharadwaj

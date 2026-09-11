@@ -49,7 +49,7 @@ Medians over 600 synthetic pages:
     circuit            1.32      0.452          0.000      0.965     0.660
     wireframe          2.47      0.142          0.000      0.730     0.293
 
-plan.md's rationale for this family was "wireframes are grid-like", and **the measurement says
+contributing.md's rationale for this family was "wireframes are grid-like", and **the measurement says
 the opposite**: wireframes score 0.000 and flowcharts 1.000. Both halves of that have a cause
 worth recording.
 

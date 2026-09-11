@@ -51,7 +51,7 @@ by hand — if a number is wrong, rerun and note it in the report.
 ## 3. Git
 
 - **Commit subject:** `Phase <n.n.n>: <what changed>`, imperative, no trailing period.
-- **One task per commit.** A commit corresponds to one row of `plan.md`, and flips that row's
+- **One task per commit.** A commit corresponds to one row of `contributing.md`, and flips that row's
   status in the same commit as the work.
 - **Never commit** weights, datasets, run directories, or anything over 2 MB. Pre-commit
   blocks it (`check-added-large-files`).

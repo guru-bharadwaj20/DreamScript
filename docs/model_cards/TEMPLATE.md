@@ -57,7 +57,7 @@ Uses this model is *not* validated for, and must not be deployed into.
 
 ## Evaluation
 
-| Metric | Value | Split | Target (plan.md) |
+| Metric | Value | Split | Target (contributing.md) |
 | :--- | ---: | :--- | ---: |
 | | | | |
 

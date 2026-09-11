@@ -330,7 +330,7 @@ def write_report(result: dict) -> Path:
     add("## The headline, before the detail")
     add("")
     add(
-        f"**plan.md 2.2.4 sets a bar of kappa >= 0.75. Nothing here reaches it; the best "
+        f"**contributing.md 2.2.4 sets a bar of kappa >= 0.75. Nothing here reaches it; the best "
         f"pairing is {best:.2f}.** That is the finding, not a missing piece of work, and three "
         "things follow from it:"
     )

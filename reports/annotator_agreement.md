@@ -33,7 +33,7 @@ substantial, above 0.8 near-perfect.
 
 ## The headline, before the detail
 
-**plan.md 2.2.4 sets a bar of kappa >= 0.75. Nothing here reaches it; the best pairing is 0.52.** That is the finding, not a missing piece of work, and three things follow from it:
+**contributing.md 2.2.4 sets a bar of kappa >= 0.75. Nothing here reaches it; the best pairing is 0.52.** That is the finding, not a missing piece of work, and three things follow from it:
 
 1. **The BPMN drawing convention is a worse account of what was drawn than a crude contour classifier is** - kappa 0.48 against the human, versus 0.52 for the geometry. Writers do not draw tasks as rounded rectangles. Every hdBPMN shape label carries `shape_basis: bpmn-convention` for exactly this reason, and no phase may treat those shapes as ground truth.
 2. **Shape labels for hand-drawn diagrams have to be annotated, not derived.** Phase 5 cannot be trained on hdBPMN-derived shapes and then be said to classify shape; it would be learning to reproduce a convention.

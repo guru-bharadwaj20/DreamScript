@@ -35,7 +35,7 @@ from pathlib import Path
 
 from src.ingest.registry import Availability, Dataset, Redistribution, register, write_provenance
 
-# The canonical source named in plan.md, kept so availability can be re-probed later.
+# The canonical source named in contributing.md, kept so availability can be re-probed later.
 FC_ORIGINAL_URLS = {
     "landing": "https://cmp.felk.cvut.cz/~breslmar/flowcharts/",
     "archive": "https://cmp.felk.cvut.cz/~breslmar/flowcharts/archive.html",

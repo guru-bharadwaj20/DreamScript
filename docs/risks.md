@@ -61,7 +61,7 @@ risk cannot be "handled" by intention alone.
 | S3 | **The GPU is shared** — another process already holds ~20 GB on this machine. | H | H | Check *free* VRAM before Phase 9 and 12 runs, not total; escalation path in `docs/hardware.md` | 0.1.7 | ✅ (documented) |
 | S4 | **Live demo fails** in front of an audience. | M | H | Cached-result fallback mode; preloaded example gallery; recorded demo video | 16.2.10, 16.2.9, 17.9 | ❌ |
 | S5 | **Irreproducible numbers** in the report. | M | H | Determinism harness; immutable run directories capturing config, env and git commit; ≥3 seeds with spread | 0.1.6, 0.2.4, 14.10 | ✅ |
-| S6 | **Scope overrun** — 18 phases, one machine. | H | M | Each task has a written Definition of Done; nothing is marked ✅ without an artifact and a passing check | plan.md | ✅ |
+| S6 | **Scope overrun** — 18 phases, one machine. | H | M | Each task has a written Definition of Done; nothing is marked ✅ without an artifact and a passing check | contributing.md | ✅ |
 | S7 | **Latency too high for the "seconds later" promise.** | M | M | Per-stage timing table and a < 10 s budget; caching; NB fast prior as a cheap first pass | 13.7, 13.6, 7.2.6 | ❌ |
 
 ## 6. Ethical and privacy risks

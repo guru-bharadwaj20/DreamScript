@@ -5,7 +5,7 @@ Label Studio server against a throwaway database, creates a project from
 `labeling/label_studio/config.xml`, registers the repository as a local-files source, syncs it,
 imports the pre-annotated tasks built by `src.ir.labelstudio`, and finally fetches one of the
 images over HTTP. If that returns JPEG bytes, the project loads images - which is what
-plan.md 2.2.1 asks for.
+contributing.md 2.2.1 asks for.
 
 Three things were learned making this work, and they are why the script is shaped this way:
 

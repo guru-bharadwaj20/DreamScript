@@ -9,7 +9,7 @@ approximation.
 sit from the simplified line before it must be kept - and it is expressed here as a fraction of
 the contour's perimeter so it scales with the shape. Too small and hand wobble registers as
 extra corners; too large and a diamond flattens into a triangle. Rather than pick one value and
-hope, this module sweeps it and writes the histogram plan.md 3.2.3 asks for, so the choice is
+hope, this module sweeps it and writes the histogram contributing.md 3.2.3 asks for, so the choice is
 visible: `reports/figures/p3_vertex_histogram.png`.
 
 The default is 0.02 and it is inherited from Phase 2.2.4's geometry classifier, where the same

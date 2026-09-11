@@ -108,4 +108,4 @@ The Phase 1.2 acceptance checks pass on their own terms: 260 images, five types,
 larger in writer count than self-collection would plausibly have achieved.
 
 It is not, however, what the plan literally described, and the difference is recorded here,
-in `plan.md`, and in every affected data card — rather than left for a reader to discover.
+in `contributing.md`, and in every affected data card — rather than left for a reader to discover.

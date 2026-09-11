@@ -16,7 +16,7 @@ def test_shape_schema_matches_the_code():
 
 
 def test_shape_vocabulary_covers_the_plan():
-    """plan.md 2.1.4 names these ten; they must all survive any later edit."""
+    """contributing.md 2.1.4 names these ten; they must all survive any later edit."""
     planned = {
         "rectangle",
         "rounded-rect",

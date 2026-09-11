@@ -33,7 +33,7 @@ Two evaluations, because neither one is sufficient alone.
 
 **Synthetic pages** (`synthetic_page`) draw shapes and Hershey-stroked words separately, so the
 two ground-truth masks are exact by construction. This measures the separator's mechanism and
-is the number reported in plan.md. Hershey fonts are stroked rather than filled, which is the
+is the number reported in contributing.md. Hershey fonts are stroked rather than filled, which is the
 right model for a pen, but they are regular in a way real handwriting is not, so this is an
 upper bound.
 

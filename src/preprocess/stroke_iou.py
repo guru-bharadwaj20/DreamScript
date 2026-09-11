@@ -2,7 +2,7 @@
 
 3.1.5 measured binarizers against each other. This measures the **pipeline** - illumination
 correction, median filter, binarization, ruled-line suppression, small-component removal - as
-one thing, against known ink, and reports the number plan.md 3.3.1 asks for.
+one thing, against known ink, and reports the number contributing.md 3.3.1 asks for.
 
 The plan says "hand-traced GT on 30 images". Nothing here is hand-traced, and the substitute is
 better rather than worse: the FA database records the pen trajectory, so rasterising it gives a
@@ -55,7 +55,7 @@ from src.utils.config import ROOT
 
 REPORT = ROOT / "reports" / "stroke_iou.md"
 
-#: The bar plan.md 3.3.1 sets.
+#: The bar contributing.md 3.3.1 sets.
 TARGET_IOU = 0.80
 
 
