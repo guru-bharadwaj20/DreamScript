@@ -12,7 +12,10 @@ So this module does not invent a second split. It **adopts** the two splits this
 built, and only decides where they are silent:
 
     1. manifest       `data/processed/manifest.parquet` (written by `src.ingest.splits`) is the
-                      authority for every source it covers. basis `manifest`.
+                      authority for every *scribed* row it covers. basis `manifest`. (12.1.1
+                      found the manifest also splits scribe-less didi rows natively, and
+                      adopting those put 381 + 361 writer-less didi pairs in validation/test;
+                      a scribe-less row now falls through to rule 4.)
     2. fa_writer_split
                       fa_bresler is not in the manifest, but it is not unsplit either:
                       `src.detect.dataset.fa_splits` is the writer-disjoint split that
@@ -333,7 +336,10 @@ def assign(
             continue
 
         entry = index.get(diagram_id) or index.get(tail)
-        if entry:
+        # Only a *scribed* index entry is adopted. The manifest also splits scribe-less sources
+        # (didi's native split, flowchartseg's), and adopting those put writer-less pairs in
+        # validation/test - the exact population rule 4 below says may only train.
+        if entry and scribe:
             record["split"] = entry["split"]
             record["split_basis"] = entry.get("basis", "manifest")
             continue

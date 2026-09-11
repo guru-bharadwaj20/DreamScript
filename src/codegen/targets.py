@@ -841,7 +841,15 @@ _EMITTERS = {
     "circuit": emit_circuit_spice,
 }
 #: bpmn is hdbpmn's own word for the same thing 12.1.6 calls a flowchart.
-_ALIASES = {"bpmn": "flowchart", "state-machine": "state_machine", "erd": "er", "ui": "wireframe"}
+#: `er_diagram` is schemas/ir.schema.json's own enum value; without it `for_type` refused the
+#: one spelling a schema-valid IR document can actually carry.
+_ALIASES = {
+    "bpmn": "flowchart",
+    "state-machine": "state_machine",
+    "erd": "er",
+    "er_diagram": "er",
+    "ui": "wireframe",
+}
 
 
 def for_type(diagram_type: str):

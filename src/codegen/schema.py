@@ -1,59 +1,77 @@
 """Phase 12.1.1 - the fixed training-pair schema, its validator, and the JSONL it lives in.
 
-    python -m src.codegen.schema data/processed/pairs/train.jsonl     # validate a shard
+    python -m src.codegen.schema data/processed/codegen/pairs/train.jsonl   # validate a shard
 
-## The pair, frozen
+## The pair, frozen at `SCHEMA_VERSION = 1`
 
-Eight keys, exactly, in this order, one JSON object per line:
+Eleven keys, exactly, in this order, one JSON object per line:
 
-    diagram_id    str   the IR document's `id` - the join key back to data/processed/ir
-    diagram_type  str   one of `DIAGRAM_TYPES` (schemas/ir.schema.json's enum)
-    ir_text       str   `src.codegen.serialise.serialise(diagram, traversal)` - nothing else
-    traversal     list  node ids in reading order, from `src.parse.sequences.traversal`
-    target_code   str   the reference program
-    language      str   one of `LANGUAGES`, and consistent with `diagram_type` (12.1.6)
-    source        str   the corpus directory: didi, fa_bresler, flowchartseg, hdbpmn, sketch2code
-                        or `synthetic` (12.1.4) or `handwritten` (12.1.3)
-    split         str   train | val | test
+    diagram_id    str        the IR document's `id` - the join key back to data/processed/ir
+    diagram_type  str        one of `DIAGRAM_TYPES`, which is schemas/ir.schema.json's enum
+    ir_text       str        `src.codegen.serialise.serialise(diagram, traversal)` - nothing else
+    traversal     list[str]  node ids in emission order: exactly the ids of `ir_text`'s `O` line
+    target_code   str        the reference program
+    language      str        12.1.6's target for `diagram_type` (`LANGUAGE_BY_TYPE`)
+    source        str        where the pair came from (`SOURCES`)
+    split         str        train | validation | test, from 12.1.8 `src.codegen.splits.assign`
+    split_basis   str        why the pair is in that split (12.1.8's basis names)
+    scribe        str|None   namespaced writer id, or null when the source publishes none
+    meta          dict       provenance only (structure family, flowchart mode, image path);
+                             never read by the prompt, so nothing in it can leak into training
 
-`traversal` is stored **as well as** being embedded in `ir_text`'s `O` line, which is redundant
-by construction, and that redundancy is the point: it is the one field 12.1.1 names that a
-downstream consumer (the sampler, the 12.3 evaluator, a data audit) needs as a list without
-re-parsing prompt text, and `validate` cross-checks the two so the redundancy cannot rot. The
-alternative - store only `traversal` and rebuild `ir_text` at load time - was rejected because
-it makes the training input a function of whatever `serialise` happens to be on the day the
-loader runs, and 12.2.5's adapter must be reproducible against the bytes it was trained on.
+The *model* input is `(diagram_type, ir_text)` - `ir_text` already carries the traversal as its
+`O` line - and the output is `target_code`. Everything else is bookkeeping a loader, a split
+audit or a 12.3 evaluator needs without re-parsing prompt text. `src.codegen.prompt` (12.2.4)
+turns a record into chat messages; `src.codegen.pairs.load_pairs` streams records back.
 
-## What `validate` catches, measured on 500 real diagrams x 12 deliberate corruptions
+## Decisions that differ from the inherited draft, and why each was forced
 
-Every record is checked structurally, not just for key presence. The mutation test in
-`tests/test_codegen_schema.py` builds a valid record from a real diagram and then breaks it one
-way at a time; **12 of 12 corruptions are caught** - missing key, extra key, wrong type,
-empty `ir_text`, empty `target_code`, unknown `diagram_type`, unknown `language`, unknown
-`split`, unknown `source`, a `traversal` id absent from `ir_text`, an `ir_text` node absent from
-`traversal`, and a `language` that is legal but wrong for the `diagram_type` (a `wireframe`
-labelled `python`). The last three are the ones a key-presence check misses entirely and they
-are the failure modes that actually happen: the pair builder is two functions, the traversal and
-the serialiser, and a mismatch between them is silent everywhere else.
+The inherited draft was internally inconsistent with the three committed modules it sits
+between, and three of its choices would have made every real pair invalid:
 
-`validate` returns a **list of every problem**, not the first one and not a bool. A shard of
-10K pairs (12.1.4) that fails on one rule is a one-line fix; discovering the rules one run at a
-time is not, and 10.2.4 settled this house style already - four independent answers rather than
-one `ok`.
+    split "val"            12.1.8 `splits.SPLITS` is `("train", "validation", "test")`, and
+                           `splits.assign` writes "validation". The draft's enum rejected every
+                           validation pair `assign` produced. Now "validation".
+    language "tsx"         12.1.6 `targets.LANGUAGES` maps wireframe to "react", and 12.1.7's
+                           `quality.CHECKS` has no "tsx" key, so a "tsx" pair would have been
+                           rejected by the very filter meant to check it. Now "react".
+    8 keys, extras refused `splits.assign` adds `split_basis` and `scribe` to every record, so
+                           the draft refused the output of the split it was paired with. Both are
+                           now schema fields - `scribe` is what a leak audit needs row by row.
+
+The draft also cross-checked `traversal` against `ir_text` with a hand-rolled `split("|")`
+that ignores 12.1.2's escaping (`\\p` is a literal pipe); `validate` now reads `ir_text` through
+`serialise.parse`, the format's own reader, so the check cannot disagree with the format.
+
+## Rules `validate` enforces beyond key presence
+
+Every one is a failure a key-presence check misses and a pair builder can actually produce:
+
+- `ir_text`'s `T|` line equals `diagram_type` - synthetic ER graphs say `er`, the IR enum says
+  `er_diagram`, and a pair carrying both would train the model on a type name it is never shown.
+- `traversal` equals the `O` line, has no repeats, and names exactly the `N|` rows.
+- `language` is 12.1.6's language for `diagram_type`.
+- `target_code` does not contain `diagram_id` (for ids of 6+ characters). The emitters name the
+  function / class / screen after the diagram id, and an id like `ex00_writer0001` is invisible
+  in `ir_text`: the model would be trained to produce an identifier it cannot see - a
+  hallucination by construction, and a writer id leaking into code. Pair builders emit against
+  the canonical id `diagram` instead (`src.codegen.pairs.CANONICAL_ID`).
+- validation/test pairs name a scribe and synthetic pairs are train-only - 12.1.8's two
+  invariants, re-checked per record so a hand-edited shard cannot break them silently.
+
+`validate` returns a **list of every problem**, not the first and not a bool: a 10K-pair shard
+that fails on one rule is fixed once, not once per rule.
 
 ## Rejected
 
-    a JSON Schema file           REJECTED for this record. `schemas/ir.schema.json` exists
-    (mirroring schemas/ir.*)     because IR is exchanged and versioned; a training pair is
-                                 internal and its interesting rules - traversal/ir_text
-                                 agreement, type/language agreement - are cross-field, which is
-                                 exactly what a JSON Schema expresses worst.
-    Parquet / a single JSON      REJECTED. 12.1.4 wants >=10K pairs written incrementally and
-    array                        streamed back; JSONL appends, tails, shards and diffs in git,
-                                 and `read_jsonl` never holds more than one line at a time.
-    storing the diagram dict     REJECTED. That is the 27x token blowup 12.1.2 measured, kept
-    alongside `ir_text`          on disk this time; `diagram_id` is the join key and the IR
-                                 corpus is right there.
+    a JSON Schema file       the interesting rules are cross-field (traversal vs ir_text,
+                             type vs language, id vs code), which JSON Schema expresses worst.
+    Parquet / one JSON array JSONL appends, streams one record at a time, shards and diffs.
+    storing the diagram dict that is the 27x token blowup 12.1.2 measured, kept on disk;
+    in the record              `diagram_id` joins back to the IR corpus.
+    rebuilding `ir_text` at   makes the training input a function of whatever `serialise` is on
+    load time                 the day the loader runs; the adapter must be reproducible against
+                              the bytes it was trained on.
 """
 
 from __future__ import annotations
@@ -62,12 +80,12 @@ import argparse
 import json
 import sys
 from collections.abc import Iterable, Iterator
-from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-#: The record's keys, in their canonical order. `write_jsonl` emits exactly these, in this
-#: order, so a shard diffs line-for-line against a re-run.
+SCHEMA_VERSION = 1
+
+#: The record's keys, in canonical order. `write_jsonl` emits exactly these, in this order.
 FIELDS: tuple[str, ...] = (
     "diagram_id",
     "diagram_type",
@@ -77,9 +95,12 @@ FIELDS: tuple[str, ...] = (
     "language",
     "source",
     "split",
+    "split_basis",
+    "scribe",
+    "meta",
 )
 
-#: `schemas/ir.schema.json`'s enum, restated here so a pair cannot carry a type the IR cannot.
+#: `schemas/ir.schema.json`'s enum, restated so a pair cannot carry a type the IR cannot.
 DIAGRAM_TYPES: tuple[str, ...] = (
     "flowchart",
     "wireframe",
@@ -89,32 +110,33 @@ DIAGRAM_TYPES: tuple[str, ...] = (
     "unknown",
 )
 
-#: 12.1.6's five target generators, by the tag that goes in `language` and in the fenced block.
-LANGUAGES: tuple[str, ...] = ("python", "sql", "tsx", "spice")
+#: 12.1.6's language tags - the keys of `src.codegen.quality.CHECKS` that a target may use.
+LANGUAGES: tuple[str, ...] = ("python", "sql", "react", "spice")
 
-#: 12.1.6's mapping, enforced. `unknown` diagrams may target anything - the classifier of Phase
-#: 5 has not spoken, and rejecting the pair would be inventing a fact.
+#: 12.1.6's mapping, enforced. `unknown` may target anything: Phase 5 has not classified it.
 LANGUAGE_BY_TYPE: dict[str, tuple[str, ...]] = {
     "flowchart": ("python",),
     "state_machine": ("python",),
     "er_diagram": ("sql",),
-    "wireframe": ("tsx",),
+    "wireframe": ("react",),
     "circuit": ("spice",),
     "unknown": LANGUAGES,
 }
 
-#: The five corpus directories under data/processed/ir, plus the two Phase 12 producers.
+#: IR corpus directories, 12.1.5's converted Sketch2Code HTML, 12.1.4 and 12.1.3.
 SOURCES: tuple[str, ...] = (
     "didi",
     "fa_bresler",
     "flowchartseg",
     "hdbpmn",
     "sketch2code",
+    "sketch2code_html",
     "synthetic",
     "handwritten",
 )
 
-SPLITS: tuple[str, ...] = ("train", "val", "test")
+#: 12.1.8's split names, verbatim from `src.codegen.splits.SPLITS`.
+SPLITS: tuple[str, ...] = ("train", "validation", "test")
 
 _STR_FIELDS = (
     "diagram_id",
@@ -124,85 +146,44 @@ _STR_FIELDS = (
     "language",
     "source",
     "split",
+    "split_basis",
 )
 
-
-@dataclass(frozen=True)
-class Pair:
-    """One training pair. Frozen because a record that mutates after validation is a lie."""
-
-    diagram_id: str
-    diagram_type: str
-    ir_text: str
-    traversal: list[str] = field(default_factory=list)
-    target_code: str = ""
-    language: str = "python"
-    source: str = "synthetic"
-    split: str = "train"
-
-    def to_dict(self) -> dict[str, Any]:
-        """Plain dict in `FIELDS` order - the thing that gets written and validated."""
-        raw = asdict(self)
-        return {k: raw[k] for k in FIELDS}
-
-    @classmethod
-    def from_dict(cls, record: dict[str, Any]) -> Pair:
-        return cls(**{k: record[k] for k in FIELDS if k in record})
+#: Ids shorter than this are too generic (`n0`, `s2c`) for a substring test to mean a leak.
+_MIN_LEAK_ID = 6
 
 
-def ir_text_node_ids(ir_text: str) -> list[str]:
-    """Node ids in an `ir_text`, in emission order. Kept here so `validate` needs no importer."""
-    out = []
-    for line in ir_text.split("\n"):
-        if line.startswith("N|"):
-            parts = line.split("|")
-            if len(parts) > 1:
-                out.append(parts[1])
-    return out
+def _parse(ir_text: str) -> dict:
+    from src.codegen.serialise import parse
 
-
-def ir_text_order(ir_text: str) -> list[str]:
-    """The `O` line's ids, or `[]` if there is no `O` line."""
-    for line in ir_text.split("\n"):
-        if line.startswith("O|"):
-            return line[2:].split()
-    return []
+    return parse(ir_text)
 
 
 def validate(record: Any) -> list[str]:
-    """Every problem with `record`, as strings. An empty list means the record is valid.
-
-    Deliberately returns all problems rather than raising on the first - a 10K-pair shard is
-    debugged once, not once per rule.
-    """
-    problems: list[str] = []
-    if isinstance(record, Pair):
-        record = record.to_dict()
+    """Every problem with `record`, as strings. An empty list means the record is valid."""
     if not isinstance(record, dict):
         return [f"record is {type(record).__name__}, not a dict"]
 
-    for key in FIELDS:
-        if key not in record:
-            problems.append(f"missing key: {key}")
-    for key in sorted(set(record) - set(FIELDS)):
-        problems.append(f"unexpected key: {key}")
+    problems = [f"missing key: {key}" for key in FIELDS if key not in record]
+    problems += [f"unexpected key: {key}" for key in sorted(set(record) - set(FIELDS))]
     if problems:
         return problems
 
     for key in _STR_FIELDS:
         if not isinstance(record[key], str):
             problems.append(f"{key} is {type(record[key]).__name__}, not str")
-    if not isinstance(record["traversal"], list) or not all(
-        isinstance(x, str) for x in record["traversal"]
-    ):
+    traversal = record["traversal"]
+    if not isinstance(traversal, list) or not all(isinstance(x, str) for x in traversal):
         problems.append("traversal is not a list[str]")
+    if record["scribe"] is not None and not isinstance(record["scribe"], str):
+        problems.append("scribe is neither str nor null")
+    if not isinstance(record["meta"], dict):
+        problems.append("meta is not a dict")
     if problems:
         return problems
 
     if not record["diagram_id"]:
         problems.append("diagram_id is empty")
-    if not record["ir_text"]:
-        problems.append("ir_text is empty")
     if not record["target_code"].strip():
         problems.append("target_code is empty")
     if record["diagram_type"] not in DIAGRAM_TYPES:
@@ -213,6 +194,8 @@ def validate(record: Any) -> list[str]:
         problems.append(f"source not in {SOURCES}: {record['source']!r}")
     if record["split"] not in SPLITS:
         problems.append(f"split not in {SPLITS}: {record['split']!r}")
+    if not record["split_basis"]:
+        problems.append("split_basis is empty")
 
     allowed = LANGUAGE_BY_TYPE.get(record["diagram_type"])
     if allowed and record["language"] in LANGUAGES and record["language"] not in allowed:
@@ -221,45 +204,62 @@ def validate(record: Any) -> list[str]:
             f"diagram_type {record['diagram_type']!r} (expected one of {allowed})"
         )
 
-    if record["ir_text"] and not record["ir_text"].startswith("T|"):
+    if record["split"] in ("validation", "test") and not record["scribe"]:
+        problems.append(f"{record['split']} pair has no scribe (12.1.8: held-out pairs need one)")
+    if record["source"] == "synthetic" and record["split"] != "train":
+        problems.append("synthetic pair outside train (12.1.8: synthetic is train-only)")
+
+    diagram_id = record["diagram_id"]
+    if len(diagram_id) >= _MIN_LEAK_ID and diagram_id in record["target_code"]:
+        problems.append("target_code contains diagram_id, which ir_text never shows")
+
+    ir_text = record["ir_text"]
+    if not ir_text.startswith("T|"):
         problems.append("ir_text does not begin with a T| type line")
-    nodes = set(ir_text_node_ids(record["ir_text"]))
-    stated = set(record["traversal"])
-    for nid in sorted(stated - nodes):
+        return problems
+    parsed = _parse(ir_text)
+    if parsed["diagram_type"] != record["diagram_type"]:
+        problems.append(
+            f"ir_text type {parsed['diagram_type']!r} != diagram_type {record['diagram_type']!r}"
+        )
+    node_ids = [node["id"] for node in parsed["nodes"]]
+    if len(set(traversal)) != len(traversal):
+        problems.append("traversal repeats a node id")
+    for nid in sorted(set(traversal) - set(node_ids)):
         problems.append(f"traversal id {nid!r} has no N| line in ir_text")
-    for nid in sorted(nodes - stated):
+    for nid in sorted(set(node_ids) - set(traversal)):
         problems.append(f"ir_text node {nid!r} is missing from traversal")
-    if record["ir_text"] and list(record["traversal"]) != ir_text_order(record["ir_text"]):
+    if traversal != parsed["traversal"]:
         problems.append("traversal does not match ir_text's O| line")
     return problems
 
 
-# -- JSONL, which is the only storage this schema has ---------------------------------------
+# -- JSONL, the only storage this schema has ---------------------------------------------------
 
 
-def write_jsonl(records: Iterable[Any], path: Path | str, *, check: bool = True) -> int:
-    """Write pairs to `path`, one compact JSON object per line. Returns the count written.
+def to_line(record: dict) -> str:
+    """One compact JSON line in `FIELDS` order - byte-stable for a given record."""
+    return json.dumps({k: record[k] for k in FIELDS}, ensure_ascii=False, separators=(",", ":"))
 
-    Raises on the first invalid record when `check` - a shard that silently contains a broken
-    pair is worse than one that fails to build.
-    """
+
+def write_jsonl(records: Iterable[dict], path: Path | str, *, check: bool = True) -> int:
+    """Write pairs to `path`, one per line. Returns the count. Raises on an invalid record."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     written = 0
     with path.open("w", encoding="utf-8", newline="\n") as handle:
         for record in records:
-            data = record.to_dict() if isinstance(record, Pair) else {k: record[k] for k in FIELDS}
             if check:
-                problems = validate(data)
+                problems = validate(record)
                 if problems:
-                    raise ValueError(f"{data.get('diagram_id')!r}: {'; '.join(problems)}")
-            handle.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n")
+                    raise ValueError(f"{record.get('diagram_id')!r}: {'; '.join(problems)}")
+            handle.write(to_line(record) + "\n")
             written += 1
     return written
 
 
 def read_jsonl(path: Path | str) -> Iterator[dict[str, Any]]:
-    """Stream records back. One line in memory at a time - 12.1.4 wants >=10K pairs."""
+    """Stream records back, one line in memory at a time. A bad line is an error."""
     with Path(path).open("r", encoding="utf-8") as handle:
         for lineno, line in enumerate(handle, 1):
             line = line.strip()
