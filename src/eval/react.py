@@ -1,6 +1,7 @@
 """Phase 12.3.6 - headless build and render of generated React components, in real node.
 
     python -m src.eval.react --install        # npm install esbuild + react into the tool dir
+    python -m src.eval.react --study          # every React target + 8 injected defects
 
     from src.eval.react import check_many
     results = check_many(codes, render=True)  # [{ok, kind, detail, html_bytes}, ...]
@@ -36,6 +37,7 @@ import json
 import os
 import shutil
 import subprocess
+from collections import Counter
 from pathlib import Path
 
 from src.utils.config import ROOT
@@ -226,15 +228,105 @@ def check(code: str, *, render: bool = True) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Phase 12.3.6 React build + render check")
     parser.add_argument("--install", action="store_true")
+    parser.add_argument("--study", action="store_true")
     parser.add_argument("files", nargs="*", type=Path)
     args = parser.parse_args(argv)
     if args.install:
         print(json.dumps({"ready": ensure_toolchain(), "dir": str(TOOL_DIR)}))
+    if args.study:
+        print(json.dumps(study(), indent=2))
     if args.files:
         codes = [p.read_text(encoding="utf-8") for p in args.files]
         for path, result in zip(args.files, check_many(codes), strict=True):
             print(path, json.dumps(result))
     return 0
+
+
+# -- the 12.3.6 study: real targets must render, broken ones must not ----------------------------
+
+MUTATIONS = (
+    "drop_closing_tag",
+    "undefined_identifier",
+    "missing_import",
+    "infinite_loop",
+    "no_export",
+    "invalid_expression",
+    "throws_in_render",
+    "returns_object",
+)
+
+
+def mutate(code: str, kind: str) -> str | None:
+    """One known defect injected into a working component, or None when there is no site."""
+    if kind == "drop_closing_tag":
+        index = code.rfind("</")
+        if index <= 0:
+            return None
+        end = code.find(">", index)
+        return code[:index] + code[end + 1 :]
+    head, sep, rest = code.partition("return (")
+    if not sep:
+        return None
+    if kind == "undefined_identifier":
+        return f"{head}const rows = items.map((x) => x);\n  return ({rest}"
+    if kind == "missing_import":
+        return f'import {{ Card }} from "@/components/card";\n{code}'
+    if kind == "infinite_loop":
+        return f"{head}while (true) {{}}\n  return ({rest}"
+    if kind == "no_export":
+        return code.replace("export default function", "function", 1)
+    if kind == "invalid_expression":
+        return f"{head}const total = 1 +;\n  return ({rest}"
+    if kind == "throws_in_render":
+        return f'{head}throw new Error("boom");\n  return ({rest}'
+    if kind == "returns_object":
+        return f"{head}return {{ a: 1 }};\n  return ({rest}"
+    raise ValueError(kind)
+
+
+def study(limit_per_source: int | None = None) -> dict:
+    """Render every React target, then every mutation of a sample; compare to the static gate."""
+    import random
+    import time
+
+    from src.codegen import quality
+    from src.codegen.pairs import load_pairs
+
+    sources: dict[str, list[str]] = {}
+    for record in load_pairs(diagram_types=["wireframe"]):
+        sources.setdefault(record["source"], []).append(record["target_code"])
+    try:
+        from src.codegen.sketch2code import load_pairs as html_pairs
+
+        sources["sketch2code_html"] = [r["target_code"] for r in html_pairs()]
+    except FileNotFoundError:
+        pass
+    report: dict = {"targets": {}, "mutations": {}}
+    for name, codes in sources.items():
+        codes = codes[:limit_per_source] if limit_per_source else codes
+        started = time.time()
+        results = check_many(codes)
+        seconds = time.time() - started
+        report["targets"][name] = {
+            "components": len(codes),
+            "rendered": sum(r["ok"] for r in results),
+            "kinds": dict(Counter(r["kind"] for r in results)),
+            "per_component_ms": round(1000 * seconds / max(1, len(codes)), 2),
+        }
+    rng = random.Random(0)
+    pool = sources.get("synthetic", [])[:150] + sources.get("sketch2code", [])[:100]
+    pool += sources.get("sketch2code_html", [])[:50]
+    rng.shuffle(pool)
+    for kind in MUTATIONS:
+        broken = [m for m in (mutate(c, kind) for c in pool) if m is not None]
+        results = check_many(broken, timeout_ms=1000)
+        report["mutations"][kind] = {
+            "applied": len(broken),
+            "rejected_by_render_check": sum(not r["ok"] for r in results),
+            "rejected_by_structural_check": sum(not quality.check_react(m)[0] for m in broken),
+            "kinds": dict(Counter(r["kind"] for r in results)),
+        }
+    return report
 
 
 if __name__ == "__main__":  # pragma: no cover
