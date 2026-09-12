@@ -526,7 +526,7 @@ becomes the code structure.
 
 | # | Task | Metric | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 12.3.1 | Syntactic validity | % of generated programs that parse | ≥ 95% | ❌ |
+| 12.3.1 | Syntactic validity | % of generated programs that parse | `src/llm/pipeline.py` stage `quality` failed and this row is not done: json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 1048565 (char 1048564). Traceback in `reports/llm_quality.md`; rerun `python -m src.llm.pipeline` to resume from this stage | ❌ |
 | 12.3.2 | Executability | % that run without exceptions in the sandbox | ≥ 85% | ❌ |
 | 12.3.3 | **Functional correctness** | pass@1 against per-diagram unit tests | ≥ 70% | ❌ |
 | 12.3.4 | Structural fidelity | Do generated branches / states / tables match the IR? (AST-vs-graph comparison) | Metric implemented | ❌ |
