@@ -21,6 +21,12 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tasks", nargs="+", help="task ids, e.g. 2.1.1")
     ap.add_argument("--dod", help="replace the Definition of Done cell (single task only)")
+    ap.add_argument(
+        "--open",
+        dest="open_row",
+        action="store_true",
+        help="record the row as still open (❌) instead of done - for a stage that ran and failed",
+    )
     args = ap.parse_args(argv)
 
     lines = PLAN.read_text(encoding="utf-8").split("\n")
@@ -34,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
             cells = line.split(" | ")
             if args.dod:
                 cells[-2] = args.dod
-            cells[-1] = "✅ |"
+            cells[-1] = ("❌" if args.open_row else "✅") + " |"
             lines[i] = " | ".join(cells)
             break
         else:
@@ -73,7 +79,8 @@ def main(argv: list[str] | None = None) -> int:
             lines[i] = f"| **Total** | **{grand_t}** | **{grand_d}** | {mark} |"
 
     PLAN.write_text("\n".join(lines), encoding="utf-8", newline="\n")
-    print(f"{' '.join(args.tasks)} -> done   ({grand_d}/{grand_t})")
+    word = "open" if args.open_row else "done"
+    print(f"{' '.join(args.tasks)} -> {word}   ({grand_d}/{grand_t})")
     return 0
 
 
