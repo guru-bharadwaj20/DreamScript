@@ -11,3 +11,7 @@ omegaconf==2.3.0
 
 # Phase 11.2.9 - the sandbox job object (Windows only); src/rl/sandbox.py imports win32api.
 pywin32==308; sys_platform == "win32"
+
+# Phase 12.1.7 - unpacks the ngspice archive for src/eval/spice.py; without it every circuit
+# target is rejected as `spice.unavailable`.
+py7zr==1.1.3
