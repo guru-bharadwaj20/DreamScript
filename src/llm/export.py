@@ -37,6 +37,73 @@ LLAMA_BIN = TOOLS / "bin"
 LLAMA_TAG = "b10909"
 
 
+#: Windows build flavour to fetch. cu124 matches requirements/torch.txt; a newer driver runs it.
+LLAMA_BUILD = "win-cuda-12.4-x64"
+LLAMA_RELEASE = "https://github.com/ggml-org/llama.cpp/releases/download/{tag}/{name}"
+LLAMA_REPO = "https://github.com/ggml-org/llama.cpp.git"
+
+
+def toolchain_ready() -> bool:
+    return (LLAMA_CPP / "convert_hf_to_gguf.py").is_file() and all(
+        (LLAMA_BIN / exe).is_file() for exe in ("llama-quantize.exe", "llama-server.exe")
+    )
+
+
+def ensure_toolchain() -> bool:
+    """Fetch llama.cpp at `LLAMA_TAG` - the converter script and the prebuilt binaries.
+
+    `experiments/` is gitignored, so this tree never survives a fresh clone and used to be built
+    by hand; a missing converter then failed the export stage with a bare `exit status 2`. Pinned
+    to a tag rather than a branch, because `convert_hf_to_gguf.py` and the GGUF it writes have to
+    agree with the `llama-quantize` that reads it.
+    """
+    import shutil
+    import urllib.request
+    import zipfile
+
+    if toolchain_ready():
+        return True
+    TOOLS.mkdir(parents=True, exist_ok=True)
+
+    if not (LLAMA_CPP / "convert_hf_to_gguf.py").is_file():
+        if LLAMA_CPP.exists():
+            shutil.rmtree(LLAMA_CPP, ignore_errors=True)
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--branch",
+                LLAMA_TAG,
+                LLAMA_REPO,
+                str(LLAMA_CPP),
+            ],
+            check=True,
+        )
+
+    if not toolchain_ready():
+        LLAMA_BIN.mkdir(parents=True, exist_ok=True)
+        # The binaries and the CUDA runtime ship as two archives; both unpack flat into bin/.
+        for name in (
+            f"llama-{LLAMA_TAG}-bin-{LLAMA_BUILD}.zip",
+            f"cudart-llama-bin-{LLAMA_BUILD}.zip",
+        ):
+            archive = TOOLS / name
+            if not archive.is_file():
+                url = LLAMA_RELEASE.format(tag=LLAMA_TAG, name=name)
+                with urllib.request.urlopen(url, timeout=900) as response, archive.open("wb") as fh:
+                    shutil.copyfileobj(response, fh)
+            with zipfile.ZipFile(archive) as zf:
+                for member in zf.infolist():
+                    if member.is_dir():
+                        continue
+                    target = LLAMA_BIN / Path(member.filename).name
+                    with zf.open(member) as src, target.open("wb") as dst:
+                        shutil.copyfileobj(src, dst)
+    return toolchain_ready()
+
+
 def merge(base_id: str, adapter: Path, out: Path) -> dict[str, Any]:
     import torch
     from peft import PeftModel
@@ -99,10 +166,12 @@ def check_merge(base_id: str, adapter: Path, merged_dir: Path, prompts: list[str
 
 
 def to_gguf(merged_dir: Path, out: Path, quants: tuple[str, ...] = ("Q8_0", "Q4_K_M")) -> dict:
+    if not ensure_toolchain():
+        raise RuntimeError(f"llama.cpp {LLAMA_TAG} toolchain unavailable under {TOOLS}")
     env = dict(os.environ, PYTHONPATH=str(LLAMA_CPP / "gguf-py"))
     f16 = out / "model-f16.gguf"
     began = time.perf_counter()
-    subprocess.run(
+    convert = subprocess.run(
         [
             sys.executable,
             str(LLAMA_CPP / "convert_hf_to_gguf.py"),
@@ -112,10 +181,17 @@ def to_gguf(merged_dir: Path, out: Path, quants: tuple[str, ...] = ("Q8_0", "Q4_
             "--outfile",
             str(f16),
         ],
-        check=True,
         env=env,
         capture_output=True,
+        text=True,
     )
+    if convert.returncode != 0:
+        # `check=True` here raised CalledProcessError with the converter's own diagnosis captured
+        # and discarded, which is how a missing script read as a bare "exit status 2".
+        raise RuntimeError(
+            f"convert_hf_to_gguf.py failed rc={convert.returncode}:\n"
+            f"{(convert.stderr or convert.stdout or '')[-2000:]}"
+        )
     report: dict[str, Any] = {
         "llama_cpp_tag": LLAMA_TAG,
         "f16": {"path": str(f16), "gb": round(f16.stat().st_size / 1e9, 2)},
