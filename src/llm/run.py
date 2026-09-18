@@ -119,6 +119,13 @@ def run(cfg) -> dict[str, Any]:  # pragma: no cover - GPU
     if cfg.train.save_adapter:
         model.save_pretrained(active.dir / "adapter")
         summary["adapter"] = str(active.dir / "adapter")
+    # `train.train` already wrote summary.json, so these last three fields only ever existed in
+    # the returned dict - and every consumer reads the *file* back (12.2's pipeline resumes an arm
+    # from it). Losing `adapter` that way is not cosmetic: it silently turned 12.2.7's LoRA arm
+    # back into the base model and crashed 12.2.8's export on Path(None).
+    (active.dir / "summary.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8"
+    )
     active.log_metrics(summary)
     active.finish()
     print(json.dumps(summary, indent=2), flush=True)
