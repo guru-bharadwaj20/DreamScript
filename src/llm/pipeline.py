@@ -2604,15 +2604,18 @@ def run_pipeline(
     ).start()
     try:
         for stage in STAGES:
-            if only and stage.name not in only:
-                continue
             d = ctx.stage_dir(stage.name)
             done_path = d / "done.json"
             failed_path = d / "failed.json"
             if done_path.exists():
+                # Absorb before the `only` filter: a finished stage still has to hand its state
+                # (the adapter path, the selected model) to whatever *is* selected, or `--only
+                # export` runs with none of what `train` learned.
                 done = json.loads(done_path.read_text(encoding="utf-8"))
                 stage.absorb(ctx, done)
                 ctx.state["stages"][stage.name] = "done (resumed)"
+                continue
+            if only and stage.name not in only:
                 continue
             bad = [
                 dep
