@@ -4,8 +4,8 @@ Identical messages (12.2.4 template as committed at `a7d945b`, loaded from the g
 
 | candidate | contract | syntax | executes | functional pass@1 | dropped nodes | invented/program | hit limit | batch | generate s |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `Qwen/Qwen2.5-Coder-7B-Instruct` | 91.5% | 96.6% | 58.5% | 13.6% | 31.1% | 1.761 | 2 | 32 | 1364.9 |
-| `deepseek-ai/deepseek-coder-6.7b-instruct` | 12.5% | 60.8% | 26.7% | 1.1% | 89.1% | 1.631 | 73 | 8 | 6005.9 |
+| `Qwen/Qwen2.5-Coder-7B-Instruct` | 91.5% | 96.6% | 58.5% | 13.6% | 31.1% | 1.761 | 2 | 32 | 1364.8 |
+| `deepseek-ai/deepseek-coder-6.7b-instruct` | 12.5% | 60.8% | 26.7% | 1.1% | 89.1% | 1.631 | 73 | 8 | 5982.8 |
 
 ## qwen7b
 
@@ -19,9 +19,9 @@ Batch sweep (32-prompt length-stratified sample):
 
 | batch | ms/sample | gen tokens/s | peak alloc GB | peak reserved GB |
 | :--- | :--- | :--- | :--- | :--- |
-| 8 | 7494.6 | 37.7 | 7.855 | 8.617 |
-| 16 | 18028.8 | 20.3 | 10.094 | 10.756 |
-| 32 | 3930.9 | 68.4 | 14.577 | 17.509 |
+| 8 | 7355.3 | 38.4 | 7.855 | 8.617 |
+| 16 | 17862.8 | 20.5 | 10.094 | 10.756 |
+| 32 | 3929.3 | 68.4 | 14.577 | 17.509 |
 
 ## dscoder67b
 
@@ -35,7 +35,7 @@ Batch sweep (32-prompt length-stratified sample):
 
 | batch | ms/sample | gen tokens/s | peak alloc GB | peak reserved GB |
 | :--- | :--- | :--- | :--- | :--- |
-| 8 | 26023.0 | 40.3 | 17.151 | 21.475 |
+| 8 | 26017.6 | 40.3 | 17.151 | 21.475 |
 | 16 | OOM |  |  |  |
 
 **Selected: `Qwen/Qwen2.5-Coder-7B-Instruct`** (highest functional pass@1, then executability, then syntax; validation only).
