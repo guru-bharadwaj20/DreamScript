@@ -26,6 +26,8 @@ PACKAGES = [
     "src.parse",
     "src.assemble",
     "src.rl",
+    "src.codegen",
+    "src.llm",
     "src.synth",
     "src.eval",
     "src.serve",
