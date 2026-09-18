@@ -119,3 +119,43 @@ class M:
 def test_mutants_include_the_expected_kinds() -> None:
     kinds = set(F.mutants(GOOD))
     assert {"drop_operation", "swap_operations", "swap_branch_polarity"} <= kinds
+
+
+def test_a_signature_past_the_sandboxs_default_keep_cap_still_parses() -> None:
+    """The depth-MAX_BITS tree of a wide flowchart serialises past 1 MiB.
+
+    The whole `quality` stage used to die on it with a JSONDecodeError at char 1048564, because
+    the sandbox keeps only its first MiB of stdout by default and the parent parsed the fragment.
+    """
+    n = 26
+    nodes = [
+        {"id": f"node_{i:02d}_long_identifier_text", "text": f"step number {i}",
+         "semantic_role": "process"}
+        for i in range(n)
+    ]
+    nodes[0]["semantic_role"] = "start"
+    diagram = {
+        "diagram_type": "flowchart",
+        "nodes": nodes,
+        "edges": [
+            {"src": nodes[i]["id"], "dst": nodes[i + 1]["id"]} for i in range(n - 1)
+        ],
+    }
+    body = []
+    for i in range(12):
+        body += [
+            f"    if ctx.flag_{i}:",
+            f"        node_{i:02d}_long_identifier_text()",
+            "    else:",
+            f"        node_{(i + 13) % n:02d}_long_identifier_text()",
+        ]
+    code = (
+        "".join(f"def node_{i:02d}_long_identifier_text():\n    pass\n" for i in range(n))
+        + "\ndef main(ctx):\n"
+        + "\n".join(body)
+        + "\n    return 1\n"
+    )
+
+    sig = F.signature(code, diagram, timeout_s=180.0)
+    assert sig["ok"] is True, sig
+    assert len(sig["paths"]) == 2 ** F.MAX_BITS

@@ -53,8 +53,14 @@ FUZZ = 0.85
 
 #: Runs inside the sandbox. Reads spec.json + prog.py from its cwd, prints one JSON line.
 DRIVER = r'''
-import builtins, difflib, json, re, sys
+import builtins, difflib, json, os, re, sys
 sys.setrecursionlimit(400)
+# The candidate program may print as much as it likes, and the sandbox keeps only the *first* MiB
+# of stdout - so a chatty program used to push the trailing @@SIG@@ line out of the buffer and
+# leave the parent parsing a JSON fragment. Give the program a sink and keep the real stream for
+# the driver's own one-line result.
+_SIG_OUT = sys.stdout
+sys.stdout = open(os.devnull, "w", encoding="utf-8")
 spec = json.load(open("spec.json", encoding="utf-8"))
 source = open("prog.py", encoding="utf-8").read()
 FUZZ = spec["fuzz"]
@@ -334,7 +340,8 @@ except SyntaxError as exc:
     out = {"ok": False, "error": "syntax"}
 except BaseException as exc:
     out = {"ok": False, "error": type(exc).__name__ + ": " + str(exc)[:200]}
-sys.stdout.write("\n@@SIG@@" + json.dumps(out) + "\n")
+_SIG_OUT.write("\n@@SIG@@" + json.dumps(out) + "\n")
+_SIG_OUT.flush()
 '''
 
 
@@ -536,12 +543,27 @@ def signature(code: str, diagram: dict, timeout_s: float = 20.0) -> dict[str, An
         DRIVER,
         timeout_s=timeout_s,
         memory_limit_mb=512,
+        # The signature is the payload, not chatter: the depth-`MAX_BITS` tree is up to 4,096
+        # paths and every path carries a full node trace, so a wide flowchart serialises past the
+        # sandbox's 1 MiB default and used to come back as half a JSON object. Capping the path
+        # set instead would quietly change what 12.3.3 scores, so widen the transport.
+        max_output_bytes=64 * 1024 * 1024,
         files={"prog.py": code, "spec.json": json.dumps(spec_for(diagram))},
     )
     marker = "@@SIG@@"
     stdout = result.get("stdout") or ""
     if marker in stdout:
-        return json.loads(stdout.rsplit(marker, 1)[1].strip().splitlines()[0])
+        line = stdout.rsplit(marker, 1)[1].strip().splitlines()
+        try:
+            return json.loads(line[0]) if line else {}
+        except (json.JSONDecodeError, IndexError):
+            # One unparseable program is a scoring result, not a pipeline crash: the driver now
+            # writes the marker past a sink, so this can only be a genuinely mangled line.
+            return {
+                "ok": False,
+                "error": "sandbox:bad_signature",
+                "detail": f"truncated={result.get('truncated')} bytes={result.get('stdout_bytes')}",
+            }
     return {"ok": False, "error": f"sandbox:{result['kind']}", "detail": result.get("detail")}
 
 
