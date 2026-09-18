@@ -1981,70 +1981,207 @@ def commit_repair(ctx: Ctx, done: dict) -> None:
 # -- similarity (report only) -------------------------------------------------------------------
 
 
-def stage_similarity(ctx: Ctx) -> dict:
-    import importlib
+def stage_structural(ctx: Ctx) -> dict:
+    """12.3.4 - do the generated branches / states / tables match the IR the model was shown?"""
+    from src.codegen import pairs as pair_mod
+    from src.eval import structural
+    from src.llm.generate import read_jsonl
+    from src.llm.score import code_of
 
-    for name in (
-        "src.eval.similarity",
-        "src.codegen.similarity",
-        "src.eval.codebleu",
-    ):
-        try:
-            module = importlib.import_module(name)
-        except Exception:  # noqa: BLE001
-            continue
-        fn = next(
-            (
-                getattr(module, a)
-                for a in (
-                    "score_many",
-                    "similarity_many",
-                    "score",
-                    "similarity",
-                )
-                if hasattr(module, a)
-            ),
-            None,
-        )
-        if fn is None:
-            continue
-        from src.llm import pairs
-        from src.llm.generate import read_jsonl
-        from src.llm.score import code_of
+    index = {p["diagram_id"]: p for p in pair_mod.load_pairs("test")}
+    rows = read_jsonl(ROOT / ctx.state["lora_generations"])
 
-        index = {p["diagram_id"]: p for p in pairs.load("test")}
-        rows = read_jsonl(ROOT / ctx.state["lora_generations"])
-        try:
-            values = fn(
+    def measure(get_code) -> dict:
+        per_type: dict[str, list[dict]] = {}
+        for row in rows:
+            record = index.get(row["diagram_id"])
+            if record is None:
+                continue
+            got = structural.fidelity(record, get_code(row, record))
+            per_type.setdefault(record["diagram_type"], []).append(got)
+        out: dict = {"by_type": {}, "n": sum(len(v) for v in per_type.values())}
+        scores = []
+        for kind, got in sorted(per_type.items()):
+            vals = [g["structural"] for g in got if g["structural"] == g["structural"]]
+            out["by_type"][kind] = {
+                "n": len(got),
+                "structural": round(sum(vals) / len(vals), 4) if vals else None,
+                "parsed": round(sum(bool(g.get("parsed")) for g in got) / len(got), 4),
+            }
+            scores += vals
+        out["structural"] = round(sum(scores) / len(scores), 4) if scores else None
+        return out
+
+    lora = measure(lambda row, record: code_of(row["text"]))
+    # The references through the same metric: 12.1.6's emitter is the convention the metric
+    # encodes, so this is the ceiling, and anything below 1.0 here is the metric's own error.
+    ceiling = measure(lambda row, record: record["target_code"])
+    done = {"lora": lora, "reference": ceiling, "n": lora["n"]}
+
+    lines = [
+        "# Phase 12.3.4 - structural fidelity of LoRA test outputs",
+        "",
+        f"`src.eval.structural.fidelity` over {lora['n']} test generations: an AST-vs-graph "
+        "comparison per diagram type, where everything expected is derived from the `ir_text` the "
+        "model was shown and never from the IR file, so the metric cannot reward reproducing "
+        "information the model could not see.",
+        "",
+        md_table(
+            ["diagram type", "n", "LoRA structural", "LoRA parsed", "reference structural"],
+            [
                 [
-                    (
-                        code_of(r["text"]),
-                        index[r["diagram_id"]]["target_code"],
-                    )
-                    for r in rows
+                    kind,
+                    v["n"],
+                    v["structural"],
+                    pct(v["parsed"]),
+                    ceiling["by_type"].get(kind, {}).get("structural"),
                 ]
+                for kind, v in sorted(lora["by_type"].items())
+            ],
+        ),
+        "",
+        f"**Overall structural fidelity {lora['structural']}** against a reference ceiling of "
+        f"{ceiling['structural']}.",
+    ]
+    (ctx.reports / "llm_structural.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return done
+
+
+def commit_structural(ctx: Ctx, done: dict) -> None:
+    lora, ref = done["lora"], done["reference"]
+    per_type = ", ".join(f"{kind} {v['structural']}" for kind, v in sorted(lora["by_type"].items()))
+    dod = (
+        f"`src/eval/structural.py` + `src/llm/pipeline.py` + `reports/llm_structural.md`: the "
+        f"AST-vs-graph comparison run over {done['n']} LoRA test generations. **Structural "
+        f"fidelity {lora['structural']}** against the reference ceiling {ref['structural']} "
+        f"({per_type}). Everything expected is derived from the `ir_text` the model was shown, "
+        "never from the IR file's `attrs`, so the metric cannot reward a model for reproducing "
+        "what it could not see; correspondence is exact-match on 12.1.6's own identifier "
+        "function, because a fuzzy rule lets one code name match nine drawn boxes"
+    )
+    commit_row(
+        ctx,
+        "12.3.4",
+        dod,
+        f"12.3.4: structural fidelity {lora['structural']} on {done['n']} LoRA test outputs "
+        f"against a reference ceiling of {ref['structural']}\n",
+        [ctx.reports / "llm_structural.md"],
+        keep_open=False,
+    )
+
+
+def stage_similarity(ctx: Ctx) -> dict:
+    """12.3.5 - CodeBLEU / exact match / edit distance of the LoRA test outputs vs their targets."""
+    from src.codegen import pairs as pair_mod
+    from src.eval import similarity
+    from src.llm.generate import read_jsonl
+    from src.llm.score import code_of
+
+    index = {p["diagram_id"]: p for p in pair_mod.load_pairs("test")}
+    rows = read_jsonl(ROOT / ctx.state["lora_generations"])
+    scored = similarity.score_many(
+        [
+            (
+                code_of(r["text"]),
+                index[r["diagram_id"]]["target_code"],
+                index[r["diagram_id"]].get("language", "python"),
             )
-        except TypeError:
-            values = [
-                fn(
-                    code_of(r["text"]),
-                    index[r["diagram_id"]]["target_code"],
+            for r in rows
+            if r["diagram_id"] in index
+        ]
+    )
+    # The reference against itself is the metric's own ceiling, and the only honest way to read
+    # the LoRA number: 1.000 there says the corpus is scoring what it claims to score.
+    ceiling = similarity.score_many(
+        [(p["target_code"], p["target_code"], p.get("language", "python")) for p in index.values()]
+    )
+    done = {
+        "n": scored["n"],
+        "lora": {k: v for k, v in scored.items() if k != "per_row"},
+        "ceiling": {k: v for k, v in ceiling.items() if k != "per_row"},
+        "perturbations": similarity.study("test")["perturbations"],
+    }
+
+    by_lang = done["lora"]["by_language"]
+    lines = [
+        "# Phase 12.3.5 - similarity of LoRA test outputs to their reference targets",
+        "",
+        f"`src.eval.similarity` over {scored['n']} test generations. CodeBLEU is the weighted mean "
+        "of the components that are *defined* for a language - an undefined one is dropped and the "
+        "rest renormalised, never scored as zero - so the per-language rows below are not "
+        "comparable with each other, only arm against arm within a row.",
+        "",
+        md_table(
+            ["metric", "LoRA", "reference vs itself"],
+            [
+                [k, done["lora"].get(k), done["ceiling"].get(k)]
+                for k in (
+                    "codebleu",
+                    "ngram_match",
+                    "weighted_ngram_match",
+                    "syntax_match",
+                    "dataflow_match",
+                    "exact_match",
+                    "edit_similarity",
                 )
-                for r in rows
-            ]
-        text = json.dumps(
-            values if isinstance(values, dict) else {"per_row": values},
-            default=str,
-        )[:20000]
-        (ctx.reports / "llm_similarity.md").write_text(
-            f"# 12.3.5 metric on LoRA test outputs (`{name}.{fn.__name__}`)\n\n"
-            f"```json\n{text}\n```\n"
-        )
-        return {
-            "module": name,
-            "function": fn.__name__,
-        }
-    return {"skipped": "no similarity metric module found"}
+            ],
+        ),
+        "",
+        "## Per language",
+        "",
+        md_table(
+            ["language", "n", "codebleu", "exact", "edit_sim"],
+            [
+                [lang, v["n"], v["codebleu"], v["exact_match"], v["edit_similarity"]]
+                for lang, v in sorted(by_lang.items())
+            ],
+        ),
+        "",
+        "## What the metric does to known perturbations of the references",
+        "",
+        "The calibration that says how to read the table above.",
+        "",
+        md_table(
+            ["perturbation", "codebleu", "exact", "edit_sim"],
+            [
+                [name, v["codebleu"], v["exact_match"], v["edit_similarity"]]
+                for name, v in done["perturbations"].items()
+            ],
+        ),
+    ]
+    (ctx.reports / "llm_similarity.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return done
+
+
+def commit_similarity(ctx: Ctx, done: dict) -> None:
+    lora, pert = done["lora"], done["perturbations"]
+    rename = pert.get("rename_locals", {}).get("codebleu")
+    drop = pert.get("drop_one_statement", {}).get("codebleu")
+    dod = (
+        f"`src/eval/similarity.py` + `tests/test_eval_similarity.py` + `src/llm/pipeline.py` + "
+        f"`reports/llm_similarity.md`: CodeBLEU (all four components, self-contained - no "
+        f"`codebleu` package), exact match and token edit distance over {done['n']} LoRA test "
+        f"generations. **CodeBLEU {lora['codebleu']}, exact match {lora['exact_match']}, edit "
+        f"similarity {lora['edit_similarity']}**; the references against themselves score "
+        f"{done['ceiling']['codebleu']}, which is the metric's ceiling on this corpus. A component "
+        "undefined for a language (no JSX/SQL/SPICE parser in the stdlib) is dropped and the "
+        "remaining weights renormalised rather than scored as zero, so a perfect SQL answer is "
+        "1.000 and not 0.500; every row carries which components it had. **The calibration is the "
+        f"finding: renaming every local variable - which changes no behaviour - costs CodeBLEU "
+        f"{rename}, while deleting a statement costs only {drop}**, so the metric is ordered "
+        "against correctness and is reported as a comparative number only; 12.3.3 is where "
+        "correctness is settled"
+    )
+    commit_row(
+        ctx,
+        "12.3.5",
+        dod,
+        f"12.3.5: CodeBLEU {lora['codebleu']} / exact {lora['exact_match']} / edit "
+        f"{lora['edit_similarity']} on {done['n']} LoRA test outputs; a harmless rename costs "
+        f"{rename} against {drop} for a dropped statement\n",
+        [ctx.reports / "llm_similarity.md"],
+        keep_open=False,
+    )
 
 
 # -- export -------------------------------------------------------------------------------------
@@ -2540,11 +2677,18 @@ STAGES = [
         commit_repair,
     ),
     Stage(
+        "structural",
+        ["12.3.4"],
+        ["compare"],
+        stage_structural,
+        commit_structural,
+    ),
+    Stage(
         "similarity",
-        [],
+        ["12.3.5"],
         ["compare"],
         stage_similarity,
-        None,
+        commit_similarity,
     ),
     Stage(
         "export",
