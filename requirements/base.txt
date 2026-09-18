@@ -8,3 +8,6 @@ matplotlib==3.9.3
 seaborn==0.13.2
 pytest==8.3.4
 omegaconf==2.3.0
+
+# Phase 11.2.9 - the sandbox job object (Windows only); src/rl/sandbox.py imports win32api.
+pywin32==308; sys_platform == "win32"
