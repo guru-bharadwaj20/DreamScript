@@ -722,9 +722,9 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 10 — Graph Assembly | 14 | 14 | ✅ |
 | 11 — RL Traversal | 16 | 16 | ✅ |
 | 12 — LLM Fine-Tuning | 26 | 24 | ❌ |
-| 13 — Orchestration | 10 | 0 | ❌ |
+| 13 — Orchestration | 10 | 7 | ❌ |
 | 14 — Evaluation | 11 | 0 | ❌ |
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **243** | ❌ |
+| **Total** | **302** | **250** | ❌ |
