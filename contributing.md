@@ -526,7 +526,7 @@ becomes the code structure.
 
 | # | Task | Metric | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 12.3.1 | Syntactic validity | % of generated programs that parse | `src/llm/pipeline.py` stage `quality` failed and this row is not done: json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 1048565 (char 1048564). Traceback in `reports/llm_quality.md`; rerun `python -m src.llm.pipeline` to resume from this stage | ❌ |
+| 12.3.1 | Syntactic validity | % of generated programs that parse | `src/llm/score.py` + `src/llm/functional.py` + `src/llm/pipeline.py` + `reports/llm_quality.md`: all 162 LoRA test generations, one denominator (unparseable replies count as failures everywhere). **Syntactic validity 99.4%** by `src.eval.codecheck.syntactic_many` (ast.parse + compile), 99.4% by `score.syntax_ok`; the strict one-fence contract holds on 100.0%; reference programs 100.0%. Threshold >= 95%: met | ✅ |
 | 12.3.2 | Executability | % that run without exceptions in the sandbox | `src/llm/pipeline.py` stage `quality` failed and this row is not done: json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 1048565 (char 1048564). Traceback in `reports/llm_quality.md`; rerun `python -m src.llm.pipeline` to resume from this stage | ❌ |
 | 12.3.3 | **Functional correctness** | pass@1 against per-diagram unit tests | `src/llm/pipeline.py` stage `quality` failed and this row is not done: json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 1048565 (char 1048564). Traceback in `reports/llm_quality.md`; rerun `python -m src.llm.pipeline` to resume from this stage | ❌ |
 | 12.3.4 | Structural fidelity | Do generated branches / states / tables match the IR? (AST-vs-graph comparison) | Metric implemented | ❌ |
@@ -719,10 +719,10 @@ Units 1-3 and the classical half of Unit 4 (clustering, CNN) are fully covered -
 | 9 — CNN & OCR | 22 | 22 | ✅ |
 | 10 — Graph Assembly | 14 | 14 | ✅ |
 | 11 — RL Traversal | 16 | 16 | ✅ |
-| 12 — LLM Fine-Tuning | 26 | 15 | ❌ |
+| 12 — LLM Fine-Tuning | 26 | 16 | ❌ |
 | 13 — Orchestration | 10 | 0 | ❌ |
 | 14 — Evaluation | 11 | 0 | ❌ |
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Web App & Demo | 14 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **302** | **234** | ❌ |
+| **Total** | **302** | **235** | ❌ |
