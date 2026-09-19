@@ -37,8 +37,9 @@ expensive stages - the detector and the language model - are the two a deploymen
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from src.pipeline.cache import StageCache, digest_obj, image_key
 from src.pipeline.contracts import UNKNOWN, Outcome, Result, StageReport, Timer
@@ -177,7 +178,9 @@ class DreamScriptPipeline:
     def _detect(self, path: Path) -> Outcome[list[dict]]:
         from src.pipeline.vision import detect_boxes
 
-        boxes = detect_boxes(path)
+        # Arrowheads are kept here and dropped inside `assemble_diagram`: 13.3's prior is
+        # fitted on the full histogram, and the arrowhead count is its strongest feature.
+        boxes = detect_boxes(path, keep_arrowheads=True)
         if not boxes:
             return Outcome.failed("the detector found nothing on this page")
         return Outcome(value=boxes)

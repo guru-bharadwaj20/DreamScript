@@ -84,14 +84,29 @@ def page_for(path: str | Path) -> LoosePage:
     return LoosePage(name=path.stem, image=path, native_size=(width, height))
 
 
-def detect_boxes(path: str | Path, min_score: float = MIN_SCORE) -> list[dict]:
-    """9.1's detector on one page, in the `{id, bbox, cls, score}` shape the tracer wants."""
+def detect_boxes(
+    path: str | Path, min_score: float = MIN_SCORE, *, keep_arrowheads: bool = False
+) -> list[dict]:
+    """9.1's detector on one page, in the `{id, bbox, cls, score}` shape the tracer wants.
+
+    **`keep_arrowheads` exists because dropping them silently broke routing.** The tracer does
+    not want arrowheads, so they were filtered here - but 13.3's prior is *fitted* on the
+    detector's full class histogram, in which the arrowhead count is the single most
+    discriminative feature: a flowchart page averages 69.97 of them and a state machine
+    essentially none. Routing the filtered list is therefore a train/serve skew, and it is not
+    theoretical - golden page `hdbpmn__ex08_writer0096` has 92 boxes including 67 arrowheads and
+    routes `flowchart` at 1.0, while the same page filtered has 24 boxes and routes
+    `state_machine` at **0.9909**, straight past 13.5's gate and into a Python state machine
+    emitted for a BPMN diagram.
+
+    So the classifier is handed what the fit saw, and assembly is handed what the tracer wants.
+    """
     prediction = _detector().predict(str(path), verbose=False, imgsz=1280)[0]
     out: list[dict] = []
     for index, row in enumerate(prediction.boxes):
         score = float(row.conf.item())
         name = CLASSES[int(row.cls.item())]
-        if score < min_score or name == "arrowhead":
+        if score < min_score or (name == "arrowhead" and not keep_arrowheads):
             continue
         x1, y1, x2, y2 = (float(v) for v in row.xyxy[0].tolist())
         out.append(
@@ -110,6 +125,11 @@ def detect_boxes(path: str | Path, min_score: float = MIN_SCORE) -> list[dict]:
 #: are both fitted per corpus, so the routed type is the honest proxy: 13.3 has already decided
 #: this is a state machine, and the only state-machine corpus is fa_bresler.
 SOURCE_FOR_TYPE = {"state_machine": "fa_bresler", "flowchart": "hdbpmn"}
+
+
+def without_arrowheads(boxes: list[dict]) -> list[dict]:
+    """The tracer's view of a detection list. See `detect_boxes` on why routing keeps them."""
+    return [b for b in boxes if str(b.get("cls")) != "arrowhead"]
 
 
 def assemble_diagram(
@@ -132,6 +152,8 @@ def assemble_diagram(
     # members. The cast keeps that narrow claim visible instead of widening tracing's signature
     # for a caller Phase 10 was not written for.
     known = cast(Any, page)
+    # Arrowheads reach this function now, because routing needs them; the tracer never did.
+    boxes = without_arrowheads(boxes)
     diagram = tracing.to_diagram(known, boxes, tracing.trace(known, boxes))
 
     if page.source in s5.TEXT_SOURCES:
