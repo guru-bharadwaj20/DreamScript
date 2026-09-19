@@ -7,11 +7,11 @@
     "edges_truth": 397,
     "edges_pred": 518,
     "edge_labels_truth": 113,
-    "edge_labels_pred": 0,
+    "edge_labels_pred": 442,
     "node_texts_truth": 295,
     "node_texts_pred": 386
   },
-  "state_machines_with_zero_transitions": 9,
+  "state_machines_with_zero_transitions": 1,
   "state_machines": 9,
   "rows": [
     {
@@ -29,14 +29,14 @@
       ],
       "edge_labels": [
         7,
-        0
+        20
       ],
       "node_texts": [
         4,
         4
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 16,
+      "code_lines": 53
     },
     {
       "name": "fa_bresler__writer015_fa_011",
@@ -53,14 +53,14 @@
       ],
       "edge_labels": [
         6,
-        0
+        12
       ],
       "node_texts": [
         5,
         5
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 5,
+      "code_lines": 42
     },
     {
       "name": "fa_bresler__writer018_fa_010",
@@ -77,14 +77,14 @@
       ],
       "edge_labels": [
         7,
-        0
+        17
       ],
       "node_texts": [
         4,
         4
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 8,
+      "code_lines": 43
     },
     {
       "name": "fa_bresler__writer018_fa_012",
@@ -101,14 +101,14 @@
       ],
       "edge_labels": [
         10,
-        0
+        24
       ],
       "node_texts": [
         5,
         5
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 20,
+      "code_lines": 59
     },
     {
       "name": "fa_bresler__writer021_fa_001",
@@ -125,14 +125,14 @@
       ],
       "edge_labels": [
         5,
-        0
+        14
       ],
       "node_texts": [
         3,
         3
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 8,
+      "code_lines": 43
     },
     {
       "name": "fa_bresler__writer021_fa_006",
@@ -149,14 +149,14 @@
       ],
       "edge_labels": [
         8,
-        0
+        16
       ],
       "node_texts": [
         5,
         5
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 17,
+      "code_lines": 54
     },
     {
       "name": "fa_bresler__writer021_fa_007",
@@ -173,14 +173,14 @@
       ],
       "edge_labels": [
         7,
-        0
+        21
       ],
       "node_texts": [
         5,
         5
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 3,
+      "code_lines": 34
     },
     {
       "name": "fa_bresler__writer024_fa_004",
@@ -197,14 +197,14 @@
       ],
       "edge_labels": [
         4,
-        0
+        14
       ],
       "node_texts": [
         2,
         2
       ],
-      "transitions_emitted": 0,
-      "code_lines": 30
+      "transitions_emitted": 4,
+      "code_lines": 35
     },
     {
       "name": "hdbpmn__ex00_writer0104",
@@ -245,7 +245,7 @@
       ],
       "edge_labels": [
         3,
-        0
+        6
       ],
       "node_texts": [
         7,
@@ -269,7 +269,7 @@
       ],
       "edge_labels": [
         3,
-        0
+        12
       ],
       "node_texts": [
         13,
@@ -293,7 +293,7 @@
       ],
       "edge_labels": [
         3,
-        0
+        13
       ],
       "node_texts": [
         17,
@@ -317,7 +317,7 @@
       ],
       "edge_labels": [
         9,
-        0
+        28
       ],
       "node_texts": [
         20,
@@ -341,7 +341,7 @@
       ],
       "edge_labels": [
         7,
-        0
+        53
       ],
       "node_texts": [
         23,
@@ -365,7 +365,7 @@
       ],
       "edge_labels": [
         3,
-        0
+        1
       ],
       "node_texts": [
         10,
@@ -389,7 +389,7 @@
       ],
       "edge_labels": [
         4,
-        0
+        12
       ],
       "node_texts": [
         15,
@@ -413,7 +413,7 @@
       ],
       "edge_labels": [
         4,
-        0
+        49
       ],
       "node_texts": [
         12,
@@ -437,7 +437,7 @@
       ],
       "edge_labels": [
         2,
-        0
+        19
       ],
       "node_texts": [
         14,
@@ -461,7 +461,7 @@
       ],
       "edge_labels": [
         1,
-        0
+        23
       ],
       "node_texts": [
         14,
@@ -485,7 +485,7 @@
       ],
       "edge_labels": [
         5,
-        0
+        13
       ],
       "node_texts": [
         18,
@@ -509,7 +509,7 @@
       ],
       "edge_labels": [
         5,
-        0
+        16
       ],
       "node_texts": [
         18,
@@ -533,7 +533,7 @@
       ],
       "edge_labels": [
         0,
-        0
+        8
       ],
       "node_texts": [
         10,
@@ -557,7 +557,7 @@
       ],
       "edge_labels": [
         6,
-        0
+        31
       ],
       "node_texts": [
         20,
@@ -581,7 +581,7 @@
       ],
       "edge_labels": [
         2,
-        0
+        6
       ],
       "node_texts": [
         21,
@@ -605,7 +605,7 @@
       ],
       "edge_labels": [
         0,
-        0
+        14
       ],
       "node_texts": [
         23,

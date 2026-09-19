@@ -259,3 +259,30 @@ def test_the_emitter_answers_when_no_model_is_served(golden_results):
     produced = [r for r in golden_results if r.ok]
     generate = [next(s for s in r.stages if s.name == "generate") for r in produced]
     assert all(s.degraded for s in generate), "a generate stage claimed a model it did not use"
+
+
+def test_a_cache_entry_written_by_different_code_is_a_miss(tmp_path, monkeypatch):
+    """The cache must not answer with results the current code would not produce.
+
+    Found by accident and worth a test: the key was the image plus a config hash of three
+    constructor arguments, so wiring the S5 assembly stages in changed what `assemble` returns
+    for every page while a warm cache went on serving the old IR - a state machine that had been
+    rebuilt with real states and transitions still came back with one merged state and none.
+    """
+    from src.pipeline import cache as cache_module
+
+    store = cache_module.StageCache(directory=tmp_path)
+    store.put("assemble", "k1", {"nodes": [1, 2]})
+    assert store.get("assemble", "k1") == {"nodes": [1, 2]}
+
+    monkeypatch.setattr(cache_module, "code_key", lambda: "0000000000000000")
+    fresh = cache_module.StageCache(directory=tmp_path)
+    assert fresh.get("assemble", "k1") is None
+    assert fresh.stats() == {"hits": 0, "misses": 1}
+
+
+def test_the_code_key_is_stable_within_a_process():
+    from src.pipeline.cache import code_key
+
+    assert code_key() == code_key()
+    assert len(code_key()) == 16

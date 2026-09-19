@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,43 @@ def digest_obj(obj: Any) -> str:
     """A stable hash of any JSON-shaped configuration."""
     text = json.dumps(obj, sort_keys=True, default=str, separators=(",", ":"))
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
+
+
+#: Which trees decide what a stage returns. `code_key` fingerprints these, so editing an
+#: assembler or an emitter invalidates entries written by the old one.
+_CODE_ROOTS = ("pipeline", "assemble", "codegen", "ocr", "parse")
+
+
+@lru_cache(maxsize=1)
+def code_key() -> str:
+    """A digest of the code that produces stage outputs.
+
+    **Without this the cache answers with results the current code would not produce.** The key
+    was the image plus a config hash of `confidence_floor`, `generate` and `read_text` - three
+    constructor arguments - and nothing about the pipeline itself. Wiring the S5 assembly stages
+    in changed what `assemble` returns for every page, and a warm cache went on serving the old
+    IR: a page whose machine had been rebuilt with real states and transitions still came back
+    with one merged state and none. That is the failure this module's own docstring promises
+    does not happen - "a stale entry from a different configuration is a miss rather than a
+    wrong answer" - and it was true only of configuration, not of code.
+
+    Hashing source text rather than mtimes, because a checkout, a rebase or a copy all move
+    mtimes without changing behaviour, and the point is to invalidate on behaviour. Computed
+    once per process: ~200 small files, a few milliseconds, against stage work measured in
+    hundreds of milliseconds.
+    """
+    digest = hashlib.sha256()
+    for root in _CODE_ROOTS:
+        base = ROOT / "src" / root
+        if not base.is_dir():
+            continue
+        for file in sorted(base.rglob("*.py")):
+            try:
+                digest.update(file.read_bytes())
+            except OSError:
+                # An unreadable file is a reason to invalidate, not to crash.
+                digest.update(str(file).encode("utf-8"))
+    return digest.hexdigest()[:16]
 
 
 def image_key(path: str | Path) -> str:
@@ -69,6 +107,10 @@ class StageCache:
         except (OSError, ValueError):
             self.misses += 1
             return None
+        if payload.get("code") != code_key():
+            # Written by different code. A miss, not a wrong answer.
+            self.misses += 1
+            return None
         self.hits += 1
         return payload.get("value")
 
@@ -79,7 +121,8 @@ class StageCache:
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             path.write_text(
-                json.dumps({"key": key, "value": value}, default=str), encoding="utf-8"
+                json.dumps({"key": key, "code": code_key(), "value": value}, default=str),
+                encoding="utf-8",
             )
         except (OSError, TypeError, ValueError):
             # A stage whose output will not serialise is simply not cached; it is not an error.
