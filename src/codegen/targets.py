@@ -46,18 +46,21 @@ the fallback is counted rather than hidden: `flowchart_mode(diagram, order)` ret
 
 **Measured fallback rate** (re-run for this module, CPU only):
 
-    real hdbpmn                495 / 693     71.4%
+    real hdbpmn                441 / 693     63.6%   <- was 71.4% before forks were emitted
     real didi                  949 / 3,000   31.6%
     real flowchartseg            0 / 1,319    0.0%   <- vacuous, see below
     synthetic flowcharts         9 / 500      1.8%
 
 Three of those four numbers need a caveat, and the caveats are the point:
 
-**71.4%, not the 92.4% this docstring claimed before.** The old figure was inherited, could not
-be reproduced by any measurement here, and is deleted rather than adjusted. The explanation it
-came with survives because it is still right: a BPMN page is drawn as several pools, the
-converted IR gives each pool as its own component with fork/join gateways of out-degree 3+, and
-almost none of it is a structured program. That is what "flowchart -> Python" costs on real
+**63.6%, after a fork of out-degree 3+ stopped being refused.** The rate was 71.4% while any
+out-degree above two raised `_Irreducible`; a parallel split is now emitted as its branches in
+sequence, so 54 hdbpmn pages that used to fall back keep their structure. The older 92.4% figure
+this docstring once carried was inherited, could not be reproduced by any measurement here, and
+is deleted rather than adjusted. The explanation it came with survives because it is still
+right: a BPMN page is drawn as several pools, the converted IR gives each pool as its own
+component with fork/join gateways of out-degree 3+, and almost none of it is a structured
+program. That is what "flowchart -> Python" costs on real
 data, and it is why 12.1.3's human-written targets exist.
 
 **flowchartseg's 0.0% is not an achievement.** Those pages carry node polygons and no
@@ -196,6 +199,37 @@ LANGUAGES: dict[str, str] = {
 LAST_MODE: str = "structured"
 
 _MAX_DEPTH = 24
+
+
+#: Edge-label separators. `a,b` / `a b` / `a;b` are all two symbols on one arrow, and the
+#: spellings below all mean the empty word. Kept identical to `src.llm.functional.symbols_of`,
+#: which is the checker that reads them back - a test pins the two together.
+_LABEL_SPLIT = re.compile(r"[,+\s;/.|]+")
+_EPSILON_WORDS = {"", "epsilon", "eps", "\u03b5", "e", "lambda", "\u03bb"}
+
+#: Roles whose out-edges all run, rather than one of them.
+_PARALLEL_ROLES = ("fork", "join")
+
+
+def _is_parallel(node: dict) -> bool:
+    return (node.get("semantic_role") or "") in _PARALLEL_ROLES
+
+
+def symbols_of(label: object) -> list[str]:
+    """The alphabet symbols one edge label carries, in order, de-duplicated."""
+    raw = "" if label is None else str(label)
+    out: list[str] = []
+    for part in _LABEL_SPLIT.split(raw.strip()):
+        if not part.strip() or part.strip().lower() in _EPSILON_WORDS:
+            continue  # the empty word consumes nothing - it is a silent move, not a trigger
+        # The symbol is a *dict key* in the emitted table, not a Python identifier, and the
+        # checker sends the drawn text verbatim. Running it through `_ident` renamed `0` to
+        # `sym_0` and case-folded `A` to `a`, so a binary-alphabet automaton - which is most of
+        # fa_bresler - raised on every word it was asked about.
+        token = part.strip()
+        if token not in out:
+            out.append(token)
+    return out
 
 
 class _Irreducible(Exception):
@@ -377,6 +411,16 @@ def _structured(
                 lines += _suite(block(targets[0], stop | {current}, depth + 1))
                 return lines
 
+            if len(targets) >= 2 and _is_parallel(node):
+                # Parallel split: every branch runs, in drawn order, and the join is where they
+                # meet again. Sequential execution of each arm is the faithful reading, and it is
+                # what makes every drawn operation reachable.
+                meet = _join_point(targets[0], targets[1], succ, rank)
+                for arm in targets if meet is None else targets:
+                    lines += block(arm, stop | ({meet} if meet else frozenset()), depth + 1)
+                current = None if (meet is None or meet == "__exit__") else meet
+                continue
+
             if len(targets) >= 3:
                 raise _Irreducible("out-degree 3+ has no if/else form")
             if len(targets) == 2:
@@ -416,10 +460,54 @@ def _structured(
     return body
 
 
+def _component_entries(order: list[str], succ: dict[str, list[str]]) -> list[str]:
+    """Every node a walk has to be *started* from to reach the whole drawing, in drawn order.
+
+    A converted BPMN page is not one graph: each pool is its own component, and a data object
+    with no incoming flow is another. Walking only from `order[0]` left those nodes in the
+    emitted program but on no path through it, which is the bulk of 12.3.3's `missing_operation`.
+    Sources come first; a component that is a pure cycle has no source, so the first of its nodes
+    still unreached is taken instead.
+    """
+    incoming = {n: 0 for n in order}
+    for src in order:
+        for dst in succ.get(src, ()):
+            if dst in incoming:
+                incoming[dst] += 1
+
+    entries: list[str] = []
+    reached: set[str] = set()
+
+    def walk(start: str) -> None:
+        stack = [start]
+        while stack:
+            node = stack.pop()
+            if node in reached:
+                continue
+            reached.add(node)
+            stack.extend(t for t in succ.get(node, ()) if t not in reached)
+
+    for node in order:  # sources first, in the order the diagram was read
+        if incoming.get(node, 0) == 0 and node not in reached:
+            entries.append(node)
+            walk(node)
+    for node in order:  # whatever is left can only be entered somewhere inside a cycle
+        if node not in reached:
+            entries.append(node)
+            walk(node)
+    return entries or list(order[:1])
+
+
 def _dispatch(diagram: dict, order: list[str], succ: dict[str, list[str]]) -> list[str]:
     """The always-valid fallback: an explicit state variable in a `while True:` loop."""
     nodes = {node["id"]: node for node in diagram.get("nodes", [])}
-    lines = [f"state = {_literal(order[0])}", "while True:"]
+    entries = _component_entries(order, succ)
+    queued = ", ".join(_literal(e) for e in entries[1:])
+    lines = [
+        f"state = {_literal(entries[0])}",
+        f"pending = [{queued}]",
+        "while True:",
+    ]
     for index, node_id in enumerate(order):
         node = nodes[node_id]
         branch = "if" if index == 0 else "elif"
@@ -428,16 +516,35 @@ def _dispatch(diagram: dict, order: list[str], succ: dict[str, list[str]]) -> li
         body = [line for line in _statement(node) if not line.startswith("return")]
         indented = [f"        {line}" for line in body]
         if len(targets) >= 2:
+            # Every branch is routed to, including the third and beyond, which the two-way
+            # if/else used to drop. A fork is *not* queued for later here the way `_structured`
+            # runs its arms in sequence: in a flat state loop the siblings could only be drained
+            # after the join's own successors had already run, which reads the drawn flow
+            # backwards. An irreducible graph therefore gets the exclusive reading, and the
+            # parallel one is what `_structured` emits when the graph admits it.
+            # An exclusive choice over N ways is an if/elif chain over N, not a two-way if/else
+            # that silently drops the rest.
             indented.append(f"        if {_condition(node)}:")
             indented.append(f"            state = {_literal(targets[0])}")
+            for extra in targets[1:-1]:
+                indented.append(f"        elif {_condition(node)}:")
+                indented.append(f"            state = {_literal(extra)}")
             indented.append("        else:")
-            indented.append(f"            state = {_literal(targets[1])}")
+            indented.append(f"            state = {_literal(targets[-1])}")
         elif targets:
             indented.append(f"        state = {_literal(targets[0])}")
         else:
+            # A terminal node drains the fork queue before it can return, or the branches a fork
+            # scheduled would be dropped at the first branch that happens to finish.
+            indented.append("        if pending:")
+            indented.append("            state = pending.pop(0)")
+            indented.append("            continue")
             indented.append("        return ctx")
         lines += indented or ["        pass"]
     lines.append("    else:")
+    lines.append("        if pending:")
+    lines.append("            state = pending.pop(0)")
+    lines.append("            continue")
     lines.append("        return ctx")
     return lines
 
@@ -512,20 +619,81 @@ def emit_state_machine_python(diagram: dict, traversal: list[str]) -> str:
         or nodes[n].get("semantic_role") == "final-state"
     ]
 
-    table: dict[str, dict[str, str]] = {names[n]: {} for n in order}
-    spec: list[str] = []
+    # A drawing is a *nondeterministic* automaton and the emitted class is a table, so the two
+    # only agree if the table is the determinisation. Two things were wrong before: an unlabelled
+    # arrow became a trigger literally named `epsilon`, which nothing ever sends - leaving those
+    # states unreachable - and where one state had two arrows carrying the same symbol, one of
+    # them was silently dropped. Both show up as 12.3.3's `verdicts_differ`. Subset construction
+    # fixes them together: states are sets of drawn states, closed under silent moves.
+    silent: dict[str, set[str]] = {n: set() for n in order}
+    moves: dict[tuple[str, str], set[str]] = {}
+    alphabet: list[str] = []
     for edge in diagram.get("edges", []):
         src, dst = edge.get("src"), edge.get("dst")
         if src not in names or dst not in names:
             continue
-        symbol = _ident(edge.get("label") or "epsilon", "sym")
-        table[names[src]].setdefault(symbol, names[dst])
-        spec.append(
-            "        {"
-            f"'trigger': {_literal(symbol)}, 'source': {_literal(names[src])}, "
-            f"'dest': {_literal(names[dst])}"
-            "},"
-        )
+        found = symbols_of(edge.get("label"))
+        if not found:
+            silent[src].add(dst)
+        for symbol in found:
+            moves.setdefault((src, symbol), set()).add(dst)
+            if symbol not in alphabet:
+                alphabet.append(symbol)
+
+    def closed(seed) -> frozenset[str]:
+        """`seed` plus everything reachable from it without consuming a symbol."""
+        seen, stack = set(seed), list(seed)
+        while stack:
+            for nxt in silent.get(stack.pop(), ()):
+                if nxt not in seen:
+                    seen.add(nxt)
+                    stack.append(nxt)
+        return frozenset(seen)
+
+    def label_of(subset: frozenset[str]) -> str:
+        """A readable name for a set of drawn states, still derived from the drawing."""
+        members = [n for n in order if n in subset]
+        return _ident("_or_".join(names[m] for m in members) or "empty", "state")
+
+    start_set = closed([initial]) if initial in names else closed(order[:1])
+    subsets: list[frozenset[str]] = [start_set]
+    seen_sets = {start_set}
+    table: dict[str, dict[str, str]] = {}
+    spec: list[str] = []
+    queue = [start_set]
+    while queue:
+        current = queue.pop(0)
+        row: dict[str, str] = {}
+        for symbol in alphabet:
+            destination = set()
+            for member in current:
+                destination |= moves.get((member, symbol), set())
+            if not destination:
+                continue  # a partial automaton stays partial; `step` raises, as it always did
+            target = closed(destination)
+            if target not in seen_sets:
+                seen_sets.add(target)
+                subsets.append(target)
+                queue.append(target)
+            row[symbol] = label_of(target)
+            spec.append(
+                "        {"
+                f"'trigger': {_literal(symbol)}, 'source': {_literal(label_of(current))}, "
+                f"'dest': {_literal(label_of(target))}"
+                "},"
+            )
+        table[label_of(current)] = row
+
+    # Every label is resolved *before* `names` is rebound, because `label_of` reads the drawn
+    # names to build them.
+    accepting_sets = [label_of(sub) for sub in subsets if any(m in accepting for m in sub)]
+    subset_labels = [label_of(sub) for sub in subsets]
+    start_label = label_of(start_set)
+    # The names the emitted class exposes are now the determinised states, in discovery order.
+    names = {label: label for label in subset_labels}
+    order = subset_labels
+    accepting = accepting_sets
+    initial = start_label
 
     class_name = "".join(part.title() for part in _ident(str(diagram.get("id") or "m")).split("_"))
     class_name = (class_name or "Machine") + "Machine"

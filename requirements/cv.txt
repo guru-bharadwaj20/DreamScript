@@ -4,3 +4,8 @@ scikit-image==0.25.0
 pillow==11.0.0
 pdf2image==1.17.0
 imageio==2.36.1
+
+# Phase 9.1 detector (src/detect/**, src/assemble/corpus.py) and 9.3 CRAFT text
+# detection (src/ocr/labelcrops.py). Imported across src/ but previously undeclared.
+ultralytics==8.4.155
+easyocr==1.7.2

@@ -176,6 +176,11 @@ HOSTILE: dict[str, dict] = {
         "nodes": [node("a", "fork")] + [node(f"n{i}") for i in range(5)],
         "edges": [edge(f"e{i}", "a", f"n{i}") for i in range(5)],
     },
+    "out_degree_five_decision": {
+        "id": "out_degree_five_decision",
+        "nodes": [node("a", "decision")] + [node(f"n{i}") for i in range(5)],
+        "edges": [edge(f"e{i}", "a", f"n{i}") for i in range(5)],
+    },
     "no_id": {"nodes": [node("a")], "edges": []},
     "deep_containment": {
         "id": "deep_containment",
@@ -235,10 +240,26 @@ def test_a_branch_whose_only_content_is_a_comment_gets_a_pass():  # regression, 
 
 
 def test_flowchart_mode_reports_the_dispatch_fallback_rather_than_hiding_it():
+    """An *exclusive* choice of five ways has no if/else form and still falls back."""
     _, mode = targets.flowchart_mode(
-        HOSTILE["out_degree_five"], traversal(HOSTILE["out_degree_five"])[0]
+        HOSTILE["out_degree_five_decision"], traversal(HOSTILE["out_degree_five_decision"])[0]
     )
     assert mode == "dispatch"
+
+
+def test_a_five_way_fork_keeps_its_structure_instead_of_falling_back():
+    """A parallel split of any width is emitted as its branches in sequence.
+
+    It used to raise `_Irreducible` on out-degree 3+, which sent every BPMN pool to the dispatch
+    fallback - and that fallback could only route to two of the five, leaving the operations on
+    the other three on no path through the program at all.
+    """
+    diagram = HOSTILE["out_degree_five"]
+    code, mode = targets.flowchart_mode(diagram, traversal(diagram)[0])
+    assert mode == "structured"
+    # The fixture's five branch nodes carry no text, so each emits the same `step(ctx)` call -
+    # what matters is that there are five of them and not two.
+    assert code.count("ctx = step(ctx)") == 5
 
 
 def test_a_reducible_flowchart_keeps_its_loop_and_does_not_fall_back():
@@ -441,10 +462,14 @@ def test_every_real_diagram_of_a_backed_type_emits_code_that_checks(source, diag
 
 @needs_corpus
 def test_the_hdbpmn_fallback_rate_is_the_one_the_docstring_records():
-    """71.4% dispatch on 693 pages. A drift either way means the emitter changed silently."""
+    """63.6% dispatch on 693 pages. A drift either way means the emitter changed silently.
+
+    Was 71.4% until a fork of out-degree 3+ stopped being refused; the 54 pages that moved are
+    parallel gateways whose branches the fallback could not all reach.
+    """
     modes = {"structured": 0, "dispatch": 0}
     for diagram in load_ir(["hdbpmn"]):
         modes[targets.flowchart_mode(diagram, traversal(diagram)[0])[1]] += 1
     total = sum(modes.values())
     assert total == 693
-    assert 0.69 <= modes["dispatch"] / total <= 0.74
+    assert 0.61 <= modes["dispatch"] / total <= 0.66
