@@ -362,6 +362,10 @@ def reader(checkpoint=None, replicas: int = 1):
     return _READER
 
 
+#: Most of a 24 GiB card, leaving the margin WDDM needs to avoid spilling into host RAM.
+CAP_GIB = 20.0
+
+
 def plan_workers(count: int, batch: int = 256) -> tuple[int, int]:
     """How many replicas and how large a batch this card can actually use.
 
@@ -392,19 +396,39 @@ def plan_workers(count: int, batch: int = 256) -> tuple[int, int]:
     # penalty while a spare worker is worth at most tens of percent, so the asymmetry says
     # round down hard.
     per_worker_gib = 9.9 * (batch / 256.0)
-    room = max(1, min(3, int((free / 2**30 - 2.0) // per_worker_gib)))
-    # A batch this size already fills the SMs on its own, and the measurement says one worker at
-    # 256 beats three at 128. Extra replicas are only allowed to help where the batch is too
-    # small to saturate by itself.
+    # Budget against the 20 GiB cap, not against whatever is free. The card is 24 GiB and WDDM
+    # spills rather than failing, so "there is room" is not the same as "using it is safe": a
+    # run that reserves 23 GiB reports 100% utilisation at a third of the power and a quarter of
+    # the throughput. Free memory still bounds the budget, because another job's allocation is
+    # real, but the cap bounds it first.
+    budget = min(free / 2**30, CAP_GIB) - 2.0
+    room = max(1, min(3, int(budget // per_worker_gib)))
+    # One worker at 256 is the measured optimum, so if it fits, take it - rather than honouring a
+    # smaller caller-supplied batch and then adding replicas to make up the throughput. That
+    # branch is what reserved 23 GiB and collapsed the run: replicas cost a full weights copy and
+    # a private allocator arena each, which `per_worker_gib` under-counts because it was measured
+    # on one worker. Replicas remain reachable only when a single big batch will not fit.
+    if budget >= 9.9:
+        return 1, 256
     workers = 1 if batch >= 192 else room
     if count < batch * 2:
         workers = 1
     return workers, batch
 
 
-#: Readability batch for `build`. Half the `read_confidence` default, because build scores the
-#: whole candidate set (65,695 crops) rather than a sample, and the card is shared.
-READ_BATCH = 128
+#: Readability batch for `build`. **256, the same as the default, and the reason is a bug this
+#: number caused.** It was set to 128 to be gentle on a shared card, which looked conservative
+#: and was the opposite: `plan_workers` only forces a single worker at `batch >= 192`, so 128
+#: took the `room` branch, asked for three replicas, and reserved 23.19 GiB of a 24 GiB card
+#: (measured per process via `\GPU Process Memory(*)\Local Usage`, with every other job on the
+#: card holding nothing). WDDM does not OOM at that point, it spills to host RAM: the run sat at
+#: 24.06 GiB drawing 60-99 W against a healthy 181-195 W, which is exactly the three-at-128
+#: configuration `plan_workers` itself measures at 7.5 crops/s versus 29.9.
+#:
+#: One worker at 256 needs ~9.9 GiB - comfortably inside the card and inside the 20 GiB cap -
+#: and is the fastest option measured (107.0 crops/s). Lowering the batch here bought nothing
+#: and cost a replica count.
+READ_BATCH = 256
 
 
 def read_confidence(patches, batch: int = 256, workers: int | None = None):
