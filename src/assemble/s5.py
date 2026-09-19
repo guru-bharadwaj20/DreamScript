@@ -125,15 +125,27 @@ KINDS = (
 # ------------------------------------------------------------------------------------------
 
 
-def assemble(page: Page, *, mask: Any = None) -> Diagram:
+def assemble(page: Page, *, mask: Any = None, text: bool = True) -> Diagram:
     """Phase 10's stages composed into the one predicted `Diagram` S5 is scored on.
 
     Nodes are 10.1.1's boxes as the tracer sees them (arrowheads dropped, `MIN_SCORE` applied),
     edges are 10.1.3's traced polylines, and containers stay in the node list because they are
     real nodes in the IR even though the tracer refuses to attach to them.
+
+    `text=False` reproduces the text-free assembly this row was first measured on, where every
+    matched node was charged a substitution because `Node.text` was never filled - 36.7% of all
+    edits. It is kept so the gain from reading the labels is a measurement and not a claim.
     """
     boxes = tracing.node_boxes(page)
-    return tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
+    diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
+    if text:
+        from src.assemble.nodetext import read_nodes
+
+        labels = read_nodes(page, boxes)
+        for node in diagram.nodes:
+            if labels.get(node.id):
+                node.text = labels[node.id]
+    return diagram
 
 
 def decompose(predicted: Diagram, actual: Diagram, *, match: str = MATCH) -> dict[str, Any]:

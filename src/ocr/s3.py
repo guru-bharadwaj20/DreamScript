@@ -134,7 +134,12 @@ def dev_writers(seed: int = SEED, writers: int = DEV_WRITERS) -> set[str]:
     Exposed because `src.ocr.labelcrops` has to know them too: the crops for these writers must
     be chosen the way val's are, without the transcript, or dev stops being a check on anything.
     """
-    from src.ocr.labelcrops import load_index
+    # Read the writer universe from the *text*-crop index, not the label-crop one. The label
+    # corpus is built by `labelcrops.build`, which asks this function which writers to withhold
+    # label-selected crops from - so sourcing it there made a fresh tree unbuildable, the build
+    # failing on the index it was about to write. Both corpora inherit split and scribe from the
+    # same 1.3.3 assignment, so the set of training writers is identical either way.
+    from src.ocr.textcrops import load_index
 
     frame = load_index()
     names = sorted(frame.loc[frame["split"] == "train", "scribe"].dropna().unique())
