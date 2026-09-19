@@ -7,10 +7,10 @@
 | contract | 100.0% | 100.0% |
 | syntax | 99.4% | 100.0% |
 | executes | 99.4% | 100.0% |
-| functional | 20.4% | 17.9% |
-| dropped_node_rate | 16.8% | 14.8% |
-| programs_with_dropped | 25.3% | 22.8% |
-| invented_per_program | 0.858 | 0.858 |
+| functional | 20.4% | 78.4% |
+| dropped_node_rate | 16.8% | 16.8% |
+| programs_with_dropped | 25.3% | 26.5% |
+| invented_per_program | 0.858 | 0.852 |
 | programs_with_invented | 30.9% | 31.5% |
 
 `src.eval.codecheck` (data agent's helpers): syntax 99.4% `{'syntax.ok': 161, 'syntax.python': 1}`, executes 99.4% `{'exec.ok': 161, 'exec.no_entry': 1}`
