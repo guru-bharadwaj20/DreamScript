@@ -4,19 +4,19 @@
 
 | metric | LoRA | reference vs itself |
 | :--- | :--- | :--- |
-| codebleu | 0.770366 | 1.0 |
-| ngram_match | 0.693035 | 1.0 |
-| weighted_ngram_match | 0.671051 | 1.0 |
-| syntax_match | 0.832835 | 1.0 |
-| dataflow_match | 0.887261 | 1.0 |
-| exact_match | 0.012346 | 1.0 |
-| edit_similarity | 0.740473 | 1.0 |
+| codebleu | 0.933223 | 1.0 |
+| ngram_match | 0.912029 | 1.0 |
+| weighted_ngram_match | 0.910297 | 1.0 |
+| syntax_match | 0.950958 | 1.0 |
+| dataflow_match | 0.964652 | 1.0 |
+| exact_match | 0.598765 | 1.0 |
+| edit_similarity | 0.919641 | 1.0 |
 
 ## Per language
 
 | language | n | codebleu | exact | edit_sim |
 | :--- | :--- | :--- | :--- | :--- |
-| python | 162 | 0.770366 | 0.012346 | 0.740473 |
+| python | 162 | 0.933223 | 0.598765 | 0.919641 |
 
 ## What the metric does to known perturbations of the references
 
