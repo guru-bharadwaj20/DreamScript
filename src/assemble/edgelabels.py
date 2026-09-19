@@ -50,8 +50,6 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-
 from src.utils.config import ROOT
 
 #: Where read labels are stored, one JSON per page, so a re-score does not re-decode.

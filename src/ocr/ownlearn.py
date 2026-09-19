@@ -398,40 +398,41 @@ def plan_workers(count: int, batch: int = 256) -> tuple[int, int]:
     # Measured cost of one worker at batch 256, plus margin. Crossing the card is a 4-90x
     # penalty while a spare worker is worth at most tens of percent, so the asymmetry says
     # round down hard.
-    per_worker_gib = 9.9 * (batch / 256.0)
-    # Budget against the 20 GiB cap, not against whatever is free. The card is 24 GiB and WDDM
-    # spills rather than failing, so "there is room" is not the same as "using it is safe": a
-    # run that reserves 23 GiB reports 100% utilisation at a third of the power and a quarter of
-    # the throughput. Free memory still bounds the budget, because another job's allocation is
-    # real, but the cap bounds it first.
-    budget = min(free / 2**30, CAP_GIB) - 2.0
-    room = max(1, min(3, int(budget // per_worker_gib)))
-    # One worker at 256 is the measured optimum, so if it fits, take it - rather than honouring a
-    # smaller caller-supplied batch and then adding replicas to make up the throughput. That
-    # branch is what reserved 23 GiB and collapsed the run: replicas cost a full weights copy and
-    # a private allocator arena each, which `per_worker_gib` under-counts because it was measured
-    # on one worker. Replicas remain reachable only when a single big batch will not fit.
-    if budget >= 9.9:
-        return 1, 256
-    workers = 1 if batch >= 192 else room
-    if count < batch * 2:
-        workers = 1
-    return workers, batch
+    # **Always one worker, and the caller's batch.** Two separate collapses came from this
+    # function returning anything else, and the second one corrected the diagnosis of the first.
+    #
+    # The first was replicas: a batch below 192 took the `room` branch, asked for three copies,
+    # and reserved 23.19 GiB. Replicas cost a full weights copy and a private allocator arena
+    # each, which `per_worker_gib` under-counts because it was measured on one worker.
+    #
+    # The fix then forced batch 256, which collapsed too - and the cause is not the weights, it
+    # is `output_scores=True` in `read_confidence`. That materialises one `[batch x 50265]`
+    # logit tensor *per decode step*, so peak memory scales with batch x steps, and the
+    # high-water mark ratchets upward as longer-decoding crops arrive. 256 reached 24.06 GiB on
+    # the full 65,695-crop corpus; the 107 crops/s that justified it was measured on a sample of
+    # short crops and does not survive contact with the whole set.
+    #
+    # So `room` is no longer consulted, and the batch is the caller's: it is the only knob that
+    # moves the peak, and `READ_BATCH` sets it from what actually fits.
+    return 1, batch
 
 
-#: Readability batch for `build`. **256, the same as the default, and the reason is a bug this
-#: number caused.** It was set to 128 to be gentle on a shared card, which looked conservative
-#: and was the opposite: `plan_workers` only forces a single worker at `batch >= 192`, so 128
-#: took the `room` branch, asked for three replicas, and reserved 23.19 GiB of a 24 GiB card
-#: (measured per process via `\GPU Process Memory(*)\Local Usage`, with every other job on the
-#: card holding nothing). WDDM does not OOM at that point, it spills to host RAM: the run sat at
-#: 24.06 GiB drawing 60-99 W against a healthy 181-195 W, which is exactly the three-at-128
-#: configuration `plan_workers` itself measures at 7.5 crops/s versus 29.9.
+#: Readability batch for `build`. **128, one worker, and both halves of that matter.**
 #:
-#: One worker at 256 needs ~9.9 GiB - comfortably inside the card and inside the 20 GiB cap -
-#: and is the fastest option measured (107.0 crops/s). Lowering the batch here bought nothing
-#: and cost a replica count.
-READ_BATCH = 256
+#: This number has been wrong twice in opposite directions. At 128 with the old `plan_workers`
+#: it selected three replicas and reserved 23.19 GiB of a 24 GiB card; WDDM does not OOM at that
+#: point, it pages to host RAM, so the run sat at 24.06 GiB drawing 60-99 W against a healthy
+#: 181-195 W. Forcing 256 removed the replicas and collapsed anyway, climbing 11.9 -> 21.9 ->
+#: 24.06 GiB through a single phase.
+#:
+#: The second collapse is what identified the real cost: `read_confidence` passes
+#: `output_scores=True`, which keeps a `[batch x 50265]` tensor for every decode step, so peak
+#: VRAM scales with batch x steps rather than with the weights. Halving the batch halves the
+#: peak. 128 with one worker is the configuration that fits under `src.utils.gpu`'s 20 GiB cap
+#: on the full 65,695-crop corpus, at the measured 65.7 crops/s - slower per crop than 256's
+#: sampled 107, and faster than 256 actually achieves here, because a run that pages finishes
+#: at roughly a quarter speed or not at all.
+READ_BATCH = 128
 
 
 def read_confidence(patches, batch: int = 256, workers: int | None = None):
