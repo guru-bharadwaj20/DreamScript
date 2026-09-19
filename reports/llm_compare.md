@@ -4,10 +4,10 @@
 
 | arm | contract | syntax | executes | functional pass@1 | functional (novel IR) | dropped nodes | invented/program | LoRA - arm, 95% CI | batch | ms/sample |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| zero-shot | 93.8% | 100.0% | 40.7% | 3.1% | 3.8% | 18.9% | 1.198 | (0.1049, 0.2469) | 8 | 8124.7 |
-| few-shot (k=2) | 95.1% | 94.4% | 93.8% | 24.7% | 25.9% | 22.8% | 0.877 | (-0.0988, 0.0062) | 8 | 20605.6 |
-| LoRA | 100.0% | 99.4% | 99.4% | 20.4% | 20.6% | 16.8% | 0.858 |  | 16 | 7354.9 |
+| zero-shot | 93.8% | 100.0% | 40.7% | 3.1% | 3.8% | 18.9% | 1.198 | (0.5988, 0.7469) | 8 | 8134.6 |
+| few-shot (k=2) | 93.2% | 96.3% | 95.7% | 39.5% | 32.8% | 23.3% | 0.988 | (0.216, 0.3951) | 8 | 21962.3 |
+| LoRA | 99.4% | 99.4% | 98.8% | 70.4% | 66.4% | 16.8% | 0.864 |  | 16 | 10740.1 |
 
-**LoRA wins on functional pass@1: False**
+**LoRA wins on functional pass@1: True**
 
 ![three-way](figures/p12_three_way.png)
