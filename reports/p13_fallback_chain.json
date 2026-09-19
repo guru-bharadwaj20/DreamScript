@@ -1,0 +1,75 @@
+{
+  "what": "13.4 classifier fallback chain - feasibility on the data that survived the rebuild",
+  "handcrafted_rung": {
+    "table": "data/features/handcrafted.parquet (rebuilt: 1435 rows, 33 features, 566.3s, 2.5 pages/s)",
+    "classes": {
+      "flowchart": 704,
+      "wireframe": 731
+    },
+    "evaluation": "grouped 5-fold x 3 seeds (src.classify.cv.splitter, groups=writer)",
+    "accuracy": 0.9961,
+    "accuracy_std": 0.0028,
+    "macro_f1": 0.996,
+    "macro_f1_std": 0.0028,
+    "confusion_summed": {
+      "flowchart": [
+        2102,
+        10
+      ],
+      "wireframe": [
+        7,
+        2186
+      ]
+    }
+  },
+  "value_it_would_add": {
+    "claim": "the NB router is confidently WRONG on wireframe pages, and this rung is right",
+    "pages": [
+      {
+        "id": "sketch2code/10018_0",
+        "truth": "wireframe",
+        "nb": [
+          "flowchart",
+          0.9965
+        ],
+        "handcrafted_oof": [
+          "wireframe",
+          0.9998
+        ]
+      },
+      {
+        "id": "sketch2code/1002_0",
+        "truth": "wireframe",
+        "nb": [
+          "flowchart",
+          0.9999
+        ],
+        "handcrafted_oof": [
+          "wireframe",
+          1.0
+        ]
+      },
+      {
+        "id": "sketch2code/10032_0",
+        "truth": "wireframe",
+        "nb": [
+          "unknown",
+          0.0
+        ],
+        "handcrafted_oof": [
+          "wireframe",
+          0.9995
+        ]
+      }
+    ]
+  },
+  "why_it_is_not_wired": {
+    "no_state_machine_class": "the rung has no state_machine class; on 8 golden fa_bresler pages it predicts wireframe 6/8, flowchart 2/8, mean confidence 0.8236, max 0.9978 - so no threshold separates it, and wiring it would trade the router's correct 48/48 state machines for a wireframe label nothing downstream can consume",
+    "cannot_add_the_class_honestly": "fa_bresler's raw data is 300 inkml stroke files, not photographs; its PNGs are rendered from strokes while every row in the table is a photograph or scan, so a 3-class model would separate rendering domain rather than diagram type - and the 2-class model already groups rendered fa_bresler with clean sketch2code line drawings, which is that confound showing up directly",
+    "upper_rungs_blocked_too": "the embedding (CLIP) and CNN rungs sit on the same two-class data; the synthetic corpus that covered all five types evenly is 0 rows after the rebuild"
+  },
+  "what_is_built_and_demonstrated": {
+    "ocr_to_placeholder": "3 rungs, each verified to still produce code that passes 12.3.1: OCR text (q0/q1/q2) -> node id (s14/s15/s16) -> literal placeholder from _ident(fallback)",
+    "model_to_emitter": "src/pipeline/generate.py emit(): served adapter, else 12.1.6's emitter, marked degraded=True"
+  }
+}
