@@ -33,7 +33,6 @@ the measurement to catch a regression, not because 3.91x is acceptable.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
