@@ -4,7 +4,7 @@
 
 | diagram type | n | LoRA structural | LoRA parsed | reference structural |
 | :--- | :--- | :--- | :--- | :--- |
-| flowchart | 114 | 0.9627 | 99.1% | 0.9706 |
-| state_machine | 48 | 0.9891 | 100.0% | 0.9967 |
+| flowchart | 114 | 0.9627 | 99.1% | 0.8873 |
+| state_machine | 48 | 0.9891 | 100.0% | 0.683 |
 
-**Overall structural fidelity 0.9705** against a reference ceiling of 0.9783.
+**Overall structural fidelity 0.9705** against a reference ceiling of 0.8267.
