@@ -126,6 +126,10 @@ KINDS = (
 
 
 #: Sources whose pages are state machines, so 10.1.2's state-label path applies.
+#: Corpora whose edges carry a label worth reading. Mirrors `edgelabels.SOURCES`, restated here
+#: so `assemble` can gate without importing a module that loads a recogniser at import time.
+EDGE_TEXT_SOURCES = ("fa_bresler", "hdbpmn")
+
 STATE_MACHINE_SOURCES = ("fa_bresler",)
 
 #: Sources whose node labels are read by `statelabels`, each by the recogniser trained on it.
@@ -224,6 +228,7 @@ def assemble(
     mask: Any = None,
     text: bool = False,
     state_text: bool = False,
+    edge_text: bool = False,
     direct: bool = False,
     prune_loops: bool = False,
 ) -> Diagram:
@@ -255,6 +260,15 @@ def assemble(
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
+
+    if edge_text and page.source in EDGE_TEXT_SOURCES:
+        # The trigger is written *beside* the connector, which is the one place neither
+        # `statelabels` (inside the shape) nor `nodetext` (owned by a node) looks. Applied before
+        # pruning so a label read onto an edge that pruning then removes is simply discarded,
+        # rather than the two stages disagreeing about which edges exist.
+        from src.assemble import edgelabels
+
+        edgelabels.apply(page, diagram)
 
     if prune_loops:
         _prune_short_loops(page, diagram)
