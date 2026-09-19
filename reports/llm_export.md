@@ -1,41 +1,12 @@
-# 12.2.8 - stage `export` failed
+# Phase 12.2.8 - adapter merge and export
 
-```
-Traceback (most recent call last):
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 2635, in run_pipeline
-    done = stage.run(ctx)
-           ^^^^^^^^^^^^^^
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 2081, in stage_export
-    result = run_job(
-             ^^^^^^^^
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 171, in run_job
-    raise RuntimeError(f"job {name} failed rc={code}:\n{tail}")
-RuntimeError: job export failed rc=1:
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 2708, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 2692, in main
-    return job_main(argv[1], argv[2])
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 405, in job_main
-    result = JOBS[kind](spec)
-             ^^^^^^^^^^^^^^^^
-  File "C:\Users\Temp\Desktop\DreamScript\src\llm\pipeline.py", line 381, in job_export
-    Path(spec["adapter"]),
-    ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Temp\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 871, in __new__
-    self = cls._from_parts(args)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Temp\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 509, in _from_parts
-    drv, root, parts = self._parse_args(args)
-                       ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Temp\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\pathlib.py", line 493, in _parse_args
-    a = os.fspath(a)
-        ^^^^^^^^^^^^
-TypeError: expected str, bytes or os.PathLike object, not NoneType
+| step | result |
+| :--- | :--- |
+| merge (bf16, CPU) | {"merge_s": 37.2, "merged_gb": 15.23} |
+| merged vs unmerged logits | {"prompts": 8, "max_abs_logit_diff": 0.25427, "argmax_agree": 8, "greedy_64_identical": 8} |
+| GGUF f16 | {"path": "C:\\Users\\Temp\\Desktop\\DreamScript\\experiments\\llm\\export\\artifacts\\model-f16.gguf", "gb": 15.24} |
+| GGUF Q8_0 | {"path": "C:\\Users\\Temp\\Desktop\\DreamScript\\experiments\\llm\\export\\artifacts\\model-Q8_0.gguf", "gb": 8.1, "quantize_s": 28.3} |
+| GGUF Q4_K_M | {"path": "C:\\Users\\Temp\\Desktop\\DreamScript\\experiments\\llm\\export\\artifacts\\model-Q4_K_M.gguf", "gb": 4.68, "quantize_s": 47.0} |
+| llama-server Q4_K_M smoke | {"diagram_id": "writer014_fa_001", "parses": true, "new_tokens": 334, "seconds": 4.29} |
 
-
-```
+llama.cpp release `b10909`; artefacts under `experiments/llm/export/artifacts` (gitignored). vLLM does not run on native Windows; the merged safetensors directory is the vLLM-loadable form and is untested here.
