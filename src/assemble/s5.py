@@ -83,6 +83,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import statistics as st
 import sys
 from collections import defaultdict
@@ -318,10 +319,21 @@ def decompose(predicted: Diagram, actual: Diagram, *, match: str = MATCH) -> dic
     }
 
 
+#: Environment switch for the edge-label stage, read per call rather than at import.
+#: `run` fans pages out to joblib workers, which are separate processes: a module constant set
+#: by the CLI in the parent would be re-imported at its default in every child, so the switch has
+#: to travel in the environment, which children do inherit.
+EDGE_TEXT_ENV = "DREAMSCRIPT_EDGE_TEXT"
+
+
 def score_page(page: Page) -> dict[str, Any]:
     """`decompose` for one held-out page, with the page's identity attached."""
+    edge_text = os.environ.get(EDGE_TEXT_ENV, "") == "1"
     row = decompose(
-        assemble(page, state_text=True, direct=True, prune_loops=True), truth(page)
+        assemble(
+            page, state_text=True, edge_text=edge_text, direct=True, prune_loops=True
+        ),
+        truth(page),
     )
     return {"page": page.name, "source": page.source, "split": page.split, **row}
 
@@ -526,8 +538,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", default=TUNING_SPLIT, choices=("val", "test"))
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--jobs", type=int, default=6)
+    parser.add_argument(
+        "--edge-text",
+        action="store_true",
+        help="read edge labels with src.assemble.edgelabels before scoring",
+    )
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
+    if args.edge_text:
+        os.environ[EDGE_TEXT_ENV] = "1"
 
     result = run(args.split, args.limit, args.jobs)
     default = REPORT if args.split == "val" else REPORT.with_name("s5_graph_ged_test.json")
