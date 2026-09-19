@@ -35,3 +35,6 @@ mlruns/
 !**/.gitkeep
 .venv-labelstudio/
 labeling/tasks/
+
+# Phase 13 batch CLI output
+runs/

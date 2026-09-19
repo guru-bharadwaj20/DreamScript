@@ -128,6 +128,12 @@ KINDS = (
 #: Sources whose pages are state machines, so 10.1.2's state-label path applies.
 STATE_MACHINE_SOURCES = ("fa_bresler",)
 
+#: Sources whose node labels are read by `statelabels`, each by the recogniser trained on it.
+#: **flowchartseg is deliberately absent**: its IR records no node text at all, so a label written
+#: there cannot match anything and can only manufacture substitutions - 218 of them when
+#: `nodetext` was last allowed to do it. That is a property of the annotation, not of the page.
+TEXT_SOURCES = ("fa_bresler", "hdbpmn")
+
 #: Where 10.1.5's fitted log-odds weights live, per ablation and per source.
 DIRECTION_WEIGHTS = ROOT / "experiments" / "assemble" / "direction.json"
 
@@ -237,7 +243,7 @@ def assemble(
     boxes = tracing.node_boxes(page)
     diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
 
-    if state_text and page.source in STATE_MACHINE_SOURCES:
+    if state_text and page.source in TEXT_SOURCES:
         # 10.1.2 for state machines: the label is inside the circle, so the node box is the crop
         # and no text detector is involved. See `statelabels` for why `nodetext` reads nothing
         # here and why S3's recogniser cannot read what it does find.
@@ -456,7 +462,7 @@ def run(split: str = TUNING_SPLIT, limit: int | None = None, n_jobs: int = 6) ->
     # the parent, looked up by the workers.
     from src.assemble.statelabels import build_cache as build_state_cache
 
-    state_pages = [p for p in held if p.source in STATE_MACHINE_SOURCES]
+    state_pages = [p for p in held if p.source in TEXT_SOURCES]
     if state_pages:
         read = build_state_cache(state_pages, tracing.node_boxes)
         if read:

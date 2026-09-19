@@ -43,8 +43,15 @@ from typing import Any
 
 from src.utils.config import ROOT
 
-#: The state-machine recogniser. Falls back to S3's checkpoint, which cannot read these.
+#: The state-machine recogniser, trained on fa_bresler's own crops.
 CHECKPOINT = ROOT / "experiments" / "ocr" / "trocr_fa"
+
+#: S3's checkpoint, which *is* trained on hdbpmn and reads its task labels at 0.5569 exact.
+HDBPMN_CHECKPOINT = ROOT / "experiments" / "ocr" / "trocr_s3"
+
+#: Which recogniser reads which corpus. The split is not a preference - each model is blind to
+#: the other's labels: S3 scores 1.3% on automaton labels, and the fa model never saw a sentence.
+RECOGNISER = {"fa_bresler": CHECKPOINT}
 
 #: Read labels once in the parent and look them up in the workers - see `build_cache`.
 CACHE = ROOT / "data" / "interim" / "state_text"
@@ -53,14 +60,18 @@ CACHE = ROOT / "data" / "interim" / "state_text"
 BEAMS = 4
 
 
-def _model(device):
+def checkpoint_for(source: str) -> Path:
+    """The recogniser that has actually seen this corpus's labels."""
+    return RECOGNISER.get(source, HDBPMN_CHECKPOINT)
+
+
+def _model(device, source: str = "fa_bresler"):
     from transformers import VisionEncoderDecoderModel
 
-    if not CHECKPOINT.is_dir():
-        raise FileNotFoundError(
-            f"no state-machine recogniser at {CHECKPOINT}; train it before reading state labels"
-        )
-    return VisionEncoderDecoderModel.from_pretrained(str(CHECKPOINT)).to(device)
+    path = checkpoint_for(source)
+    if not path.is_dir():
+        raise FileNotFoundError(f"no recogniser at {path}; train it before reading labels")
+    return VisionEncoderDecoderModel.from_pretrained(str(path)).to(device)
 
 
 def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:
@@ -89,7 +100,7 @@ def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:
     import tempfile
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = _model(device)
+    model = _model(device, page.source)
     with tempfile.TemporaryDirectory() as tmp:
         files = []
         for name, patch in zip(ids, patches, strict=True):

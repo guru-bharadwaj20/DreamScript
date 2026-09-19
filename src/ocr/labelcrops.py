@@ -441,6 +441,13 @@ def elements_of(diagram: dict) -> list[dict]:
     return out
 
 
+#: The corpora this crop set covers. **hdbpmn alone until now**, which silently scoped S3 to one
+#: diagram type: it had never seen a fa_bresler label in training or evaluation, and reads them at
+#: 1.3% exact (3 of 233) as a result. fa_bresler renders are cheap to add and the omission was not
+#: a decision anyone recorded, so it is corrected rather than documented.
+SOURCES = ("hdbpmn", "fa_bresler")
+
+
 def build(limit: int | None = None, out: Path = OUT) -> dict:
     """Write one crop per labelled element that the page gives a label block to."""
     import pandas as pd
@@ -470,7 +477,7 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
     held = dev_writers()
 
     rows, pages, missing = [], 0, 0
-    for diagram in load_ir(["hdbpmn"], limit=limit):
+    for diagram in load_ir(list(SOURCES), limit=limit):
         meta = assignment.get(diagram["id"])
         if meta is None:
             continue
@@ -494,7 +501,7 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
             text = normalise(element["text"])
             if not text:
                 continue
-            name = f"hdbpmn__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
+            name = f"{meta[2]}__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
             teachable = meta[0] == "train" and meta[1] not in held
             source = clean.get((diagram["id"], str(element["id"]))) if teachable else None
             if source is not None and Path(source).is_file():
@@ -566,15 +573,17 @@ def unlocated(name: str) -> list[str]:
     frame = load_index()
     pages = set(frame.loc[frame["split"] == name, "page"])
     have = set(frame.loc[frame["split"] == name, "file"])
+    source_of = dict(zip(frame["page"], frame["source"], strict=False))
     out: list[str] = []
-    for diagram in load_ir(["hdbpmn"], limit=None):
+    for diagram in load_ir(list(SOURCES), limit=None):
         if diagram["id"] not in pages:
             continue
+        prefix = source_of.get(diagram["id"], "hdbpmn")
         for element in elements_of(diagram):
             text = normalise(element["text"])
             if not text:
                 continue
-            name_ = f"hdbpmn__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
+            name_ = f"{prefix}__{diagram['id']}__{element['kind'][0]}_{element['id']}.png"
             if name_ not in have:
                 out.append(element["text"])
     return out
