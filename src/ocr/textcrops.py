@@ -120,8 +120,27 @@ MIN_CROP = (20, 12)
 #: An edge-label box is this many median-glyph-heights tall and this many wide, centred on the
 #: polyline midpoint and pushed perpendicular to the local direction.
 EDGE_BOX_HEIGHTS = 1.6
-EDGE_BOX_WIDTHS = 3.2
 EDGE_OFFSET = 0.9
+
+#: **4.8, swept rather than guessed, and the sweep went the opposite way to the hypothesis.**
+#: Reading edge labels off 10 fa_bresler pages (83 annotated triggers, `src.assemble.edgelabels`)
+#: showed the characteristic error of a box that is too *wide*: `c` read as `a,c`, `b` as `a,b`,
+#: `a,b` as `a,b,c` - the crop swallowing a neighbouring connector's label. Narrowing is the
+#: obvious response and it is wrong:
+#:
+#:     1.4  0.229 exact, 42 blank      3.2  0.482 exact, 17 blank
+#:     1.8  0.265 exact, 39 blank      4.0  0.542 exact, 15 blank
+#:     2.4  0.398 exact, 24 blank      4.8  0.602 exact, 10 blank
+#:                                     6.0  0.554 exact,  9 blank
+#:
+#: Every step narrower loses accuracy and nearly triples the blanks, because a hand-written
+#: trigger is often not centred on the arc-length midpoint at all - a narrow box misses it
+#: entirely, and a miss costs more than a neighbour costs. The optimum is 4.8 and 6.0 is past it.
+#:
+#: Note the sweep was measured with a recogniser trained on 3.2-wide crops, so 0.602 is achieved
+#: *despite* a train/inference mismatch; aligning the training corpus to this width is a rebuild
+#: of `labelcrops` plus an S3 retrain, and is expected to add to it rather than subtract.
+EDGE_BOX_WIDTHS = 4.8
 
 #: A detected box must overlap an annotated node this much to inherit its transcription.
 MATCH_IOU = 0.5
