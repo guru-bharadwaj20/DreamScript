@@ -125,7 +125,102 @@ KINDS = (
 # ------------------------------------------------------------------------------------------
 
 
-def assemble(page: Page, *, mask: Any = None, text: bool = False) -> Diagram:
+#: Sources whose pages are state machines, so 10.1.2's state-label path applies.
+STATE_MACHINE_SOURCES = ("fa_bresler",)
+
+#: Where 10.1.5's fitted log-odds weights live, per ablation and per source.
+DIRECTION_WEIGHTS = ROOT / "experiments" / "assemble" / "direction.json"
+
+
+#: A self-loop whose longest supporting polyline is shorter than this fraction of the page
+#: diagonal is a fragment, not a drawn loop. Fitted on val, which is s5's tuning split; the
+#: claim it supports is only worth what the test run says.
+MIN_LOOP_LENGTH = 0.072
+
+
+def _arc_length(points) -> float:
+    if not points or len(points) < 2:
+        return 0.0
+    return sum(
+        ((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2) ** 0.5
+        for a, b in zip(points, points[1:], strict=False)
+    )
+
+
+def _prune_short_loops(page: Page, diagram: Diagram) -> None:
+    """Drop self-loops with no polyline long enough to be one (in place).
+
+    The tracer attaches both ends of a stub to the nearest box, and when that box is the same one
+    twice the result is a self-loop that was never drawn. On fa_bresler val these are **80 of the
+    147 false predicted edges**, and they separate cleanly from real loops by length: the longest
+    polyline supporting a true loop has a median of 0.166 of the page diagonal against 0.035 for a
+    false one. Cutting at `MIN_LOOP_LENGTH` removes all 80 and costs 4 true loops.
+
+    Grouped by endpoint pair rather than per polyline, because `irdiff` scores pairs as a set: one
+    long trace is enough to establish the loop however many short ones accompany it.
+    """
+    diagonal = getattr(page, "diagonal", 0.0) or 1.0
+    longest: dict[tuple[str, str], float] = {}
+    for edge in diagram.edges:
+        if edge.src is None or edge.dst is None or edge.src != edge.dst:
+            continue
+        key = (edge.src, edge.dst)
+        length = _arc_length(getattr(edge, "polyline", None) or []) / diagonal
+        longest[key] = max(longest.get(key, 0.0), length)
+
+    doomed = {key for key, length in longest.items() if length < MIN_LOOP_LENGTH}
+    if not doomed:
+        return
+    diagram.edges = [
+        e
+        for e in diagram.edges
+        if not (e.src is not None and e.src == e.dst and (e.src, e.dst) in doomed)
+    ]
+
+
+def _orient(page: Page, diagram: Diagram) -> None:
+    """Give every traced edge a direction, using 10.1.5's fitted model (in place).
+
+    The tracer returns `src`/`dst` in walk order and `directed=False`, while the truth records
+    directed edges. `irdiff._edge_keys` keys a directed edge as an ordered pair and an undirected
+    one as a sorted pair, so an unoriented prediction can never match a truth edge that does not
+    happen to already be in sorted order - 52.6% of hdbpmn's and 23.5% of fa_bresler's. 10.1.5
+    was built, but never run or wired; this is that connection.
+    """
+    from src.assemble import direction
+
+    try:
+        fitted = json.loads(DIRECTION_WEIGHTS.read_text(encoding="utf-8"))["weights"]["all"]
+    except (OSError, ValueError, KeyError):
+        return
+    # flowchartseg carries no edges of its own to fit on, so it borrows hdbpmn's - the other
+    # flowchart corpus - rather than falling back to an unweighted coin flip.
+    weights = fitted.get(page.source) or fitted.get("hdbpmn") or {}
+    nodes = {n.id: n for n in diagram.nodes}
+    evidence = direction.evidence_for(page, weights)
+    for edge in diagram.edges:
+        if edge.src is None or edge.dst is None or edge.src == edge.dst:
+            continue
+        if edge.src not in nodes or edge.dst not in nodes:
+            continue
+        try:
+            decision = direction.resolve(edge, nodes, evidence)
+        except Exception:  # noqa: BLE001 - a malformed polyline leaves the edge undirected
+            continue
+        if decision is None:
+            continue
+        edge.src, edge.dst, edge.directed = decision.src, decision.dst, True
+
+
+def assemble(
+    page: Page,
+    *,
+    mask: Any = None,
+    text: bool = False,
+    state_text: bool = False,
+    direct: bool = False,
+    prune_loops: bool = False,
+) -> Diagram:
     """Phase 10's stages composed into the one predicted `Diagram` S5 is scored on.
 
     Nodes are 10.1.1's boxes as the tracer sees them (arrowheads dropped, `MIN_SCORE` applied),
@@ -141,6 +236,26 @@ def assemble(page: Page, *, mask: Any = None, text: bool = False) -> Diagram:
     """
     boxes = tracing.node_boxes(page)
     diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
+
+    if state_text and page.source in STATE_MACHINE_SOURCES:
+        # 10.1.2 for state machines: the label is inside the circle, so the node box is the crop
+        # and no text detector is involved. See `statelabels` for why `nodetext` reads nothing
+        # here and why S3's recogniser cannot read what it does find.
+        from src.assemble import statelabels
+
+        labels = statelabels.cached(page)
+        if labels is None:
+            labels = statelabels.read_page(page, boxes)
+        for node in diagram.nodes:
+            if labels.get(node.id):
+                node.text = labels[node.id]
+
+    if prune_loops:
+        _prune_short_loops(page, diagram)
+
+    if direct:
+        _orient(page, diagram)
+
     if text:
         from src.assemble import nodetext
         from src.assemble.nodetext import cached
@@ -185,7 +300,9 @@ def decompose(predicted: Diagram, actual: Diagram, *, match: str = MATCH) -> dic
 
 def score_page(page: Page) -> dict[str, Any]:
     """`decompose` for one held-out page, with the page's identity attached."""
-    row = decompose(assemble(page), truth(page))
+    row = decompose(
+        assemble(page, state_text=True, direct=True, prune_loops=True), truth(page)
+    )
     return {"page": page.name, "source": page.source, "split": page.split, **row}
 
 
@@ -334,6 +451,16 @@ def run(split: str = TUNING_SPLIT, limit: int | None = None, n_jobs: int = 6) ->
     read = build_cache(held, tracing.node_boxes)
     if read:
         print(f"[s5] read labels on {read} pages", flush=True)
+
+    # The state-machine recogniser is a second model, and the same argument applies: one copy in
+    # the parent, looked up by the workers.
+    from src.assemble.statelabels import build_cache as build_state_cache
+
+    state_pages = [p for p in held if p.source in STATE_MACHINE_SOURCES]
+    if state_pages:
+        read = build_state_cache(state_pages, tracing.node_boxes)
+        if read:
+            print(f"[s5] read state labels on {read} pages", flush=True)
 
     rows = pmap(score_page, held, n_jobs=n_jobs, prefer="threads", desc=f"s5-{split}")
     bridges = pmap(bridge_ceiling, held, n_jobs=n_jobs, prefer="threads", desc="s5-bridge")
