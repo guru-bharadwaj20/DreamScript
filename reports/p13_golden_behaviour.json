@@ -1,0 +1,618 @@
+{
+  "pages": 25,
+  "with_truth": 25,
+  "totals": {
+    "nodes_truth": 360,
+    "nodes_pred": 397,
+    "edges_truth": 397,
+    "edges_pred": 518,
+    "edge_labels_truth": 113,
+    "edge_labels_pred": 0,
+    "node_texts_truth": 295,
+    "node_texts_pred": 386
+  },
+  "state_machines_with_zero_transitions": 9,
+  "state_machines": 9,
+  "rows": [
+    {
+      "name": "fa_bresler__writer015_fa_010",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        4,
+        4
+      ],
+      "edges": [
+        8,
+        21
+      ],
+      "edge_labels": [
+        7,
+        0
+      ],
+      "node_texts": [
+        4,
+        4
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer015_fa_011",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        5,
+        5
+      ],
+      "edges": [
+        7,
+        12
+      ],
+      "edge_labels": [
+        6,
+        0
+      ],
+      "node_texts": [
+        5,
+        5
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer018_fa_010",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        4,
+        4
+      ],
+      "edges": [
+        8,
+        17
+      ],
+      "edge_labels": [
+        7,
+        0
+      ],
+      "node_texts": [
+        4,
+        4
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer018_fa_012",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        5,
+        5
+      ],
+      "edges": [
+        11,
+        25
+      ],
+      "edge_labels": [
+        10,
+        0
+      ],
+      "node_texts": [
+        5,
+        5
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer021_fa_001",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        3,
+        3
+      ],
+      "edges": [
+        6,
+        15
+      ],
+      "edge_labels": [
+        5,
+        0
+      ],
+      "node_texts": [
+        3,
+        3
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer021_fa_006",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        5,
+        5
+      ],
+      "edges": [
+        9,
+        17
+      ],
+      "edge_labels": [
+        8,
+        0
+      ],
+      "node_texts": [
+        5,
+        5
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer021_fa_007",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        5,
+        5
+      ],
+      "edges": [
+        8,
+        21
+      ],
+      "edge_labels": [
+        7,
+        0
+      ],
+      "node_texts": [
+        5,
+        5
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "fa_bresler__writer024_fa_004",
+      "source": "fa_bresler",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        2,
+        2
+      ],
+      "edges": [
+        5,
+        14
+      ],
+      "edge_labels": [
+        4,
+        0
+      ],
+      "node_texts": [
+        2,
+        2
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "hdbpmn__ex00_writer0104",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        12,
+        12
+      ],
+      "edges": [
+        13,
+        3
+      ],
+      "edge_labels": [
+        2,
+        0
+      ],
+      "node_texts": [
+        7,
+        12
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 14
+    },
+    {
+      "name": "hdbpmn__ex01_writer0100",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        11,
+        11
+      ],
+      "edges": [
+        12,
+        11
+      ],
+      "edge_labels": [
+        3,
+        0
+      ],
+      "node_texts": [
+        7,
+        11
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 15
+    },
+    {
+      "name": "hdbpmn__ex02_writer0089",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        14,
+        20
+      ],
+      "edges": [
+        12,
+        12
+      ],
+      "edge_labels": [
+        3,
+        0
+      ],
+      "node_texts": [
+        13,
+        20
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 123
+    },
+    {
+      "name": "hdbpmn__ex02_writer0100",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        19,
+        24
+      ],
+      "edges": [
+        21,
+        24
+      ],
+      "edge_labels": [
+        3,
+        0
+      ],
+      "node_texts": [
+        17,
+        24
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 135
+    },
+    {
+      "name": "hdbpmn__ex03_writer0093",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        25,
+        28
+      ],
+      "edges": [
+        28,
+        30
+      ],
+      "edge_labels": [
+        9,
+        0
+      ],
+      "node_texts": [
+        20,
+        26
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 164
+    },
+    {
+      "name": "hdbpmn__ex03_writer0096",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        26,
+        24
+      ],
+      "edges": [
+        29,
+        61
+      ],
+      "edge_labels": [
+        7,
+        0
+      ],
+      "node_texts": [
+        23,
+        19
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 138
+    },
+    {
+      "name": "hdbpmn__ex04_writer0104",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        14,
+        15
+      ],
+      "edges": [
+        14,
+        3
+      ],
+      "edge_labels": [
+        3,
+        0
+      ],
+      "node_texts": [
+        10,
+        15
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 17
+    },
+    {
+      "name": "hdbpmn__ex06_writer0088",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        17,
+        18
+      ],
+      "edges": [
+        18,
+        16
+      ],
+      "edge_labels": [
+        4,
+        0
+      ],
+      "node_texts": [
+        15,
+        15
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 107
+    },
+    {
+      "name": "hdbpmn__ex06_writer0092",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        16,
+        20
+      ],
+      "edges": [
+        21,
+        49
+      ],
+      "edge_labels": [
+        4,
+        0
+      ],
+      "node_texts": [
+        12,
+        20
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 123
+    },
+    {
+      "name": "hdbpmn__ex07_writer0086",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        19,
+        17
+      ],
+      "edges": [
+        17,
+        19
+      ],
+      "edge_labels": [
+        2,
+        0
+      ],
+      "node_texts": [
+        14,
+        17
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 19
+    },
+    {
+      "name": "hdbpmn__ex07_writer0094",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        20,
+        34
+      ],
+      "edges": [
+        21,
+        27
+      ],
+      "edge_labels": [
+        1,
+        0
+      ],
+      "node_texts": [
+        14,
+        34
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 202
+    },
+    {
+      "name": "hdbpmn__ex07_writer0098",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        27,
+        26
+      ],
+      "edges": [
+        28,
+        21
+      ],
+      "edge_labels": [
+        5,
+        0
+      ],
+      "node_texts": [
+        18,
+        25
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 147
+    },
+    {
+      "name": "hdbpmn__ex07_writer0106",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        23,
+        27
+      ],
+      "edges": [
+        25,
+        29
+      ],
+      "edge_labels": [
+        5,
+        0
+      ],
+      "node_texts": [
+        18,
+        27
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 147
+    },
+    {
+      "name": "hdbpmn__ex08_writer0087",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        12,
+        14
+      ],
+      "edges": [
+        8,
+        10
+      ],
+      "edge_labels": [
+        0,
+        0
+      ],
+      "node_texts": [
+        10,
+        14
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 81
+    },
+    {
+      "name": "hdbpmn__ex08_writer0095",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        23,
+        23
+      ],
+      "edges": [
+        23,
+        32
+      ],
+      "edge_labels": [
+        6,
+        0
+      ],
+      "node_texts": [
+        20,
+        23
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 111
+    },
+    {
+      "name": "hdbpmn__ex08_writer0096",
+      "source": "hdbpmn",
+      "type": "state_machine",
+      "ok": true,
+      "nodes": [
+        23,
+        24
+      ],
+      "edges": [
+        21,
+        12
+      ],
+      "edge_labels": [
+        2,
+        0
+      ],
+      "node_texts": [
+        21,
+        24
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 30
+    },
+    {
+      "name": "hdbpmn__ex08_writer0097",
+      "source": "hdbpmn",
+      "type": "flowchart",
+      "ok": true,
+      "nodes": [
+        26,
+        27
+      ],
+      "edges": [
+        24,
+        17
+      ],
+      "edge_labels": [
+        0,
+        0
+      ],
+      "node_texts": [
+        23,
+        27
+      ],
+      "transitions_emitted": 0,
+      "code_lines": 150
+    }
+  ]
+}

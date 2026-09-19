@@ -105,18 +105,48 @@ def detect_boxes(path: str | Path, min_score: float = MIN_SCORE) -> list[dict]:
     return out
 
 
+#: Which corpus each routed type stands in for, when the S5 stages ask a page where it came from.
+#: A live page has no provenance, but `_orient`'s direction weights and `statelabels`' recogniser
+#: are both fitted per corpus, so the routed type is the honest proxy: 13.3 has already decided
+#: this is a state machine, and the only state-machine corpus is fa_bresler.
+SOURCE_FOR_TYPE = {"state_machine": "fa_bresler", "flowchart": "hdbpmn"}
+
+
 def assemble_diagram(
-    path: str | Path, boxes: list[dict], *, read_text: bool = False
+    path: str | Path, boxes: list[dict], *, read_text: bool = False, kind: str = ""
 ) -> dict[str, Any]:
-    """10.1's tracer over those boxes, as a plain IR dict."""
-    from src.assemble import tracing
+    """10.1's tracer over those boxes, plus the S5 stages, as a plain IR dict.
+
+    **The three stages after the tracer are the ones S5 is actually scored with**, and the
+    pipeline was not running any of them: `statelabels` for node text, `_prune_short_loops`, and
+    `_orient` for edge direction. Composed, they are what moved S5's val median from 9.0 to 3.0,
+    and without them this stage emitted nodes named `d000`-`d011` with no text at all - 0 of 295
+    node labels on the 25 golden pages. They are gated on `kind` because both the direction
+    weights and the recogniser are fitted per corpus and 13.3 has already decided the type.
+    """
+    from src.assemble import s5, tracing
 
     page = page_for(path)
+    page.source = SOURCE_FOR_TYPE.get(kind, "loose")
     # Deliberate: `tracing` is annotated for `corpus.Page` but only reads `PageLike`'s three
     # members. The cast keeps that narrow claim visible instead of widening tracing's signature
     # for a caller Phase 10 was not written for.
     known = cast(Any, page)
     diagram = tracing.to_diagram(known, boxes, tracing.trace(known, boxes))
+
+    if page.source in s5.TEXT_SOURCES:
+        # The label is inside the shape for a state machine, so the node box is the crop and no
+        # text detector is involved. `nodetext` reads nothing here; see `statelabels`.
+        from src.assemble import statelabels
+
+        labels = statelabels.read_page(known, boxes)
+        for node in diagram.nodes:
+            if labels.get(node.id):
+                node.text = labels[node.id]
+    if page.source != "loose":
+        s5._prune_short_loops(known, diagram)
+        s5._orient(known, diagram)
+
     if read_text:
         # Off by default: `nodetext` measures this as break-even at best on S5.
         from src.assemble.nodetext import assign, read_page

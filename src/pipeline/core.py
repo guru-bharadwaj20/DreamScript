@@ -103,7 +103,9 @@ class DreamScriptPipeline:
             result.stopped_at = "classify"
             return result
 
-        diagram = self._stage(result, "assemble", key, lambda: self._assemble(path, boxes))
+        diagram = self._stage(
+            result, "assemble", key, lambda: self._assemble(path, boxes, result.diagram_type)
+        )
         if diagram is None:
             return result
         result.ir = diagram
@@ -188,10 +190,10 @@ class DreamScriptPipeline:
             return Outcome(value=(UNKNOWN, 0.0), confidence=0.0)
         return Outcome(value=(kind, probability), confidence=probability)
 
-    def _assemble(self, path: Path, boxes: list[dict]) -> Outcome[dict]:
+    def _assemble(self, path: Path, boxes: list[dict], kind: str = "") -> Outcome[dict]:
         from src.pipeline.vision import assemble_diagram
 
-        diagram = assemble_diagram(path, boxes, read_text=self.read_text)
+        diagram = assemble_diagram(path, boxes, read_text=self.read_text, kind=kind)
         if not diagram.get("nodes"):
             return Outcome.failed("no nodes survived assembly")
         return Outcome(value=diagram)
