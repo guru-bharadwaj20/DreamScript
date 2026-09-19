@@ -23,9 +23,11 @@ test that asserts an aspiration fails on the day it is written and teaches nothi
 pinned to the measurement fails the day a change makes things worse, which is the only day it
 should fail - and the day edge labels land, the bound is what gets tightened.
 
-`EDGE_LABEL_RECALL_FLOOR` is the honest one. It is 0.0, because nothing in the assembler reads
-edge labels at all: 0 of 113 across the 25 pages. It is written as a named constant rather than
-omitted so that the gap is a number in the suite instead of a silence in it.
+`EDGE_LABEL_RATIO_CEILING` is the honest one. Edge labels went from 0 of 113 to 442 of 113 once
+`src.assemble.edgelabels` existed, and 442 is both the reason the machines work and the reason
+they are not right: assembly over-segments edges, the ink gate labels the fragments, and the
+emitted program carries spurious transitions beside the real ones. The ceiling sits just above
+the measurement to catch a regression, not because 3.91x is acceptable.
 """
 
 from __future__ import annotations
@@ -39,7 +41,20 @@ from src.utils.config import ROOT
 
 #: Measured on the 25 golden pages. See the module docstring on why these are floors, not goals.
 NODE_COUNT_TOLERANCE = 0.25
-EDGE_LABEL_RECALL_FLOOR = 0.0
+
+#: No state machine may emit zero transitions. This was 9 of 9 when the file was written and is
+#: now 0 of 8, so it is an assertion rather than a record: a machine with no transitions cannot
+#: accept or reject anything, and nothing should be allowed to put one back.
+VACUOUS_MACHINES_ALLOWED = 0
+
+#: Edge labels must be produced at all - 0 of 113 before `src.assemble.edgelabels` existed.
+EDGE_LABELS_FLOOR = 100
+
+#: ...and not wildly over-produced. 442 against 113 annotated is 3.91x, which is the honest
+#: state: assembly over-segments edges (518 predicted against 397) and the ink gate labels the
+#: fragments, so the machines carry spurious transitions beside the real ones. The ceiling is
+#: set just above the measurement to catch a regression, **not** because 3.91x is acceptable.
+EDGE_LABEL_RATIO_CEILING = 4.2
 
 GOLDEN = ROOT / "tests" / "fixtures" / "p13_golden.json"
 REPORT = ROOT / "reports" / "p13_golden_behaviour.json"
@@ -75,30 +90,38 @@ def test_the_node_count_stays_near_the_annotation():
     )
 
 
-def test_edge_label_recall_is_recorded_even_though_it_is_zero():
-    """The gap that makes the generated state machines vacuous, pinned as a number.
+def test_edge_labels_are_produced_and_not_wildly_over_produced():
+    """Both halves matter, and the second is the one that is still wrong.
 
-    This is not a passing grade. It is the instrument that will show edge-label OCR working on
-    the day it is wired: `EDGE_LABEL_RECALL_FLOOR` goes up, and this test is what enforces it.
+    Before `src.assemble.edgelabels` this was 0 of 113 and every generated machine was vacuous.
+    It is now 442, which is enough labels and too many: the over-production is assembly's edge
+    over-segmentation showing through, and it puts spurious transitions in the emitted program.
     """
     report = _report()
     truth = report["totals"]["edge_labels_truth"]
     predicted = report["totals"]["edge_labels_pred"]
     assert truth > 0, "the annotation must carry edge labels for this to measure anything"
-    recall = predicted / truth
-    assert recall >= EDGE_LABEL_RECALL_FLOOR
+    assert predicted >= EDGE_LABELS_FLOOR, f"only {predicted} edge labels read"
+    assert predicted / truth <= EDGE_LABEL_RATIO_CEILING, (
+        f"{predicted} labels against {truth} annotated"
+    )
 
 
-def test_a_state_machine_with_no_triggers_is_reported_not_hidden():
-    """A machine with zero transitions must show up in the report as exactly that."""
+def test_no_generated_state_machine_is_vacuous():
+    """A machine with no transitions parses and cannot accept or reject anything.
+
+    This started as "record the count, it is all of them" and is now a real bound, because the
+    count is zero. Two bugs produced those nine: nothing read edge labels, and a BPMN page was
+    routed to `state_machine` at 0.9909 because the router was served a histogram with the
+    arrowheads stripped out.
+    """
     report = _report()
     machines = report["state_machines"]
     vacuous = report["state_machines_with_zero_transitions"]
     assert machines > 0
-    # The assertion is that the count is *recorded*, not that it is small - it is currently all
-    # of them, and a green suite must not be able to hide that.
-    assert isinstance(vacuous, int)
-    assert vacuous <= machines
+    assert vacuous <= VACUOUS_MACHINES_ALLOWED, (
+        f"{vacuous} of {machines} generated machines have no transitions"
+    )
 
 
 @pytest.mark.gpu

@@ -11,8 +11,8 @@
     "node_texts_truth": 295,
     "node_texts_pred": 386
   },
-  "state_machines_with_zero_transitions": 1,
-  "state_machines": 9,
+  "state_machines_with_zero_transitions": 0,
+  "state_machines": 8,
   "rows": [
     {
       "name": "fa_bresler__writer015_fa_010",
@@ -569,7 +569,7 @@
     {
       "name": "hdbpmn__ex08_writer0096",
       "source": "hdbpmn",
-      "type": "state_machine",
+      "type": "flowchart",
       "ok": true,
       "nodes": [
         23,
@@ -588,7 +588,7 @@
         24
       ],
       "transitions_emitted": 0,
-      "code_lines": 30
+      "code_lines": 138
     },
     {
       "name": "hdbpmn__ex08_writer0097",
