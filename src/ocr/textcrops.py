@@ -137,9 +137,14 @@ EDGE_OFFSET = 0.9
 #: trigger is often not centred on the arc-length midpoint at all - a narrow box misses it
 #: entirely, and a miss costs more than a neighbour costs. The optimum is 4.8 and 6.0 is past it.
 #:
-#: Note the sweep was measured with a recogniser trained on 3.2-wide crops, so 0.602 is achieved
-#: *despite* a train/inference mismatch; aligning the training corpus to this width is a rebuild
-#: of `labelcrops` plus an S3 retrain, and is expected to add to it rather than subtract.
+#: The sweep was measured with a recogniser that never saw a crop of this shape, and **there is
+#: no cheap way to change that, contrary to what this comment first said.** S3 sets
+#: `CORPUS = "label"`, so it trains on `src.ocr.labelcrops`, whose blocks come from CRAFT line
+#: boxes by way of `ownership.blocks` / `page_labels` - `edge_label_box` is not in that path at
+#: all. Only this module's own `page_rows` (the "element" corpus, which S3 does not use) and
+#: `src.assemble.edgelabels` crop this way. So rebuilding `labelcrops` aligns nothing, and 0.602
+#: is what an out-of-distribution crop already buys. Closing that gap means training a recogniser
+#: on edge-box crops specifically, which is a corpus decision rather than a constant.
 EDGE_BOX_WIDTHS = 4.8
 
 #: A detected box must overlap an annotated node this much to inherit its transcription.
