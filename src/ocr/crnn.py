@@ -433,10 +433,26 @@ def predict(model, batches, chars: str, device) -> tuple[list[str], list[str]]:
 
 
 def shared_alphabet() -> str:
+    """One alphabet across every arm, so their CERs are comparable.
+
+    IAM is pulled in even for the diagram-only arms: an arm that could not *emit* a character the
+    pretrained arm can emit would be scored on a different label space, and the comparison 9.3.2
+    exists for would be between two different problems.
+
+    **IAM may be absent.** `data/raw/iam_line` is a DVC pointer whose store is empty, so the `iam`,
+    `zero_shot` and `finetune` arms cannot run at all; `scratch` can, and blocking it on a file
+    only its siblings need would lose the one measurement still available. When IAM is missing the
+    alphabet is the diagram labels' own, and the arms that needed IAM are the arms that are gone -
+    so nothing is being compared across two label spaces.
+    """
     _, diagram_texts, _ = diagram_split("train")
+    iam_train = IAM / "train.parquet"
+    if not iam_train.is_file():
+        return alphabet(diagram_texts)
+
     import pandas as pd
 
-    iam_texts = pd.read_parquet(IAM / "train.parquet", columns=["text"])["text"].tolist()
+    iam_texts = pd.read_parquet(iam_train, columns=["text"])["text"].tolist()
     return alphabet(diagram_texts, iam_texts)
 
 
