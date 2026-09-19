@@ -1,0 +1,37 @@
+{
+  "what": "Does reading edge labels change S5? No - and the reason is the metric, not the module.",
+  "design": "Same recogniser, same code, one flag. src.assemble.s5 --edge-text on and off, val and test.",
+  "val": {
+    "base": {
+      "median_ged": 3.0,
+      "pass_share": 0.5162,
+      "mean_ged": 12.036
+    },
+    "edge": {
+      "median_ged": 3.0,
+      "pass_share": 0.5162,
+      "mean_ged": 12.036
+    },
+    "identical": true
+  },
+  "test": {
+    "base": {
+      "median_ged": 21.5,
+      "pass_share": 0.2284,
+      "mean_ged": 20.907
+    },
+    "edge": {
+      "median_ged": 21.5,
+      "pass_share": 0.2284,
+      "mean_ged": 20.907
+    },
+    "identical": true
+  },
+  "cause": "src.assemble.irdiff builds edge edits as set differences over endpoint keys - edits['edge_insert'] = predicted_edges - true_edges and the mirror for delete. There is no edge_substitute edit kind, so an edge's label is never compared. A state machine with every trigger correct scores identically to one with none.",
+  "consequence": "S5 is an incomplete proxy for IR correctness on state machines. Edge labels are worth nothing to it and everything to the emitted program: with no triggers every transition is an epsilon transition and epsilon-closure collapses the machine to one state. The stage is therefore wired into src/pipeline/vision.py, where 13.10 measures behaviour.",
+  "edge_label_reading_itself": {
+    "measured_on": "10 fa_bresler pages, 83 annotated triggers, ground-truth polylines",
+    "exact_match": 0.602,
+    "note": "with a recogniser that never trained on edge-box crops; see textcrops.EDGE_BOX_WIDTHS"
+  }
+}
