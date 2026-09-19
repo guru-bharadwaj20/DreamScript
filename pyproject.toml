@@ -7,6 +7,11 @@ requires-python = "==3.11.*"
 readme = "README.md"
 license = { text = "MIT" }
 
+[project.scripts]
+# 13.9's `dreamscript run <dir> --out <dir>`. The same callable as `python -m src.pipeline`,
+# which is what the tests drive so the suite does not depend on an editable install.
+dreamscript = "src.pipeline.cli:run"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
