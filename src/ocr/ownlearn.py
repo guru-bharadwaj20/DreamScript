@@ -185,6 +185,9 @@ MODEL_FEATURES = FEATURES + READING
 
 def build(limit: int | None = None, out: Path = TABLE) -> dict:
     """Recognise every shortlisted candidate on the training pages and store its CER."""
+    from src.utils import gpu
+
+    gpu.cap()
     import cv2
     import pandas as pd
     import torch

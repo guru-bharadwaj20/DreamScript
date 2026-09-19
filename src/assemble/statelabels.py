@@ -76,6 +76,9 @@ def _model(device, source: str = "fa_bresler"):
 
 def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:
     """`{box id: label}` for every detected node box on one page."""
+    from src.utils import gpu
+
+    gpu.cap()
     import cv2
     import torch
 
