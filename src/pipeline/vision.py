@@ -143,6 +143,18 @@ def assemble_diagram(
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
+    if page.source in s5.EDGE_TEXT_SOURCES:
+        # The trigger is written *beside* the connector - the one place neither `statelabels`
+        # (inside the shape) nor `nodetext` (owned by a node) looks. **S5 cannot see this
+        # stage**: `irdiff` compares edges as endpoint-key sets and has no `edge_substitute`,
+        # so a machine with every trigger correct scores identically to one with none. It is
+        # wired here rather than there because what it changes is the emitted program - with no
+        # triggers every transition is an epsilon transition and epsilon-closure collapses the
+        # whole machine to one state.
+        from src.assemble import edgelabels
+
+        edgelabels.apply(page, diagram)
+
     if page.source != "loose":
         s5._prune_short_loops(known, diagram)
         s5._orient(known, diagram)
