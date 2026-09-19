@@ -156,7 +156,12 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
 def apply(page, diagram: Any) -> int:
     """Read this page's edge labels onto `diagram` in place. Returns how many were set."""
     plain = diagram.to_dict() if hasattr(diagram, "to_dict") else diagram
-    labels = cached(page) or read_page(page, plain)
+    labels = cached(page)
+    if labels is None:
+        labels = read_page(page, plain)
+        # Stored even when empty, so a page with nothing written beside any connector is not
+        # re-decoded on every re-score. `cached` distinguishes "no file" from "read, found none".
+        store(page, labels)
     if not labels:
         return 0
     written = 0

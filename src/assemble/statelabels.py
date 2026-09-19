@@ -38,6 +38,7 @@ question. Reading a whole circle interior at 0.66 scale instead scored 0/28.
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -65,10 +66,19 @@ def checkpoint_for(source: str) -> Path:
     return RECOGNISER.get(source, HDBPMN_CHECKPOINT)
 
 
-def _model(device, source: str = "fa_bresler"):
-    from transformers import VisionEncoderDecoderModel
+#: `s5.run` fans pages out with `prefer="threads"`, and transformers resolves its submodules
+#: lazily on first attribute access. Six threads reaching that at once raced and one lost with
+#: `ImportError: cannot import name 'VisionEncoderDecoderModel'` - a real traceback from an
+#: import that succeeds when serialised. The lock covers the import, not just the construction,
+#: because the import is what raced.
+_IMPORT_LOCK = threading.Lock()
 
-    path = checkpoint_for(source)
+
+def _model(device, source: str = "fa_bresler"):
+    with _IMPORT_LOCK:
+        from transformers import VisionEncoderDecoderModel
+
+        path = checkpoint_for(source)
     if not path.is_dir():
         raise FileNotFoundError(f"no recogniser at {path}; train it before reading labels")
     return VisionEncoderDecoderModel.from_pretrained(str(path)).to(device)
