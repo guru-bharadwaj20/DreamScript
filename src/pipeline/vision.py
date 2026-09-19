@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
 from src.assemble.corpus import WEIGHTS
 from src.detect.classes import CLASSES
@@ -25,9 +25,27 @@ from src.detect.classes import CLASSES
 MIN_SCORE = 0.25
 
 
+class PageLike(Protocol):
+    """What Phase 10 actually reads off a page.
+
+    `corpus.Page` derives `image` from its split and name, so a page with pixels and no
+    provenance cannot subclass it. This states the real requirement instead: the tracer touches
+    `name`, `image` and `diagonal` and nothing else, which is why `LoosePage` works at all. The
+    casts below are that fact made checkable rather than asserted in a docstring.
+    """
+
+    name: str
+
+    @property
+    def image(self) -> Path: ...
+
+    @property
+    def diagonal(self) -> float: ...
+
+
 @dataclass(slots=True)
 class LoosePage:
-    """A page with pixels and no provenance."""
+    """A page with pixels and no provenance. Satisfies `PageLike`."""
 
     name: str
     image: Path
@@ -94,13 +112,21 @@ def assemble_diagram(
     from src.assemble import tracing
 
     page = page_for(path)
-    diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes))
+    # Deliberate: `tracing` is annotated for `corpus.Page` but only reads `PageLike`'s three
+    # members. The cast keeps that narrow claim visible instead of widening tracing's signature
+    # for a caller Phase 10 was not written for.
+    known = cast(Any, page)
+    diagram = tracing.to_diagram(known, boxes, tracing.trace(known, boxes))
     if read_text:
         # Off by default: `nodetext` measures this as break-even at best on S5.
         from src.assemble.nodetext import assign, read_page
 
-        labels = assign(read_page(page, boxes), boxes)
+        labels = assign(read_page(known, boxes), boxes)
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
-    return diagram.to_dict() if hasattr(diagram, "to_dict") else diagram
+    # `to_diagram` returns an `ir.model.Diagram`; the pipeline caches and serialises plain
+    # dicts, so the boundary converts once here rather than in every consumer.
+    if hasattr(diagram, "to_dict"):
+        return cast(dict[str, Any], diagram.to_dict())
+    return cast(dict[str, Any], diagram)

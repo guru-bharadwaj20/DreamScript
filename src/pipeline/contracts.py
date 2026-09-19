@@ -1,11 +1,21 @@
 """Phase 13.2 - the typed values that pass between stages.
 
 Every stage takes one of these and returns one of these, so a stage can be run, cached and
-tested without the stage before it. They are plain dataclasses with `slots=True` rather than
-pydantic models: the values crossing these boundaries are numpy arrays, IR dicts and strings
-that are already validated where they are produced - `schemas/ir.schema.json` for the IR,
-12.1.1's schema for a pair - and a second validation layer here would re-describe those schemas
-in a second language without checking anything they do not already check.
+tested without the stage before it.
+
+They are **pydantic dataclasses**, not `BaseModel`s: `StageReport("detect", ok=True, ...)` is
+constructed positionally throughout the pipeline, which a `BaseModel` forbids, and
+`pydantic.dataclasses.dataclass` gives the same validation without changing a single call site.
+
+The validation is deliberately shallow on payloads and strict on structure. `Outcome.value` is
+`Any` because what crosses that boundary is a numpy array, an IR dict or a code string, each
+already validated where it is produced - `schemas/ir.schema.json` for the IR, 12.1.1's schema for
+a pair - and re-describing those schemas here would restate them in a second language without
+checking anything new. What *is* worth enforcing is the shape of the report itself: `seconds` and
+`confidence` are floats, `ok`/`cached`/`degraded` are bools, `stages` is a list of `StageReport`.
+Those are the fields the timing table and the failure message are built from, and a stage that
+wrote a string into `seconds` would produce a table that sorts wrongly and a budget check that
+silently compares a string to 10.0.
 
 What this does buy is that **a stage's failure is a value, not an exception** (13.8). `Outcome`
 carries either a payload or a reason, so a pipeline that cannot read a page still returns a
@@ -16,8 +26,16 @@ a detector.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import Any, Generic, TypeVar
+
+from pydantic import ConfigDict
+from pydantic.dataclasses import dataclass
+
+#: Payloads crossing these boundaries are numpy arrays and IR dicts, which pydantic cannot
+#: describe and does not need to; `arbitrary_types_allowed` lets them through untouched while
+#: the report's own fields stay validated.
+_CONFIG = ConfigDict(arbitrary_types_allowed=True)
 
 T = TypeVar("T")
 
@@ -26,7 +44,7 @@ DIAGRAM_TYPES = ("flowchart", "state_machine", "er_diagram", "wireframe", "circu
 UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, config=_CONFIG)
 class Outcome(Generic[T]):
     """A stage's answer: a value, or a reason there is none. Never both."""
 
@@ -49,7 +67,7 @@ class Outcome(Generic[T]):
         return cls(value=value, reason=reason, confidence=confidence, degraded=True)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, config=_CONFIG)
 class StageReport:
     """What one stage did, for the timing table (13.7) and the failure message (13.8)."""
 
@@ -75,7 +93,7 @@ class StageReport:
         }
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, config=_CONFIG)
 class Result:
     """Everything one page produced, whether or not it got all the way to code."""
 

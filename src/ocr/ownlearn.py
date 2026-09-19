@@ -257,6 +257,12 @@ def build(limit: int | None = None, out: Path = TABLE) -> dict:
 
     print(f"[ownlearn] recognising {len(paths)} candidate crops", flush=True)
     predictions = predict(model, proc, paths, device, beams=1)
+    # Hand the card back before `read_confidence` loads its own copy. Leaving this one resident
+    # put two models plus a batch-256 activation set on a 24 GiB card, which WDDM does not OOM -
+    # it spills to host RAM and the run collapses to ~65 W at a reported 100% utilisation.
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     frame = pd.DataFrame(rows)
     # The READING columns are part of MODEL_FEATURES, so the table `train` reads has to carry
     # them - it does not compute them itself. Building the table without this raised a KeyError
@@ -266,7 +272,10 @@ def build(limit: int | None = None, out: Path = TABLE) -> dict:
     patches = [cv2.imread(str(p), cv2.IMREAD_GRAYSCALE) for p in paths]
     usable = [p if p is not None else np.zeros((8, 8), dtype=np.uint8) for p in patches]
     print(f"[ownlearn] scoring readability of {len(usable)} crops", flush=True)
-    for column, values in zip(READING, zip(*read_confidence(usable), strict=True), strict=True):
+    # 128, not the 256 default: `plan` prices a worker at 9.9 GiB for 256, and this corpus is
+    # 65,695 crops rather than the few thousand the default was measured on.
+    scored = read_confidence(usable, batch=READ_BATCH)
+    for column, values in zip(READING, zip(*scored, strict=True), strict=True):
         frame[column] = list(values)
     frame["cer"] = [
         min(1.5, edit_distance(normalise(t), normalise(p)) / max(1, len(normalise(t))))
@@ -391,6 +400,11 @@ def plan_workers(count: int, batch: int = 256) -> tuple[int, int]:
     if count < batch * 2:
         workers = 1
     return workers, batch
+
+
+#: Readability batch for `build`. Half the `read_confidence` default, because build scores the
+#: whole candidate set (65,695 crops) rather than a sample, and the card is shared.
+READ_BATCH = 128
 
 
 def read_confidence(patches, batch: int = 256, workers: int | None = None):
