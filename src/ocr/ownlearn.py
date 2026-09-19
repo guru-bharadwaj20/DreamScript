@@ -171,10 +171,15 @@ FEATURES = [
 ]
 
 #: Added by reading the candidate rather than by measuring it. Geometry alone picks the right
-#: crop at 0.4676 against a 0.1422 oracle, so the decoder's own mean token log-probability is
-#: brought in as evidence: a crop holding a written phrase is easier to read than a crop holding
-#: half an arrow, and knowing that needs no label, so it is available at inference too.
-READING = ["conf", "ntok"]
+#: crop at 0.4676 against a 0.1422 oracle, so the decoder's own log-probability is brought in as
+#: evidence: a crop holding a written phrase is easier to read than a crop holding half an arrow,
+#: and knowing that needs no label, so it is available at inference too.
+#:
+#: `conf` is the mean over *tokens* and `conf_char` the same total over *characters*. Both are
+#: kept because the token mean is the one that decays as the reader improves - round 4 measured
+#: its correlation with CER weakening -0.3086 -> -0.2419 - while the per-character view still
+#: separates a read phrase from a confidently emitted fragment.
+READING = ["conf", "ntok", "conf_char", "nchar"]
 MODEL_FEATURES = FEATURES + READING
 
 
@@ -253,6 +258,16 @@ def build(limit: int | None = None, out: Path = TABLE) -> dict:
     print(f"[ownlearn] recognising {len(paths)} candidate crops", flush=True)
     predictions = predict(model, proc, paths, device, beams=1)
     frame = pd.DataFrame(rows)
+    # The READING columns are part of MODEL_FEATURES, so the table `train` reads has to carry
+    # them - it does not compute them itself. Building the table without this raised a KeyError
+    # on the first fit from a fresh corpus.
+    import cv2
+
+    patches = [cv2.imread(str(p), cv2.IMREAD_GRAYSCALE) for p in paths]
+    usable = [p if p is not None else np.zeros((8, 8), dtype=np.uint8) for p in patches]
+    print(f"[ownlearn] scoring readability of {len(usable)} crops", flush=True)
+    for column, values in zip(READING, zip(*read_confidence(usable), strict=True), strict=True):
+        frame[column] = list(values)
     frame["cer"] = [
         min(1.5, edit_distance(normalise(t), normalise(p)) / max(1, len(normalise(t))))
         for t, p in zip(frame["truth"], predictions, strict=True)
@@ -453,10 +468,18 @@ def read_confidence(patches, batch: int = 256, workers: int | None = None):
                 mask = (seq != proc.tokenizer.pad_token_id) & (seq != proc.tokenizer.eos_token_id)
                 summed = scores.masked_fill(~mask, 0.0).float()
                 n = mask.sum(1).clamp(min=1)
-                means = (summed.sum(1) / n).cpu().numpy().tolist()
+                totals = summed.sum(1)
+                means = (totals / n).cpu().numpy().tolist()
                 counts = n.cpu().numpy().tolist()
-                for offset, pair in enumerate(zip(means, counts, strict=True)):
-                    out[start + offset] = pair
+                # The same evidence per *character* rather than per token. A confident two-token
+                # misread of half an arrow scores well on the token mean and badly here, which is
+                # the distinction the token mean stopped making as the reader improved.
+                text = proc.batch_decode(gen.sequences, skip_special_tokens=True)
+                chars = [max(1, len(t.strip())) for t in text]
+                per_char = (totals.cpu().numpy() / chars).tolist()
+                rows = zip(means, counts, per_char, chars, strict=True)
+                for offset, row in enumerate(rows):
+                    out[start + offset] = row
 
     threads = [threading.Thread(target=work, args=(i,)) for i in range(workers)]
     for thread in threads:

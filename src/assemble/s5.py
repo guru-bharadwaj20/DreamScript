@@ -125,23 +125,29 @@ KINDS = (
 # ------------------------------------------------------------------------------------------
 
 
-def assemble(page: Page, *, mask: Any = None, text: bool = True) -> Diagram:
+def assemble(page: Page, *, mask: Any = None, text: bool = False) -> Diagram:
     """Phase 10's stages composed into the one predicted `Diagram` S5 is scored on.
 
     Nodes are 10.1.1's boxes as the tracer sees them (arrowheads dropped, `MIN_SCORE` applied),
     edges are 10.1.3's traced polylines, and containers stay in the node list because they are
     real nodes in the IR even though the tracer refuses to attach to them.
 
-    `text=False` reproduces the text-free assembly this row was first measured on, where every
-    matched node was charged a substitution because `Node.text` was never filled - 36.7% of all
-    edits. It is kept so the gain from reading the labels is a measurement and not a claim.
+    `text` reads the labels through `src.assemble.nodetext` and is **off by default, because it
+    was measured and does not pay**: 9.0 -> 9.0 median on val at the break-even containment
+    policy, and 9.0 -> 10.0 once the looser ownership stages are allowed. The edits it removes by
+    reading a label exactly are cancelled by the ones it creates on nodes whose truth is blank and
+    by labels attached to the wrong node. That table is in `nodetext`, and it is the reason the
+    36.7% text edit mass is not recoverable by composing the parts that already exist.
     """
     boxes = tracing.node_boxes(page)
     diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
     if text:
-        from src.assemble.nodetext import read_nodes
+        from src.assemble import nodetext
+        from src.assemble.nodetext import cached
 
-        labels = read_nodes(page, boxes)
+        labels = cached(page, boxes)
+        if labels is None:
+            labels = nodetext.assign(nodetext.read_page(page, boxes), boxes)
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
@@ -321,6 +327,14 @@ def run(split: str = TUNING_SPLIT, limit: int | None = None, n_jobs: int = 6) ->
     held = [p for p in pages() if p.split == split]
     if limit:
         held = held[:limit]
+
+    # Read the labels here, once, before the workers start: see `nodetext.build_cache`.
+    from src.assemble.nodetext import build_cache
+
+    read = build_cache(held, tracing.node_boxes)
+    if read:
+        print(f"[s5] read labels on {read} pages", flush=True)
+
     rows = pmap(score_page, held, n_jobs=n_jobs, prefer="threads", desc=f"s5-{split}")
     bridges = pmap(bridge_ceiling, held, n_jobs=n_jobs, prefer="threads", desc="s5-bridge")
 
