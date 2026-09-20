@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import json
 import threading
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -74,14 +75,31 @@ def checkpoint_for(source: str) -> Path:
 _IMPORT_LOCK = threading.Lock()
 
 
-def _model(device, source: str = "fa_bresler"):
+@lru_cache(maxsize=2)
+def _load(checkpoint: str, device_key: str):
+    """One resident recogniser per checkpoint. **Not caching this cost 5.4577 s per page.**
+
+    `from_pretrained` reads ~1.3 GB from disk and rebuilds the graph, and it was being called
+    once per page per stage - so a 25-page run loaded the same two checkpoints fifty times, and
+    13.7's assemble stage measured 5.4577 s median against a detector at 0.0717 s. The weights
+    do not change between pages; there was never a reason to re-read them.
+
+    Keyed on the device as well as the path because a CPU and a CUDA copy are different objects,
+    and `maxsize=2` because that is how many checkpoints exist - fa_bresler's and hdbpmn's.
+    """
     with _IMPORT_LOCK:
         from transformers import VisionEncoderDecoderModel
 
-        path = checkpoint_for(source)
+    import torch
+
+    return VisionEncoderDecoderModel.from_pretrained(checkpoint).to(torch.device(device_key))
+
+
+def _model(device, source: str = "fa_bresler"):
+    path = checkpoint_for(source)
     if not path.is_dir():
         raise FileNotFoundError(f"no recogniser at {path}; train it before reading labels")
-    return VisionEncoderDecoderModel.from_pretrained(str(path)).to(device)
+    return _load(str(path), str(device))
 
 
 def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:

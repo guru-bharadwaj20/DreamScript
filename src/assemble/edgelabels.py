@@ -147,9 +147,8 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
             files.append(path)
         texts = s3.predict(model, s3.processor(), files, device, batch=batch, beams=BEAMS)
 
-    del model
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    # The model is cached by `statelabels._load` and deliberately stays resident: freeing it here
+    # would force a 1.3 GB re-read on the next page, which is the cost this caching removed.
     return {name: text.strip() for name, text in zip(ids, texts, strict=True) if text.strip()}
 
 
