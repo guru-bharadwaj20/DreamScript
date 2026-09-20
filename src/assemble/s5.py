@@ -345,7 +345,12 @@ PAGE_TEXT_ENV = "DREAMSCRIPT_PAGE_TEXT"
 def score_page(page: Page) -> dict[str, Any]:
     """`decompose` for one held-out page, with the page's identity attached."""
     edge_text = os.environ.get(EDGE_TEXT_ENV, "") == "1"
-    page_text = os.environ.get(PAGE_TEXT_ENV, "") == "1"
+    # **On by default, because it was measured and it pays.** Both arms on the same recogniser:
+    # hdbpmn median 27.0 -> 25.0 and its text edits 1,605 -> 1,494, overall mean GED 12.088 ->
+    # 11.727. The overall median does not move because val is 132 flowchartseg and 48 fa_bresler
+    # pages that already pass, which is the same reason the val headline flatters this criterion.
+    # `DREAMSCRIPT_PAGE_TEXT=0` turns it off for a comparison.
+    page_text = os.environ.get(PAGE_TEXT_ENV, "1") != "0"
     row = decompose(
         assemble(
             page,
@@ -563,7 +568,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--page-text",
         action="store_true",
-        help="read node labels with src.assemble.pagetext (BPMN ownership rules)",
+        help="read node labels with src.assemble.pagetext (BPMN ownership rules); now the default",
+    )
+    parser.add_argument(
+        "--no-page-text",
+        action="store_true",
+        help="disable pagetext and fall back to statelabels, for a comparison",
     )
     parser.add_argument(
         "--edge-text",
@@ -576,6 +586,8 @@ def main(argv: list[str] | None = None) -> int:
         os.environ[EDGE_TEXT_ENV] = "1"
     if args.page_text:
         os.environ[PAGE_TEXT_ENV] = "1"
+    if args.no_page_text:
+        os.environ[PAGE_TEXT_ENV] = "0"
 
     result = run(args.split, args.limit, args.jobs)
     default = REPORT if args.split == "val" else REPORT.with_name("s5_graph_ged_test.json")
