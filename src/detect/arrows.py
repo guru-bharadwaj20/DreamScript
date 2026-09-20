@@ -274,15 +274,85 @@ def export(out: Path = OUT, sources=SOURCES, limit: int | None = None) -> dict:
     return result
 
 
+#: Where the pose run's weights land. Separate from 9.1's `RUNS/final`, because this is a
+#: different task on a different label set and must not overwrite the shape detector.
+RUNS = ROOT / "experiments" / "detect" / "arrows"
+BEST = RUNS / "pose" / "weights" / "best.pt"
+
+#: 1280, matching 9.1's chosen size. An arrow's keypoints are a few pixels of ink at the end of a
+#: long thin object, so resolution is the one thing this task cannot trade away.
+IMGSZ = 1280
+
+#: Batch 4 rather than 9.1's 8: at 1280 with a pose head the activations are larger, and
+#: `src.utils.gpu` caps this process at 20 GiB of a shared card.
+BATCH = 4
+EPOCHS = 40
+SEED = 42
+
+
+def train(
+    epochs: int = EPOCHS,
+    imgsz: int = IMGSZ,
+    batch: int = BATCH,
+    weights: str = "yolov8n-pose.pt",
+    root: Path = OUT,
+) -> dict:
+    """Fit the arrow detector. `yolov8n-pose.pt` because the pose head is the point."""
+    import time
+
+    from ultralytics import YOLO
+
+    from src.utils import gpu
+
+    gpu.cap()
+    if not (root / "data.yaml").is_file():
+        raise FileNotFoundError(f"no dataset at {root}; run --export first")
+
+    model = YOLO(weights)
+    started = time.perf_counter()
+    model.train(
+        data=str(root / "data.yaml"),
+        epochs=epochs,
+        imgsz=imgsz,
+        batch=batch,
+        seed=SEED,
+        project=str(RUNS),
+        name="pose",
+        exist_ok=True,
+        deterministic=True,
+        plots=False,
+        verbose=True,
+    )
+    seconds = time.perf_counter() - started
+    metrics = model.val(data=str(root / "data.yaml"), imgsz=imgsz, split="val", verbose=False)
+    result = {
+        "epochs": epochs,
+        "imgsz": imgsz,
+        "batch": batch,
+        "seconds": round(seconds, 1),
+        "box_map50": round(float(metrics.box.map50), 4),
+        "pose_map50": round(float(metrics.pose.map50), 4),
+        "weights": str(BEST),
+    }
+    (RUNS / "train.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print(json.dumps(result, indent=2))
+    return result
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export", action="store_true")
+    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--epochs", type=int, default=EPOCHS)
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--out", type=Path, default=OUT)
     args = parser.parse_args(argv)
-    if not args.export:
-        parser.error("nothing to do: pass --export")
-    export(args.out, SOURCES, args.limit)
+    if not (args.export or args.train):
+        parser.error("nothing to do: pass --export or --train")
+    if args.export:
+        export(args.out, SOURCES, args.limit)
+    if args.train:
+        train(epochs=args.epochs, root=args.out)
     return 0
 
 
