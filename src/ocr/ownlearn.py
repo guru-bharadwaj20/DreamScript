@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import threading
 from pathlib import Path
@@ -443,7 +444,11 @@ def plan_workers(count: int, batch: int = 256) -> tuple[int, int]:
 #: on the full 65,695-crop corpus, at the measured 65.7 crops/s - slower per crop than 256's
 #: sampled 107, and faster than 256 actually achieves here, because a run that pages finishes
 #: at roughly a quarter speed or not at all.
-READ_BATCH = 128
+#: 128 was profiled against `trocr-base`. `OWNLEARN_READ_BATCH` exists because the reader is now
+#: choosable (`S3_CHECKPOINT`) and `trocr-large` is roughly 1.7x the activations for the same
+#: batch - on a shared card with a 20 GiB budget that is the difference between computing and
+#: spilling to host RAM, which WDDM does silently instead of raising OOM.
+READ_BATCH = int(os.environ.get("OWNLEARN_READ_BATCH", "128"))
 
 
 def read_confidence(patches, batch: int = 256, workers: int | None = None):

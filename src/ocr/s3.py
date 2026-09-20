@@ -91,7 +91,11 @@ from src.ocr.metrics import RUNS, TARGET_CER, normalise, score
 from src.utils.config import ROOT
 
 MODEL = "microsoft/trocr-base-handwritten"
-CHECKPOINT = RUNS / "trocr_s3"
+#: Where the fitted recogniser lives. `S3_CHECKPOINT` names a directory under `RUNS` so the
+#: consumers that import this constant - `src.ocr.ownlearn` reads every candidate crop with it -
+#: can be pointed at a better model without editing them. `trocr_large` by this module's own
+#: protocol: CER **0.2133** against `trocr_s3`'s 0.2364 over the same 2,835 writer-disjoint crops.
+CHECKPOINT = RUNS / os.environ.get("S3_CHECKPOINT", "trocr_large")
 REPORT = ROOT / "reports" / "s3_label_ocr.json"
 PROVENANCE = ("annotated", "derived", "detected")
 
