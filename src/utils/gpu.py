@@ -37,6 +37,7 @@ guarantees that when this process is wrong about its own size, it says so.
 from __future__ import annotations
 
 import os
+import sys
 
 #: Share of the 24 GiB card one process may reserve. 20 GiB, leaving the margin WDDM needs
 #: before it starts paging - the same cap `ownlearn.plan_workers` budgets against.
@@ -57,9 +58,16 @@ def cap(fraction: float = FRACTION) -> bool:
         return False
 
     # Segments that can grow and shrink in place fragment far less across a job whose phases
-    # allocate differently - which is exactly the shape that overran the planned budget here,
-    # a recognition pass followed by a readability pass with a different batch.
-    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+    # allocate differently - which is exactly the shape that overran the planned budget here, a
+    # recognition pass followed by a readability pass with a different batch.
+    #
+    # **Not on Windows.** The allocator accepts the option and then reports
+    # "expandable_segments not supported on this platform" on the first `.to(device)`, once per
+    # model load, which is noise in every log this project writes. The cap below is what
+    # actually does the work; this is a fragmentation nicety, so it is skipped where it is not
+    # implemented rather than left to warn.
+    if not sys.platform.startswith("win"):
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     try:
         torch.cuda.set_per_process_memory_fraction(float(fraction))
     except (RuntimeError, ValueError):
