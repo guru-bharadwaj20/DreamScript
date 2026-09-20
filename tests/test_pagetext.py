@@ -129,3 +129,44 @@ def test_nodes_below_the_container_threshold_are_not_containers(area):
         {"nodes": [_node("d12", [0, 0, side, side], "rectangle")]}, (1000, 1000)
     )
     assert not elements[0]["id"].startswith("Participant_")
+
+
+# -- the cache key that cost two retrains -------------------------------------------------
+
+
+def test_a_label_cached_by_a_different_recogniser_is_a_miss(tmp_path, monkeypatch):
+    """A retrain must invalidate stored labels, or the criterion never sees it.
+
+    This is the bug, not a hypothetical: `statelabels` keyed 338 files on the page name alone, so
+    two S3 retrains in one night reached S5 not at all and each re-score came back byte-identical
+    - which reads as "the change did nothing" rather than "the change never ran".
+    """
+    import json
+
+    page = SimpleNamespace(image="x.png", source="hdbpmn", id="p1", name="p1")
+    monkeypatch.setattr(pagetext, "CACHE", tmp_path)
+    monkeypatch.setattr(
+        "src.assemble.statelabels.checkpoint_fingerprint", lambda _s="hdbpmn": "model-a"
+    )
+    pagetext.store(page, {"d0": "assess risk"})
+    assert pagetext.cached(page) == {"d0": "assess risk"}
+
+    monkeypatch.setattr(
+        "src.assemble.statelabels.checkpoint_fingerprint", lambda _s="hdbpmn": "model-b"
+    )
+    assert pagetext.cached(page) is None, "a new checkpoint must not reuse old labels"
+
+    # And the stored file is still well-formed - it is a miss, not corruption.
+    stored = json.loads((tmp_path / "hdbpmn__p1.json").read_text(encoding="utf-8"))
+    assert stored["checkpoint"] == "model-a"
+    assert stored["labels"] == {"d0": "assess risk"}
+
+
+def test_a_cache_file_written_before_fingerprints_is_a_miss(tmp_path, monkeypatch):
+    """Legacy entries carry no record of which model wrote them, so they cannot be trusted."""
+    import json
+
+    page = SimpleNamespace(image="x.png", source="hdbpmn", id="p2", name="p2")
+    monkeypatch.setattr(pagetext, "CACHE", tmp_path)
+    (tmp_path / "hdbpmn__p2.json").write_text(json.dumps({"d0": "old format"}), encoding="utf-8")
+    assert pagetext.cached(page) is None
