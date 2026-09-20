@@ -38,6 +38,7 @@ question. Reading a whole circle interior at 0.66 scale instead scored 0/28.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -48,8 +49,15 @@ from src.utils.config import ROOT
 #: The state-machine recogniser, trained on fa_bresler's own crops.
 CHECKPOINT = ROOT / "experiments" / "ocr" / "trocr_fa"
 
-#: S3's checkpoint, which *is* trained on hdbpmn and reads its task labels at 0.5569 exact.
-HDBPMN_CHECKPOINT = ROOT / "experiments" / "ocr" / "trocr_s3"
+#: S3's checkpoint, which *is* trained on hdbpmn and reads its task labels. `HDBPMN_RECOGNISER`
+#: names a directory under `experiments/ocr`, so a better recogniser reaches S5 as a run rather
+#: than an edit. The default is `trocr_large` because it measures better on S3's own protocol -
+#: **CER 0.2133 / exact 0.6526 against `trocr_s3`'s 0.2364 / 0.6198** over the same 2,835 crops
+#: and 23 writer-disjoint evaluation writers - and because `sub_text` is more than half of
+#: hdbpmn's median GED, so this is the only remaining lever on S5.
+HDBPMN_CHECKPOINT = ROOT / "experiments" / "ocr" / os.environ.get(
+    "HDBPMN_RECOGNISER", "trocr_large"
+)
 
 #: Which recogniser reads which corpus. The split is not a preference - each model is blind to
 #: the other's labels: S3 scores 1.3% on automaton labels, and the fa model never saw a sentence.
