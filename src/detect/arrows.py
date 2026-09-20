@@ -282,8 +282,15 @@ RUNS = ROOT / "experiments" / "detect" / "arrows"
 #: Which trained run answers at inference. `ARROW_WEIGHTS` names a run directory under `RUNS`,
 #: so a candidate detector can be scored end to end without overwriting the incumbent's weights -
 #: the measured comparison is yolov8s/40 epochs (box 0.8365, pose 0.8833) against yolov8m/150
-#: (box 0.8446, pose **0.9356**), and the S5 number decides which one this default points at.
-RUN = os.environ.get("ARROW_WEIGHTS", "pose")
+#: (box 0.8446, pose **0.9356**), and the S5 number decided which one this default points at.
+#:
+#: `pose_m` won on the criterion rather than on mAP, which is the only reason it is the default:
+#: end to end on the frozen test split it takes S5 from median GED **14.5 to 13.0**, hdbpmn edge
+#: recall **0.7563 -> 0.8190** and edge deletes **525 -> 395**, with precision also up
+#: (0.7004 -> 0.7274) - so the extra recall is not bought with false arrows. Box mAP barely moved
+#: (0.8365 -> 0.8446) and keypoint mAP moved 5.2 points, which fits what the inference rule needs:
+#: finding the arrow was never the hard part, placing its two ends was.
+RUN = os.environ.get("ARROW_WEIGHTS", "pose_m")
 BEST = RUNS / RUN / "weights" / "best.pt"
 
 #: 1280, matching 9.1's chosen size. An arrow's keypoints are a few pixels of ink at the end of a
