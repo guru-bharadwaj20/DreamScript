@@ -129,6 +129,11 @@ KINDS = (
 #: Sources whose pages are state machines, so 10.1.2's state-label path applies.
 #: Corpora whose edges carry a label worth reading. Mirrors `edgelabels.SOURCES`, restated here
 #: so `assemble` can gate without importing a module that loads a recogniser at import time.
+#: Corpora whose node labels are written outside the glyph, and so need `pagetext` rather than
+#: `statelabels`. fa_bresler is absent: its state names are inside the circle, where
+#: `statelabels` reads them at 94.4%.
+PAGE_TEXT_SOURCES = ("hdbpmn",)
+
 EDGE_TEXT_SOURCES = ("fa_bresler", "hdbpmn")
 
 STATE_MACHINE_SOURCES = ("fa_bresler",)
@@ -229,6 +234,7 @@ def assemble(
     mask: Any = None,
     text: bool = False,
     state_text: bool = False,
+    page_text: bool = False,
     edge_text: bool = False,
     direct: bool = False,
     prune_loops: bool = False,
@@ -261,6 +267,15 @@ def assemble(
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
+
+    if page_text and page.source in PAGE_TEXT_SOURCES:
+        # BPMN writes the label outside the glyph, so the node box is the wrong crop. This routes
+        # the same ownership rules `labelcrops` uses over a *predicted* diagram. Measured on 6
+        # pages: statelabels 0.373 exact, this 0.451. Applied after `state_text` so that for a
+        # corpus in both lists the page reader wins, which is the point of having it.
+        from src.assemble import pagetext
+
+        pagetext.apply(page, diagram)
 
     if edge_text and page.source in EDGE_TEXT_SOURCES:
         # The trigger is written *beside* the connector, which is the one place neither
@@ -324,14 +339,21 @@ def decompose(predicted: Diagram, actual: Diagram, *, match: str = MATCH) -> dic
 #: by the CLI in the parent would be re-imported at its default in every child, so the switch has
 #: to travel in the environment, which children do inherit.
 EDGE_TEXT_ENV = "DREAMSCRIPT_EDGE_TEXT"
+PAGE_TEXT_ENV = "DREAMSCRIPT_PAGE_TEXT"
 
 
 def score_page(page: Page) -> dict[str, Any]:
     """`decompose` for one held-out page, with the page's identity attached."""
     edge_text = os.environ.get(EDGE_TEXT_ENV, "") == "1"
+    page_text = os.environ.get(PAGE_TEXT_ENV, "") == "1"
     row = decompose(
         assemble(
-            page, state_text=True, edge_text=edge_text, direct=True, prune_loops=True
+            page,
+            state_text=True,
+            page_text=page_text,
+            edge_text=edge_text,
+            direct=True,
+            prune_loops=True,
         ),
         truth(page),
     )
@@ -539,6 +561,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--jobs", type=int, default=6)
     parser.add_argument(
+        "--page-text",
+        action="store_true",
+        help="read node labels with src.assemble.pagetext (BPMN ownership rules)",
+    )
+    parser.add_argument(
         "--edge-text",
         action="store_true",
         help="read edge labels with src.assemble.edgelabels before scoring",
@@ -547,6 +574,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.edge_text:
         os.environ[EDGE_TEXT_ENV] = "1"
+    if args.page_text:
+        os.environ[PAGE_TEXT_ENV] = "1"
 
     result = run(args.split, args.limit, args.jobs)
     default = REPORT if args.split == "val" else REPORT.with_name("s5_graph_ged_test.json")
