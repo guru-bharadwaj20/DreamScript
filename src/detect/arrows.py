@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from functools import lru_cache
@@ -278,7 +279,12 @@ def export(out: Path = OUT, sources=SOURCES, limit: int | None = None) -> dict:
 #: Where the pose run's weights land. Separate from 9.1's `RUNS/final`, because this is a
 #: different task on a different label set and must not overwrite the shape detector.
 RUNS = ROOT / "experiments" / "detect" / "arrows"
-BEST = RUNS / "pose" / "weights" / "best.pt"
+#: Which trained run answers at inference. `ARROW_WEIGHTS` names a run directory under `RUNS`,
+#: so a candidate detector can be scored end to end without overwriting the incumbent's weights -
+#: the measured comparison is yolov8s/40 epochs (box 0.8365, pose 0.8833) against yolov8m/150
+#: (box 0.8446, pose **0.9356**), and the S5 number decides which one this default points at.
+RUN = os.environ.get("ARROW_WEIGHTS", "pose")
+BEST = RUNS / RUN / "weights" / "best.pt"
 
 #: 1280, matching 9.1's chosen size. An arrow's keypoints are a few pixels of ink at the end of a
 #: long thin object, so resolution is the one thing this task cannot trade away.
