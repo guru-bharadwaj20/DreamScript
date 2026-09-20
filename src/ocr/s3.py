@@ -80,6 +80,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -170,6 +171,17 @@ def train_dev_split(seed: int = SEED, writers: int = DEV_WRITERS):
     return train, dev
 
 
+#: Augmentation strength. "mild" is the setting every S3 number up to trocr-large was measured
+#: under: crop jitter, +/-3 degrees, brightness and contrast. "strong" adds the two distortions
+#: that actually vary *between writers* rather than between photographs - **slant** (shear) and
+#: **stroke weight** (a morphological thicken or thin) - because that is where this criterion
+#: loses: dev CER, carved from the training writers, reaches 0.1665 while the writer-disjoint
+#: val split reads 0.2133, and a 28-epoch run showed the gap is not the schedule (best dev 0.1697
+#: at epoch 17, val 0.2222 - both worse than 16 epochs, so longer training is measured as a dead
+#: end). Selected by `S3_AUGMENT`, so the comparison is a run rather than an edit.
+AUGMENT = os.environ.get("S3_AUGMENT", "mild")
+
+
 def augment(image, rng):
     """Affine, scale, brightness and a crop-box jitter that imitates detector error."""
     from PIL import Image, ImageEnhance
@@ -183,8 +195,38 @@ def augment(image, rng):
     image = image.rotate(
         float(rng.uniform(-3.0, 3.0)), resample=Image.BILINEAR, expand=True, fillcolor=255
     )
+    if AUGMENT == "strong":
+        image = _slant(image, rng)
+        image = _stroke(image, rng)
     image = ImageEnhance.Brightness(image).enhance(float(rng.uniform(0.85, 1.15)))
     image = ImageEnhance.Contrast(image).enhance(float(rng.uniform(0.85, 1.15)))
+    return image
+
+
+def _slant(image, rng):
+    """Shear about the baseline - one writer's hand leans where another's does not."""
+    from PIL import Image
+
+    width, height = image.size
+    factor = float(rng.uniform(-0.30, 0.30))
+    return image.transform(
+        (width + int(abs(factor) * height), height),
+        Image.AFFINE,
+        (1.0, factor, -factor * height if factor > 0 else 0.0, 0.0, 1.0, 0.0),
+        resample=Image.BILINEAR,
+        fillcolor=255,
+    )
+
+
+def _stroke(image, rng):
+    """Thicken or thin the ink - a gel pen and a pencil are not the same stroke weight."""
+    from PIL import ImageFilter
+
+    choice = float(rng.uniform())
+    if choice < 0.33:
+        return image.filter(ImageFilter.MinFilter(3))  # darker pixels win: thicker ink
+    if choice < 0.66:
+        return image.filter(ImageFilter.MaxFilter(3))  # lighter pixels win: thinner ink
     return image
 
 
