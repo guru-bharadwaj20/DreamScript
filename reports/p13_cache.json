@@ -2,168 +2,168 @@
   "cold": {
     "run": "cold",
     "pages": 25,
-    "median_s": 5.545,
-    "mean_s": 5.7812,
-    "total_s": 144.53,
+    "median_s": 2.71,
+    "mean_s": 2.9853,
+    "total_s": 74.632,
     "hits": 0,
     "misses": 150,
     "per_stage_median_s": {
-      "detect": 0.0717,
+      "detect": 0.0362,
       "classify": 0.0003,
-      "assemble": 5.4577,
+      "assemble": 2.666,
       "traverse": 0.0001,
       "serialise": 0.0001,
-      "generate": 0.0002,
+      "generate": 0.0003,
       "verify": 0.0006
     },
     "rows": [
       {
         "page": "fa_bresler__writer015_fa_010.png",
-        "seconds": 9.343,
+        "seconds": 9.673,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer015_fa_011.png",
-        "seconds": 5.377,
+        "seconds": 2.049,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer018_fa_010.png",
-        "seconds": 4.996,
+        "seconds": 1.994,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer018_fa_012.png",
-        "seconds": 5.37,
+        "seconds": 2.168,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer021_fa_001.png",
-        "seconds": 5.187,
+        "seconds": 1.974,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer021_fa_006.png",
-        "seconds": 5.132,
+        "seconds": 2.135,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer021_fa_007.png",
-        "seconds": 5.097,
+        "seconds": 1.991,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "fa_bresler__writer024_fa_004.png",
-        "seconds": 4.936,
+        "seconds": 1.909,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex00_writer0104.png",
-        "seconds": 5.71,
+        "seconds": 5.617,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex01_writer0100.png",
-        "seconds": 4.95,
+        "seconds": 2.011,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex02_writer0089.png",
-        "seconds": 5.996,
+        "seconds": 2.968,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex02_writer0100.png",
-        "seconds": 5.74,
+        "seconds": 2.966,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex03_writer0093.png",
-        "seconds": 5.882,
+        "seconds": 2.712,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex03_writer0096.png",
-        "seconds": 6.037,
+        "seconds": 2.71,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex04_writer0104.png",
-        "seconds": 5.377,
+        "seconds": 2.204,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex06_writer0088.png",
-        "seconds": 5.503,
+        "seconds": 2.23,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex06_writer0092.png",
-        "seconds": 5.546,
+        "seconds": 2.672,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex07_writer0086.png",
-        "seconds": 5.192,
+        "seconds": 2.333,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex07_writer0094.png",
-        "seconds": 6.692,
+        "seconds": 3.663,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex07_writer0098.png",
-        "seconds": 5.855,
+        "seconds": 3.002,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex07_writer0106.png",
-        "seconds": 6.278,
+        "seconds": 3.481,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex08_writer0087.png",
-        "seconds": 5.527,
+        "seconds": 2.73,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex08_writer0095.png",
-        "seconds": 5.545,
+        "seconds": 2.952,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex08_writer0096.png",
-        "seconds": 6.564,
+        "seconds": 3.356,
         "ok": true,
         "cached_stages": 0
       },
       {
         "page": "hdbpmn__ex08_writer0097.png",
-        "seconds": 6.698,
+        "seconds": 3.132,
         "ok": true,
         "cached_stages": 0
       }
@@ -339,26 +339,6 @@
       }
     ]
   },
-  "summary": {
-    "cold": {
-      "median_s": 5.545,
-      "p90_s": 6.692,
-      "max_s": 9.343,
-      "total_s": 144.53
-    },
-    "warm": {
-      "median_s": 0.0,
-      "p90_s": 0.0,
-      "max_s": 0.0,
-      "total_s": 0.0
-    },
-    "hits_cold": 0,
-    "misses_cold": 150,
-    "hits_warm": 150,
-    "misses_warm": 0,
-    "speedup": "Not quoted as a ratio. A fully warm run does no stage work at all, so every per-stage time falls below the timer's resolution and the quotient is an artefact of dividing by ~0 - the first version of this report printed 5.5e9. The measurement is: cold 144.53 s of stage work over 25 pages, warm 0.00 s, 150 of 150 lookups hit.",
-    "budget_s": 10.0,
-    "cold_pages_over_budget": 0,
-    "note": "Cold is 13x slower than 13.7's published 0.411 s median because assembly now runs statelabels and edgelabels - two TrOCR decodes per page - which is what took the generated state machines from 9 of 9 vacuous to 0 of 8."
-  }
+  "speedup_median": 2710000000.0,
+  "speedup_total": 74632000000.0
 }
