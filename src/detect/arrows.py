@@ -297,6 +297,7 @@ def train(
     batch: int = BATCH,
     weights: str = "yolov8n-pose.pt",
     root: Path = OUT,
+    name: str = "pose",
 ) -> dict:
     """Fit the arrow detector. `yolov8n-pose.pt` because the pose head is the point."""
     import time
@@ -318,7 +319,7 @@ def train(
         batch=batch,
         seed=SEED,
         project=str(RUNS),
-        name="pose",
+        name=name,
         exist_ok=True,
         deterministic=True,
         plots=False,
@@ -327,15 +328,17 @@ def train(
     seconds = time.perf_counter() - started
     metrics = model.val(data=str(root / "data.yaml"), imgsz=imgsz, split="val", verbose=False)
     result = {
+        "weights_from": weights,
+        "name": name,
         "epochs": epochs,
         "imgsz": imgsz,
         "batch": batch,
         "seconds": round(seconds, 1),
         "box_map50": round(float(metrics.box.map50), 4),
         "pose_map50": round(float(metrics.pose.map50), 4),
-        "weights": str(BEST),
+        "weights": str(RUNS / name / "weights" / "best.pt"),
     }
-    (RUNS / "train.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    (RUNS / f"train_{name}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
     return result
 
@@ -443,6 +446,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--export", action="store_true")
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--epochs", type=int, default=EPOCHS)
+    parser.add_argument("--batch", type=int, default=BATCH)
+    parser.add_argument("--weights", default="yolov8n-pose.pt")
+    parser.add_argument("--name", default="pose")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--out", type=Path, default=OUT)
     args = parser.parse_args(argv)
@@ -451,7 +457,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.export:
         export(args.out, SOURCES, args.limit)
     if args.train:
-        train(epochs=args.epochs, root=args.out)
+        train(
+            epochs=args.epochs,
+            batch=args.batch,
+            weights=args.weights,
+            root=args.out,
+            name=args.name,
+        )
     return 0
 
 

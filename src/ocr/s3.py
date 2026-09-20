@@ -228,11 +228,13 @@ def targets(proc, texts, device):
     return labels.to(device)
 
 
-def train(epochs: int = EPOCHS, batch: int = BATCH, checkpoint: Path = CHECKPOINT) -> dict:
+def train(epochs: int = EPOCHS, batch: int | None = None, checkpoint: Path | None = None) -> dict:
     """Fine-tune on the training split and store the weights the evaluation reads."""
     import torch
     from transformers import get_cosine_schedule_with_warmup
 
+    batch = batch or BATCH
+    checkpoint = Path(checkpoint) if checkpoint else CHECKPOINT
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     proc = processor()
     model = fresh_model(device)
@@ -344,7 +346,7 @@ def check_disjoint(train_frame, eval_frame) -> dict:
 
 def evaluate(
     name: str = "val",
-    checkpoint: Path = CHECKPOINT,
+    checkpoint: Path | None = None,
     beams: int = BEAMS,
     corpus: str | None = None,
 ) -> dict:
@@ -354,6 +356,7 @@ def evaluate(
 
     from src.ocr.metrics import breakdown
 
+    checkpoint = Path(checkpoint) if checkpoint else CHECKPOINT
     if not (checkpoint / "config.json").is_file():
         raise FileNotFoundError(f"no S3 checkpoint at {checkpoint}; run with --train")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -392,6 +395,7 @@ def evaluate(
         "criterion": "S3",
         "target_cer": TARGET_CER,
         "model": f"{MODEL} fine-tuned {EPOCHS} epochs (beam {beams})",
+        "checkpoint": str(checkpoint),
         "split": name,
         "protocol": "9.3.1 crops, 1.3.3 writer-disjoint split, src.ocr.metrics.score",
         **check_disjoint(train_frame, frame),
@@ -421,11 +425,29 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--epochs", type=int, default=EPOCHS)
     ap.add_argument("--split", default="val", choices=("val", "test"))
     ap.add_argument("--corpus", default=CORPUS, choices=("label", "element"))
+    ap.add_argument("--model", default=MODEL, help="base checkpoint to fine-tune from")
+    ap.add_argument("--batch", type=int, default=BATCH, help="micro-batch")
+    ap.add_argument(
+        "--accumulate",
+        type=int,
+        default=ACCUMULATE,
+        help="gradient accumulation; batch x accumulate is the effective batch the optimiser sees",
+    )
+    ap.add_argument("--checkpoint", type=Path, default=CHECKPOINT, help="where weights are stored")
     args = ap.parse_args(argv)
     globals()["CORPUS"] = args.corpus
+    globals()["MODEL"] = args.model
+    globals()["EPOCHS"] = args.epochs
+    globals()["ACCUMULATE"] = args.accumulate
+    globals()["CHECKPOINT"] = args.checkpoint
     try:
-        training = train(args.epochs) if args.train else {}
-        result = {**evaluate(args.split), **({"training": training} if training else {})}
+        training = (
+            train(args.epochs, batch=args.batch, checkpoint=args.checkpoint) if args.train else {}
+        )
+        result = {
+            **evaluate(args.split, checkpoint=args.checkpoint),
+            **({"training": training} if training else {}),
+        }
         write_report(result)
     except FileNotFoundError as error:
         print(error, file=sys.stderr)
