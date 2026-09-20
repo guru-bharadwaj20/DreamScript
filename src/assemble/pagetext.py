@@ -144,7 +144,7 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
             path = Path(tmp) / f"{name}.png"
             cv2.imwrite(str(path), patch)
             files.append(path)
-        texts = s3.predict(model, s3.processor(), files, device, batch=batch, beams=BEAMS)
+        texts = s3.predict(model, statelabels.processor(), files, device, batch=batch, beams=BEAMS)
     return {name: text.strip() for name, text in zip(ids, texts, strict=True) if text.strip()}
 
 

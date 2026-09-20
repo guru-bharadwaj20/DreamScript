@@ -145,7 +145,7 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
             path = Path(tmp) / f"{name}.png"
             cv2.imwrite(str(path), patch)
             files.append(path)
-        texts = s3.predict(model, s3.processor(), files, device, batch=batch, beams=BEAMS)
+        texts = s3.predict(model, statelabels.processor(), files, device, batch=batch, beams=BEAMS)
 
     # The model is cached by `statelabels._load` and deliberately stays resident: freeing it here
     # would force a 1.3 GB re-read on the next page, which is the cost this caching removed.

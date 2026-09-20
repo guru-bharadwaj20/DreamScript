@@ -75,6 +75,27 @@ def checkpoint_for(source: str) -> Path:
 _IMPORT_LOCK = threading.Lock()
 
 
+@lru_cache(maxsize=1)
+def processor():
+    """One resident `TrOCRProcessor`, imported under the same lock as the model.
+
+    **The lock has to cover every lazily-resolved transformers symbol, not one of them.** The
+    first version locked `VisionEncoderDecoderModel` only, and the next parallel S5 run died the
+    same way one symbol along: `ImportError: cannot import name 'TrOCRProcessor'`. transformers
+    resolves submodules on first attribute access and `s5.run` uses `prefer="threads"`, so any
+    first touch from six threads at once is the same race.
+
+    Cached as well as locked, because `from_pretrained` on the processor was being called once
+    per page per stage for the same reason the model was.
+    """
+    with _IMPORT_LOCK:
+        from transformers import TrOCRProcessor
+
+        from src.ocr.s3 import MODEL
+
+    return TrOCRProcessor.from_pretrained(MODEL)
+
+
 @lru_cache(maxsize=2)
 def _load(checkpoint: str, device_key: str):
     """One resident recogniser per checkpoint. **Not caching this cost 5.4577 s per page.**
@@ -138,7 +159,7 @@ def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:
             path = Path(tmp) / f"{name}.png"
             cv2.imwrite(str(path), patch)
             files.append(path)
-        texts = s3.predict(model, s3.processor(), files, device, batch=batch, beams=BEAMS)
+        texts = s3.predict(model, processor(), files, device, batch=batch, beams=BEAMS)
     return {name: text.strip() for name, text in zip(ids, texts, strict=True)}
 
 
