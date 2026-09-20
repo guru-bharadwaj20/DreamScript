@@ -167,21 +167,40 @@ def apply(page, diagram: Any) -> int:
 
 
 def cached(page) -> dict[str, str] | None:
+    """Stored labels for a page, or None when they were not read by *this* recogniser.
+
+    The checkpoint fingerprint is not decoration: without it a retrain leaves every stored file
+    valid, and the criterion is re-scored with text the previous model produced. That happened -
+    `statelabels` had 338 files keyed on the page name alone, and two S3 retrains reached S5 not
+    at all while each report came back byte-identical.
+    """
+    from src.assemble.statelabels import checkpoint_fingerprint
+
     path = CACHE / f"{getattr(page, 'source', 'loose')}__{page.id or page.name}.json"
     if not path.is_file():
         return None
     try:
         import json
 
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    if not isinstance(payload, dict) or "labels" not in payload:
+        return None
+    if payload.get("checkpoint") != checkpoint_fingerprint("hdbpmn"):
+        return None
+    return dict(payload["labels"])
 
 
 def store(page, labels: dict[str, str]) -> Path:
     import json
 
+    from src.assemble.statelabels import checkpoint_fingerprint
+
     path = CACHE / f"{getattr(page, 'source', 'loose')}__{page.id or page.name}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(labels), encoding="utf-8")
+    path.write_text(
+        json.dumps({"checkpoint": checkpoint_fingerprint("hdbpmn"), "labels": labels}),
+        encoding="utf-8",
+    )
     return path

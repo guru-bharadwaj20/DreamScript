@@ -142,15 +142,53 @@ def read_page(page, boxes: list[dict], batch: int = 32) -> dict[str, str]:
     return {name: text.strip() for name, text in zip(ids, texts, strict=True)}
 
 
+@lru_cache(maxsize=4)
+def checkpoint_fingerprint(source: str = "fa_bresler") -> str:
+    """Which recogniser a cached label was read with.
+
+    **Without this the cache outlives the model and silently hides a retrain.** The key was the
+    page name alone, so when S3 was retrained the 338 stored files stayed valid and S5 went on
+    scoring text produced by the previous checkpoint - two retrains in one night reached the
+    criterion not at all, and the report was byte-identical each time, which reads like "the
+    change did nothing" rather than "the change was never applied".
+
+    The weights file's size and mtime rather than its contents: it is 1.3 GB, this is called per
+    page, and a retrain always rewrites it. `code_key` in `src.pipeline.cache` hashes source text
+    because source files are small and a checkout can move mtimes without changing behaviour;
+    neither applies to a 1.3 GB checkpoint that only ever changes when it is rewritten.
+    """
+    path = checkpoint_for(source) / "model.safetensors"
+    try:
+        stat = path.stat()
+    except OSError:
+        return "none"
+    return f"{stat.st_size:x}-{int(stat.st_mtime):x}"
+
+
 def cached(page) -> dict[str, str] | None:
-    """The stored labels for a page, or None when it has not been read."""
+    """The stored labels for a page, or None when it has not been read by *this* recogniser."""
     path = CACHE / f"{page.name}.json"
     if not path.is_file():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
+    if not isinstance(payload, dict) or "labels" not in payload:
+        # Written before the fingerprint existed, so which model produced it is unknowable.
+        return None
+    if payload.get("checkpoint") != checkpoint_fingerprint(getattr(page, "source", "fa_bresler")):
+        return None
+    return dict(payload["labels"])
+
+
+def _payload(page, labels: dict[str, str]) -> str:
+    return json.dumps(
+        {
+            "checkpoint": checkpoint_fingerprint(getattr(page, "source", "fa_bresler")),
+            "labels": labels,
+        }
+    )
 
 
 def build_cache(pages: list[Any], boxes_for, batch: int = 32) -> int:
@@ -165,7 +203,7 @@ def build_cache(pages: list[Any], boxes_for, batch: int = 32) -> int:
         if cached(page) is not None:
             continue
         labels = read_page(page, boxes_for(page), batch=batch)
-        (CACHE / f"{page.name}.json").write_text(json.dumps(labels), encoding="utf-8")
+        (CACHE / f"{page.name}.json").write_text(_payload(page, labels), encoding="utf-8")
         done += 1
         if done % 25 == 0:
             print(f"[statelabels] read {done} pages", flush=True)
