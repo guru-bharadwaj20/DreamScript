@@ -132,6 +132,15 @@ KINDS = (
 #: Corpora whose node labels are written outside the glyph, and so need `pagetext` rather than
 #: `statelabels`. fa_bresler is absent: its state names are inside the circle, where
 #: `statelabels` reads them at 94.4%.
+#: Corpora the arrow detector was trained on **and** whose truth records edges at all.
+#: flowchartseg is excluded on both counts, and the second is the decisive one: its annotation
+#: carries **zero edges**, which 10.1.5 already recorded - "those pages are flowcharts that
+#: visibly have arrows and the annotation simply does not record them". Measured, running arrow
+#: edges over it turns 54 `edge_insert` into **1,250** and its median GED from 0.0 to 9.0, not
+#: because the detector is wrong but because it is right about arrows nobody wrote down. Scoring
+#: a detector against an annotation that omits the thing it detects measures the annotation.
+ARROW_SOURCES = ("hdbpmn", "fa_bresler")
+
 PAGE_TEXT_SOURCES = ("hdbpmn",)
 
 EDGE_TEXT_SOURCES = ("fa_bresler", "hdbpmn")
@@ -269,7 +278,7 @@ def assemble(
             if labels.get(node.id):
                 node.text = labels[node.id]
 
-    if arrow_edges:
+    if arrow_edges and page.source in ARROW_SOURCES:
         # **Replaces 10.1.3's trace rather than supplementing it.** The tracer follows ink and its
         # own measured ceiling - recall 0.7239, precision 0.6386 - floors hdbpmn's median GED at
         # 12.63 against a target of 3, so the bar sits below the ceiling and no tuning reaches it.
