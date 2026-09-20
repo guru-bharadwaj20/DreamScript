@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -344,10 +345,20 @@ def train(table: Path = TABLE, model_path: Path = MODEL, dev_writers: int = 15) 
     }
 
 
+#: `assign` is reached from `src.assemble.pagetext` inside `s5.run`'s joblib threads, so this
+#: builds under a lock: transformers resolves its submodules on first attribute access and six
+#: threads touching it at once raced to `ImportError: cannot import name 'TrOCRProcessor'`. The
+#: `_READER` global is the second reason - two threads past the guard would each build a reader
+#: and one would be discarded after paying for it.
+_READER_LOCK = threading.Lock()
+
+
 def reader(checkpoint=None, replicas: int = 1):
     """`replicas` independent copies of the S3 checkpoint, each on its own CUDA stream."""
     global _READER
-    if _READER is None or len(_READER[0]) < replicas:
+    with _READER_LOCK:
+        if _READER is not None and len(_READER[0]) >= replicas:
+            return _READER
         import torch
         from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 
