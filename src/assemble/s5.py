@@ -299,10 +299,16 @@ def assemble(
 
         edgelabels.apply(page, diagram)
 
-    if prune_loops:
+    # **Both of these repair tracer artefacts, and arrow edges do not have them**, so running
+    # them over arrow edges would only do damage. `_prune_short_loops` drops self-loops with a
+    # short supporting polyline, but an arrow's polyline is its two keypoints, which for a loop
+    # is short by construction - every genuine automaton self-loop would go. `_orient` re-derives
+    # direction from 10.1.5's fitted prior, which would overwrite the direction the head keypoint
+    # measured directly, replacing evidence with a prior.
+    if prune_loops and not arrow_edges:
         _prune_short_loops(page, diagram)
 
-    if direct:
+    if direct and not arrow_edges:
         _orient(page, diagram)
 
     if text:
