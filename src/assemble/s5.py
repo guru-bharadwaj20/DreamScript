@@ -234,6 +234,7 @@ def assemble(
     mask: Any = None,
     text: bool = False,
     state_text: bool = False,
+    arrow_edges: bool = False,
     page_text: bool = False,
     edge_text: bool = False,
     direct: bool = False,
@@ -267,6 +268,18 @@ def assemble(
         for node in diagram.nodes:
             if labels.get(node.id):
                 node.text = labels[node.id]
+
+    if arrow_edges:
+        # **Replaces 10.1.3's trace rather than supplementing it.** The tracer follows ink and its
+        # own measured ceiling - recall 0.7239, precision 0.6386 - floors hdbpmn's median GED at
+        # 12.63 against a target of 3, so the bar sits below the ceiling and no tuning reaches it.
+        # `src.detect.arrows` detects each arrow as an object with tail and head keypoints and
+        # snaps them to nodes; with ground-truth keypoints that rule recovers 95.1% of hdbpmn's
+        # edges exactly. Applied before the text stages so a label is read onto the edges that
+        # survive, and before pruning for the same reason.
+        from src.detect import arrows
+
+        arrows.apply(page, diagram)
 
     if page_text and page.source in PAGE_TEXT_SOURCES:
         # BPMN writes the label outside the glyph, so the node box is the wrong crop. This routes
@@ -339,6 +352,7 @@ def decompose(predicted: Diagram, actual: Diagram, *, match: str = MATCH) -> dic
 #: by the CLI in the parent would be re-imported at its default in every child, so the switch has
 #: to travel in the environment, which children do inherit.
 EDGE_TEXT_ENV = "DREAMSCRIPT_EDGE_TEXT"
+ARROW_EDGES_ENV = "DREAMSCRIPT_ARROW_EDGES"
 PAGE_TEXT_ENV = "DREAMSCRIPT_PAGE_TEXT"
 
 
@@ -351,10 +365,12 @@ def score_page(page: Page) -> dict[str, Any]:
     # pages that already pass, which is the same reason the val headline flatters this criterion.
     # `DREAMSCRIPT_PAGE_TEXT=0` turns it off for a comparison.
     page_text = os.environ.get(PAGE_TEXT_ENV, "1") != "0"
+    arrow_edges = os.environ.get(ARROW_EDGES_ENV, "") == "1"
     row = decompose(
         assemble(
             page,
             state_text=True,
+            arrow_edges=arrow_edges,
             page_text=page_text,
             edge_text=edge_text,
             direct=True,
@@ -571,6 +587,11 @@ def main(argv: list[str] | None = None) -> int:
         help="read node labels with src.assemble.pagetext (BPMN ownership rules); now the default",
     )
     parser.add_argument(
+        "--arrow-edges",
+        action="store_true",
+        help="replace the traced edges with src.detect.arrows keypoint detections",
+    )
+    parser.add_argument(
         "--no-page-text",
         action="store_true",
         help="disable pagetext and fall back to statelabels, for a comparison",
@@ -588,6 +609,8 @@ def main(argv: list[str] | None = None) -> int:
         os.environ[PAGE_TEXT_ENV] = "1"
     if args.no_page_text:
         os.environ[PAGE_TEXT_ENV] = "0"
+    if args.arrow_edges:
+        os.environ[ARROW_EDGES_ENV] = "1"
 
     result = run(args.split, args.limit, args.jobs)
     default = REPORT if args.split == "val" else REPORT.with_name("s5_graph_ged_test.json")

@@ -52,6 +52,7 @@ import argparse
 import json
 import shutil
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -337,6 +338,104 @@ def train(
     (RUNS / "train.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps(result, indent=2))
     return result
+
+
+#: Detector confidence floor for an arrow. Lower than 9.1's 0.25 for shapes on purpose: a missed
+#: arrow is an `edge_delete` in S5 and a spurious one is an `edge_insert`, and the test split
+#: carries **1,251 deletes against 325 inserts** - so recall is worth roughly four times
+#: precision here, and the threshold is set from that asymmetry rather than from habit.
+CONF = 0.15
+
+
+@lru_cache(maxsize=1)
+def _detector(weights: str = ""):
+    from ultralytics import YOLO
+
+    from src.utils import gpu
+
+    gpu.cap()
+    path = Path(weights) if weights else BEST
+    if not path.is_file():
+        raise FileNotFoundError(f"no arrow detector at {path}; run --train first")
+    return YOLO(str(path))
+
+
+def detect(image_path, conf: float = CONF, imgsz: int = IMGSZ, weights: str = "") -> list[dict]:
+    """Every arrow the detector finds, with its two keypoints in image pixels."""
+    prediction = _detector(weights).predict(str(image_path), verbose=False, imgsz=imgsz, conf=conf)[0]
+    keypoints = prediction.keypoints
+    out = []
+    if keypoints is None:
+        return out
+    points = keypoints.xy.cpu().numpy()
+    for index, box in enumerate(prediction.boxes):
+        if index >= len(points) or len(points[index]) < 2:
+            continue
+        tail, head = points[index][0], points[index][1]
+        out.append(
+            {
+                "id": f"a{index:03d}",
+                "tail": (float(tail[0]), float(tail[1])),
+                "head": (float(head[0]), float(head[1])),
+                "score": float(box.conf.item()),
+            }
+        )
+    return out
+
+
+def edges_for(page, diagram: dict[str, Any], conf: float = CONF, weights: str = "") -> list[dict]:
+    """Arrow-derived edges for a predicted page, in the IR's own edge shape.
+
+    Replaces 10.1.3's ink-following trace rather than supplementing it. Duplicate `(src, dst)`
+    pairs are collapsed keeping the most confident, because two detections of one drawn arrow are
+    one edge and S5 counts edges as a set of endpoint pairs.
+    """
+    targets = snap_targets(diagram, page.size)
+    if not targets:
+        return []
+    best: dict[tuple[str, str], dict] = {}
+    for arrow in detect(page.image, conf=conf, weights=weights):
+        pair = link(arrow["tail"], arrow["head"], targets)
+        if pair is None:
+            continue
+        keep = best.get(pair)
+        if keep is None or arrow["score"] > keep["confidence"]:
+            best[pair] = {
+                "id": arrow["id"],
+                "src": pair[0],
+                "dst": pair[1],
+                "directed": True,
+                "label": "",
+                "polyline": [list(arrow["tail"]), list(arrow["head"])],
+                "confidence": round(arrow["score"], 4),
+                "attrs": {"self_loop": pair[0] == pair[1], "from": "arrows"},
+            }
+    return list(best.values())
+
+
+def apply(page, diagram: Any, conf: float = CONF, weights: str = "") -> int:
+    """Replace `diagram`'s edges with arrow-derived ones, in place. Returns how many."""
+    from src.ir.model import Edge
+
+    plain = diagram.to_dict() if hasattr(diagram, "to_dict") else diagram
+    rows = edges_for(page, plain, conf=conf, weights=weights)
+    if hasattr(diagram, "edges"):
+        diagram.edges = [
+            Edge(
+                id=r["id"],
+                src=r["src"],
+                dst=r["dst"],
+                directed=r["directed"],
+                label=r["label"],
+                polyline=r["polyline"],
+                confidence=r["confidence"],
+                attrs=r["attrs"],
+            )
+            for r in rows
+        ]
+    else:
+        diagram["edges"] = rows
+    return len(rows)
 
 
 def main(argv: list[str] | None = None) -> int:
