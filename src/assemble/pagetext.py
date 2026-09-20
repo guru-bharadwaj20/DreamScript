@@ -100,8 +100,8 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
     import torch
 
     from src.assemble import statelabels
-    from src.ocr import ownership, s3
-    from src.ocr.labelcrops import cached_lines, crop, text_boxes
+    from src.ocr import s3
+    from src.ocr.labelcrops import cached_lines, crop, page_labels, text_boxes
     from src.utils import gpu
 
     gpu.cap()
@@ -116,7 +116,12 @@ def read_page(page, diagram: dict[str, Any], batch: int = 32) -> dict[str, str]:
     lines = cached_lines(getattr(page, "id", "") or page.name) or text_boxes(image)
     if not lines:
         return {}
-    blocks = ownership.blocks(image.shape, elements, [list(map(int, b[:4])) for b in lines])
+    # **`page_labels`, not `ownership.blocks` directly.** The first version called the geometric
+    # rules straight, which quietly skipped the fitted ranker: `page_labels` uses
+    # `ownlearn.assign` whenever a ranker exists and only falls back to pure geometry when it
+    # does not. The ranker is the part that was refitted to a learned-pick CER of 0.1441, so
+    # bypassing it left most of that work on the floor.
+    blocks = page_labels(image, elements, [list(map(int, b[:4])) for b in lines])
 
     ids, patches = [], []
     for element in elements:
