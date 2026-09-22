@@ -1,0 +1,94 @@
+{
+  "rows": [
+    {
+      "component": "HMM (semantic roles, 7.3)",
+      "replaced_by": "majority role per shape class (7.3.11 bag of shapes)",
+      "metric": "role macro F1 (5-fold, 993 sequences)",
+      "source": "re-run: src.parse.ablation",
+      "on_deployed_path": false,
+      "evidence": "no hmm call site in src/pipeline/*.py",
+      "with_component": 0.7763,
+      "without_component": 0.3228,
+      "delta": 0.4535,
+      "detail": {
+        "alphabet_beyond_shape": 0.2885,
+        "sequence_model": 0.1473,
+        "diagram_type": 0.0177,
+        "nodes": 14056
+      }
+    },
+    {
+      "component": "GMM + EM (learned shape evidence, 7.4)",
+      "replaced_by": "the annotated `shape` field (7.4.6 `annotated` arm)",
+      "metric": "role macro F1 (5-fold, hdbpmn)",
+      "source": "re-run: src.parse.softshapes",
+      "on_deployed_path": false,
+      "evidence": "no gmm call site in src/pipeline/*.py",
+      "with_component": 0.5067,
+      "without_component": 0.7506,
+      "delta": -0.2439,
+      "detail": {
+        "best_learned_arm": "hard",
+        "best_mode_overall": "annotated",
+        "hard_minus_annotated": -0.2439,
+        "soft_minus_annotated": -0.2486,
+        "sequences": 693
+      }
+    },
+    {
+      "component": "RL traversal agent (11.1-11.2)",
+      "replaced_by": "the DFS reading order (11.2.7's best heuristic)",
+      "metric": "semantic score of the emitted program",
+      "source": "reports/rl_ablation.md",
+      "on_deployed_path": false,
+      "evidence": "no rl call site in src/pipeline/*.py",
+      "with_component": 0.889,
+      "without_component": 0.863,
+      "delta": 0.026,
+      "detail": {
+        "pure_dqn_semantic": 0.5861,
+        "pure_dqn_sandbox_pass": 0.309,
+        "note": "the learned arm that beats DFS is the hybrid dqn+dfs; the pure policy cannot cross a connected component and loses badly"
+      }
+    },
+    {
+      "component": "LoRA fine-tune (12.2)",
+      "replaced_by": "the same base model, zero-shot (12.2.7)",
+      "metric": "functional pass@1 over 162 test pairs",
+      "source": "experiments/llm/{quality,compare}/done.json",
+      "on_deployed_path": true,
+      "evidence": [
+        "core.py:src.pipeline.generate",
+        "generate.py:llama"
+      ],
+      "with_component": 0.7037,
+      "without_component": 0.0309,
+      "delta": 0.6728,
+      "detail": {
+        "few_shot_k2": 0.3951,
+        "base_model": "Qwen2.5-Coder-7B-Instruct",
+        "served_at_measurement_time": "13.4 records that no llama.cpp server was reachable for the golden run, so the pipeline answered from 12.1.6's emitter - being on the path and being the answerer are different facts and both are recorded"
+      }
+    },
+    {
+      "component": "style adaptation (Phase 8 clusters -> 9.3.5)",
+      "replaced_by": "one global adaptation over every writer",
+      "metric": "OCR CER (lower is better)",
+      "lower_is_better": true,
+      "source": "reports/ocr.md",
+      "on_deployed_path": false,
+      "evidence": "no style call site in src/pipeline/*.py",
+      "with_component": 0.6816,
+      "without_component": 0.6864,
+      "delta": -0.0048,
+      "detail": {
+        "random_cluster_control": 0.6818,
+        "note": "the control matters: adapting to a *random* partition scores within 0.0002 of adapting to the style clusters, so the gain is adaptation, not style",
+        "deployed_reader": "trocr_large (S3), which is not a CRNN and carries no style-adapted variant - these rows are the 9.3.6 generation"
+      }
+    }
+  ],
+  "components": 5,
+  "on_deployed_path": 1,
+  "seconds": 3.8
+}

@@ -285,8 +285,11 @@ def describe(contour: np.ndarray) -> np.ndarray | None:
         except cv2.error:
             defects = None
         if defects is not None:
-            # Column 3 is the depth, in fixed-point units of 1/256 of a pixel.
-            depths = defects[:, 0, 3] / 256.0 / hull_perimeter
+            # Column 3 is the depth, in fixed-point units of 1/256 of a pixel. The array comes
+            # back `(n, 1, 4)` on some OpenCV builds and `(n, 4)` on others - this one returns
+            # the flat form, which indexed as `[:, 0, 3]` raises rather than reading a wrong
+            # column, so the shape is normalised instead of assumed.
+            depths = np.asarray(defects).reshape(-1, 4)[:, 3] / 256.0 / hull_perimeter
             deep = depths[depths > DEFECT_MIN]
             defect_count = int(len(deep))
             defect_max = float(deep.max()) if len(deep) else 0.0
