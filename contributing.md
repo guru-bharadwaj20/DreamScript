@@ -559,7 +559,7 @@ becomes the code structure.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 14.1 | Master results table | Every model × every metric, one table | Built | ❌ |
+| 14.1 | Master results table | Every model × every metric, one table | `src/eval/master.py` + `tests/test_eval_master.py` (12 tests) + `reports/master_results.md` + `reports/master_results.json`: one table over every stage - classify, detect, ocr, parse, assemble, codegen, serve, pipeline - **57 declared cells, 54 resolved, and 10 of the 12 with a target meet it** (the two that do not are S3 at 0.2006 against 0.15 and S5 at median 13.0 against 3). **The module contains no result and cannot**: a registry row is (stage, model, metric, *source*), where a source is either a key path inside a JSON artefact or a located cell of a markdown table, and `Row` has no field a number could be stored in - a test pins that by rewriting an artefact between two collections and watching the table follow. Every printed cell carries its own provenance (`reports/s3_label_ocr.json:cer`, `reports/classification_report.md:[logreg].macro F1`), so the table audits back to the file without reading this source, and the markdown parser is strict rather than fuzzy - a renamed column or row reads `missing`, because a silently-renamed column is exactly the drift this row exists to catch. **What is not durable is named rather than transcribed**: the Phase 6-8 sweeps (MLP, SVM kernels, forests, boosting, clustering) and 11.2.7's RL baselines wrote to gitignored `experiments/` directories the DVC loss took with them, so the report lists them with the command that rebuilds each instead of copying prose figures into a table that would then look authoritative. Three cells point at `reports/stagewise.json`, which 14.2 writes, and they read `missing` until it exists - a declared gap rather than a hidden one | ✅ |
 | 14.2 | Stage-wise accuracy | Classification / detection / OCR / parsing / codegen, isolated | Reported | ❌ |
 | 14.3 | Error propagation study | How a stage-1 error changes final code correctness | Quantified | ❌ |
 | 14.4 | **Full ablation matrix** | Remove HMM / RL / GMM / LoRA / style-adaptation one at a time | 5-row ablation table | ❌ |
@@ -754,8 +754,8 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 11 — RL Traversal | 16 | 16 | ✅ |
 | 12 — LLM Fine-Tuning | 26 | 24 | ❌ |
 | 13 — Orchestration | 10 | 9 | ❌ |
-| 14 — Evaluation | 11 | 0 | ❌ |
+| 14 — Evaluation | 11 | 1 | ❌ |
 | 15 — MLOps | 12 | 0 | ❌ |
 | 16 — Android App & Capture | 20 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **308** | **252** | ❌ |
+| **Total** | **308** | **253** | ❌ |
