@@ -1,0 +1,5257 @@
+{
+  "split": "test",
+  "generator": "12.1.6 emitter (deterministic; the LoRA model is 12.3.3's separate number)",
+  "test": "src.llm.functional.expected on the annotated IR, identical on every rung",
+  "seconds": 305.6,
+  "pages": 162,
+  "trivial_tests": 5,
+  "pass_rate": {
+    "gold": 0.784,
+    "gold_structure": 0.6543,
+    "gold_text": 0.2284,
+    "predicted": 0.1914
+  },
+  "attributable_drop": {
+    "text_only": 0.1297,
+    "structure_only": 0.5556,
+    "both": 0.5926
+  },
+  "failure_reasons": {
+    "gold": {
+      "missing_operation": 20,
+      "order_violation": 7,
+      "verdicts_differ": 4,
+      "exclusive_branches_both_ran": 2,
+      "never_returns": 1,
+      "crash_or_nontermination": 1
+    },
+    "gold_structure": {
+      "missing_operation": 41,
+      "order_violation": 5,
+      "verdicts_differ": 4,
+      "exclusive_branches_both_ran": 4,
+      "never_returns": 1,
+      "crash_or_nontermination": 1
+    },
+    "gold_text": {
+      "no_acceptor": 48,
+      "order_violation": 39,
+      "crash_or_nontermination": 15,
+      "missing_operation": 10,
+      "exclusive_branches_both_ran": 8,
+      "never_returns": 3,
+      "candidate_sandbox": 2
+    },
+    "predicted": {
+      "no_acceptor": 48,
+      "order_violation": 29,
+      "missing_operation": 24,
+      "crash_or_nontermination": 15,
+      "exclusive_branches_both_ran": 10,
+      "never_returns": 3,
+      "candidate_sandbox": 2
+    }
+  },
+  "by_source": {
+    "fa_bresler": {
+      "pages": 48,
+      "gold": 0.9167,
+      "gold_structure": 0.9167,
+      "gold_text": 0.0,
+      "predicted": 0.0
+    },
+    "hdbpmn": {
+      "pages": 114,
+      "gold": 0.7281,
+      "gold_structure": 0.5439,
+      "gold_text": 0.3246,
+      "predicted": 0.2719
+    }
+  },
+  "rows": [
+    {
+      "page": "fa_bresler__writer015_fa_001",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1068
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1068
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_002",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_003",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 795
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 795
+        }
+      },
+      "trivial_test": true
+    },
+    {
+      "page": "fa_bresler__writer015_fa_004",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_005",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2799
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2799
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1639
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1639
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_006",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1353
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1353
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_007",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_008",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1913
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1913
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1131
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1131
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_009",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6650
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6650
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1211
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1211
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_010",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 803
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 803
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_011",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 913
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 913
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer015_fa_012",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1785
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 976
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 974
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_001",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_002",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 746
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 746
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_003",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 795
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 795
+        }
+      },
+      "trivial_test": true
+    },
+    {
+      "page": "fa_bresler__writer018_fa_004",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 446
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 446
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_005",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3067
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3067
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1862
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1862
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_006",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_007",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2609
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2609
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_008",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1131
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1131
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_009",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1980
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1980
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1111
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1111
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_010",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 817
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 817
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_011",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 997
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 997
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer018_fa_012",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_001",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 600
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_002",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_003",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1839
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1839
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 815
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 815
+        }
+      },
+      "trivial_test": true
+    },
+    {
+      "page": "fa_bresler__writer021_fa_004",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_005",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3067
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3067
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1862
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1862
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_006",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_007",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_008",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1208
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1208
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_009",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1980
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2008
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1049
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1049
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_010",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 797
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 797
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_011",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 913
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 913
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer021_fa_012",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_001",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1149
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 606
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 606
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_002",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2355
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 127
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_003",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "verdicts_differ",
+          "characters": 1431
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 815
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 815
+        }
+      },
+      "trivial_test": true
+    },
+    {
+      "page": "fa_bresler__writer024_fa_004",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 985
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 517
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_005",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3841
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3841
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1806
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1806
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_006",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1352
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1046
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_007",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3087
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 760
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_008",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1641
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1228
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1228
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_009",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1980
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1980
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1195
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1195
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_010",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1313
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 823
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 823
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_011",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1343
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 752
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 752
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "fa_bresler__writer024_fa_012",
+      "source": "fa_bresler",
+      "diagram_type": "state_machine",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1792
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "no_acceptor",
+          "characters": 1034
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 354
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 337
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1762
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1713
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 279
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 273
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1653
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1618
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 386
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 380
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1884
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1867
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 337
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 356
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1470
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1522
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 413
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 399
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1779
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1822
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 467
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 439
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2081
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2056
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 456
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 460
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1817
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 1847
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 348
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 326
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 411
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 363
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 475
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 443
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2133
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2117
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex00_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 386
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 389
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1720
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1764
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 307
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 310
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 418
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 430
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 326
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 335
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "candidate_sandbox",
+          "characters": 406
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "candidate_sandbox",
+          "characters": 420
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 369
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 373
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 1544
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 1572
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 345
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 366
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 413
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 435
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 353
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 359
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 449
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 479
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 394
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 400
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 468
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 482
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 367
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 367
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 442
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 455
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 361
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 343
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1525
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1504
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 399
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 419
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1583
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1609
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex01_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 374
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 369
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 429
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 454
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3266
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3206
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3023
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2978
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 524
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 466
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 2186
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 2158
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 588
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 621
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 611
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 659
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 405
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 402
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1908
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1933
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 830
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 693
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3250
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3189
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 869
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 788
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4094
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4092
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 760
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 744
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3800
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3805
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 542
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 531
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2802
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2837
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex02_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 756
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 624
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2468
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2433
+        }
+      },
+      "trivial_test": true
+    },
+    {
+      "page": "hdbpmn__ex02_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 831
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 699
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3670
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3590
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4095
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4077
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3991
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3934
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4453
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4528
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 4038
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 4115
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4699
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4686
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4169
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4179
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3555
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3587
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3588
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3614
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4686
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4623
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4411
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4440
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6139
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6079
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 5246
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 5220
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6153
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 6077
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 5625
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 5599
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4638
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4630
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4569
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4586
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 331
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 330
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 375
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 388
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex03_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4352
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4341
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3363
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3364
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex04_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3717
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3583
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3276
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3196
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex04_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2195
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2197
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1852
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1896
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex05_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 6155
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 6053
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5093
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5071
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex05_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 1227
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 1186
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5401
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5393
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex05_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4669
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4677
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4042
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4089
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0086",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2380
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2366
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2535
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2523
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0087",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2351
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2340
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2339
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2329
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2984
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3029
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2597
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2641
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2096
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 2133
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 1828
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 1865
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0090",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2084
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2093
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 1767
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 1779
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0092",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3082
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 3056
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2589
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2558
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2217
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2209
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2433
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2426
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2457
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2438
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2270
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2259
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0095",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3079
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3091
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3757
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3798
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2037
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2061
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1973
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1995
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3471
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3386
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3301
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3267
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0098",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3299
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3328
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3364
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3390
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3113
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3096
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2550
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 2561
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0101",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2687
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2709
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2580
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2620
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2337
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2292
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2124
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2091
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3542
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3473
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2682
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2658
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2952
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 2914
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2823
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 2792
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex06_writer0106",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2452
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2413
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2383
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2282
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0086",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3269
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3269
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2545
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2569
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0087",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4058
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4003
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3615
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3584
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3534
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3502
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 3683
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 3677
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3575
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3574
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2896
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2941
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0090",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3063
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3027
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2696
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2707
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0092",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3857
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3878
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3826
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3884
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4490
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4426
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3375
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3387
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3339
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3331
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4506
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4673
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0095",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3222
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3196
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "candidate_sandbox",
+          "characters": 550
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "candidate_sandbox",
+          "characters": 581
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3300
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3340
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2600
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2673
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4013
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3965
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3166
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3139
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0098",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4996
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 5024
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3974
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4016
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3635
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3651
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3038
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3096
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0101",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3737
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3674
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3083
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3049
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3841
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3807
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3153
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3180
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4180
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4163
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 3936
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "never_returns",
+          "characters": 3944
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3647
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3682
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3091
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3170
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex07_writer0106",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3923
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3804
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3695
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3626
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0086",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4212
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4214
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3304
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3320
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0087",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 469
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 425
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1976
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 1952
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 566
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 552
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3716
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3715
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3747
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3675
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 3098
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 3141
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0090",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 603
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 602
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 556
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 569
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0092",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 4833
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4828
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3635
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3677
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0094",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 913
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 742
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2637
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 2402
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0095",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4056
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3960
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3543
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3463
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4025
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3850
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3859
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 3684
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4463
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4336
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4154
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4018
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0098",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3506
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3500
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3561
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3642
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 756
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 722
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4207
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4230
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0101",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4784
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4611
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 5858
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5760
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3094
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3050
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2676
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2678
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex08_writer0106",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3916
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3870
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3518
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3453
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex09_writer0092",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3898
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3856
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4147
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4078
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0086",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3414
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3417
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2915
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2928
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0087",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3674
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3708
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3271
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3235
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0088",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3334
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3408
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 3388
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3442
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0089",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4480
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4385
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4314
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4276
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0090",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3343
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 3339
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2758
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 2728
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0092",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3312
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3337
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 3341
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 3377
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0093",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2664
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2729
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2299
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2390
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0095",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2964
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2944
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2786
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2747
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0096",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4513
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 4546
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4156
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 4257
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0097",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4625
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4641
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4106
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4120
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0098",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4301
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4393
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4351
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4442
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0100",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3207
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3303
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2839
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2904
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0101",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5765
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 5731
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4661
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 4647
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0102",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2864
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 2801
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2539
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "exclusive_branches_both_ran",
+          "characters": 2492
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0103",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 6207
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": false,
+          "reason": "missing_operation",
+          "characters": 6171
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 5304
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "crash_or_nontermination",
+          "characters": 5280
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0104",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3200
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3202
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2760
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2745
+        }
+      },
+      "trivial_test": false
+    },
+    {
+      "page": "hdbpmn__ex10_writer0106",
+      "source": "hdbpmn",
+      "diagram_type": "flowchart",
+      "rungs": {
+        "gold": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3149
+        },
+        "gold_structure": {
+          "emitted": true,
+          "functional": true,
+          "reason": "equal",
+          "characters": 3166
+        },
+        "gold_text": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2953
+        },
+        "predicted": {
+          "emitted": true,
+          "functional": false,
+          "reason": "order_violation",
+          "characters": 2965
+        }
+      },
+      "trivial_test": false
+    }
+  ]
+}
