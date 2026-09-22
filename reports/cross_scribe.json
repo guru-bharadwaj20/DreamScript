@@ -1,0 +1,1139 @@
+{
+  "classify": {
+    "model": "logreg",
+    "protocol": "leave-one-scribe-out; the writer's every page is absent from the fit",
+    "rows_with_a_known_writer": 704,
+    "rows_without_one": 731,
+    "seconds": 107.9,
+    "writers_scored": 107,
+    "writers_skipped": [],
+    "spread": {
+      "n": 107,
+      "mean": 0.9967,
+      "median": 1.0,
+      "min": 0.75,
+      "max": 1.0,
+      "p10": 1.0,
+      "p90": 1.0,
+      "spread_p90_p10": 0.0
+    },
+    "worst": [
+      {
+        "writer": "hdbpmn:writer0089",
+        "pages": 8,
+        "accuracy": 0.75
+      },
+      {
+        "writer": "hdbpmn:writer0079",
+        "pages": 10,
+        "accuracy": 0.9
+      },
+      {
+        "writer": "hdbpmn:writer0000",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0001",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0002",
+        "pages": 9,
+        "accuracy": 1.0
+      }
+    ],
+    "per_writer": [
+      {
+        "writer": "hdbpmn:writer0000",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0001",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0002",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0003",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0004",
+        "pages": 1,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0005",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0006",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0007",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0008",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0009",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0010",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0011",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0012",
+        "pages": 3,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0013",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0014",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0015",
+        "pages": 3,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0016",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0017",
+        "pages": 5,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0018",
+        "pages": 1,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0019",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0020",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0021",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0022",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0023",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0024",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0025",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0026",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0027",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0028",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0029",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0030",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0031",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0032",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0033",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0034",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0035",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0036",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0037",
+        "pages": 5,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0038",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0039",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0040",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0041",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0042",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0043",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0044",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0045",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0046",
+        "pages": 1,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0047",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0048",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0049",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0050",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0051",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0052",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0053",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0054",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0055",
+        "pages": 3,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0056",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0057",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0058",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0059",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0060",
+        "pages": 5,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0061",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0062",
+        "pages": 5,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0063",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0064",
+        "pages": 6,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0065",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0066",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0067",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0068",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0069",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0070",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0071",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0072",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0073",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0074",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0075",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0076",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0077",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0078",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0079",
+        "pages": 10,
+        "accuracy": 0.9
+      },
+      {
+        "writer": "hdbpmn:writer0080",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0081",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0082",
+        "pages": 1,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0083",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0084",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0085",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0086",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0087",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0088",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0089",
+        "pages": 8,
+        "accuracy": 0.75
+      },
+      {
+        "writer": "hdbpmn:writer0090",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0091",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0092",
+        "pages": 5,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0093",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0094",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0095",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0096",
+        "pages": 8,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0097",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0098",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0099",
+        "pages": 3,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0100",
+        "pages": 9,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0101",
+        "pages": 4,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0102",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0103",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0104",
+        "pages": 10,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0105",
+        "pages": 7,
+        "accuracy": 1.0
+      },
+      {
+        "writer": "hdbpmn:writer0106",
+        "pages": 4,
+        "accuracy": 1.0
+      }
+    ]
+  },
+  "ocr": {
+    "source": "rescored from trocr_large",
+    "crops": 2835,
+    "cer": 0.2006,
+    "published_cer": 0.2006,
+    "reproduces_published": true,
+    "spread": {
+      "n": 23,
+      "mean": 0.2064,
+      "median": 0.2033,
+      "min": 0.1258,
+      "max": 0.3911,
+      "p10": 0.1406,
+      "p90": 0.2765,
+      "spread_p90_p10": 0.1359
+    },
+    "worst": [
+      {
+        "writer": "writer0072",
+        "crops": 77,
+        "cer": 0.3911,
+        "exact_match": 0.4156
+      },
+      {
+        "writer": "writer0083",
+        "crops": 89,
+        "cer": 0.299,
+        "exact_match": 0.5281
+      },
+      {
+        "writer": "writer0070",
+        "crops": 148,
+        "cer": 0.2799,
+        "exact_match": 0.5676
+      },
+      {
+        "writer": "writer0065",
+        "crops": 60,
+        "cer": 0.2765,
+        "exact_match": 0.45
+      },
+      {
+        "writer": "fa-writer014",
+        "crops": 158,
+        "cer": 0.2745,
+        "exact_match": 0.7152
+      }
+    ],
+    "per_writer": [
+      {
+        "writer": "fa-writer014",
+        "crops": 158,
+        "cer": 0.2745,
+        "exact_match": 0.7152
+      },
+      {
+        "writer": "fa-writer017",
+        "crops": 159,
+        "cer": 0.1484,
+        "exact_match": 0.8679
+      },
+      {
+        "writer": "fa-writer020",
+        "crops": 154,
+        "cer": 0.1411,
+        "exact_match": 0.8506
+      },
+      {
+        "writer": "fa-writer023",
+        "crops": 159,
+        "cer": 0.1406,
+        "exact_match": 0.8868
+      },
+      {
+        "writer": "writer0065",
+        "crops": 60,
+        "cer": 0.2765,
+        "exact_match": 0.45
+      },
+      {
+        "writer": "writer0066",
+        "crops": 172,
+        "cer": 0.233,
+        "exact_match": 0.5116
+      },
+      {
+        "writer": "writer0067",
+        "crops": 133,
+        "cer": 0.2102,
+        "exact_match": 0.6391
+      },
+      {
+        "writer": "writer0068",
+        "crops": 139,
+        "cer": 0.2033,
+        "exact_match": 0.6691
+      },
+      {
+        "writer": "writer0069",
+        "crops": 58,
+        "cer": 0.219,
+        "exact_match": 0.4655
+      },
+      {
+        "writer": "writer0070",
+        "crops": 148,
+        "cer": 0.2799,
+        "exact_match": 0.5676
+      },
+      {
+        "writer": "writer0071",
+        "crops": 67,
+        "cer": 0.2411,
+        "exact_match": 0.5821
+      },
+      {
+        "writer": "writer0072",
+        "crops": 77,
+        "cer": 0.3911,
+        "exact_match": 0.4156
+      },
+      {
+        "writer": "writer0074",
+        "crops": 62,
+        "cer": 0.158,
+        "exact_match": 0.7258
+      },
+      {
+        "writer": "writer0075",
+        "crops": 179,
+        "cer": 0.1742,
+        "exact_match": 0.6145
+      },
+      {
+        "writer": "writer0076",
+        "crops": 123,
+        "cer": 0.2077,
+        "exact_match": 0.6585
+      },
+      {
+        "writer": "writer0077",
+        "crops": 129,
+        "cer": 0.1258,
+        "exact_match": 0.7442
+      },
+      {
+        "writer": "writer0079",
+        "crops": 182,
+        "cer": 0.1362,
+        "exact_match": 0.7418
+      },
+      {
+        "writer": "writer0080",
+        "crops": 60,
+        "cer": 0.2593,
+        "exact_match": 0.4833
+      },
+      {
+        "writer": "writer0081",
+        "crops": 147,
+        "cer": 0.1483,
+        "exact_match": 0.619
+      },
+      {
+        "writer": "writer0082",
+        "crops": 25,
+        "cer": 0.1577,
+        "exact_match": 0.68
+      },
+      {
+        "writer": "writer0083",
+        "crops": 89,
+        "cer": 0.299,
+        "exact_match": 0.5281
+      },
+      {
+        "writer": "writer0084",
+        "crops": 157,
+        "cer": 0.147,
+        "exact_match": 0.6561
+      },
+      {
+        "writer": "writer0085",
+        "crops": 198,
+        "cer": 0.1749,
+        "exact_match": 0.6818
+      }
+    ]
+  },
+  "assemble": {
+    "writers": 22,
+    "spread": {
+      "n": 22,
+      "mean": 17.4545,
+      "median": 18.25,
+      "min": 1.0,
+      "max": 36.0,
+      "p10": 1.0,
+      "p90": 27.0,
+      "spread_p90_p10": 26.0
+    },
+    "per_writer": [
+      {
+        "writer": "writer0086",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 17.5
+      },
+      {
+        "writer": "writer0087",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 23.0
+      },
+      {
+        "writer": "writer0088",
+        "pages": 8,
+        "source": "hdbpmn",
+        "median_ged": 28.0
+      },
+      {
+        "writer": "writer0089",
+        "pages": 8,
+        "source": "hdbpmn",
+        "median_ged": 19.0
+      },
+      {
+        "writer": "writer0090",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 10.5
+      },
+      {
+        "writer": "writer0092",
+        "pages": 5,
+        "source": "hdbpmn",
+        "median_ged": 23.0
+      },
+      {
+        "writer": "writer0093",
+        "pages": 7,
+        "source": "hdbpmn",
+        "median_ged": 17.0
+      },
+      {
+        "writer": "writer0094",
+        "pages": 7,
+        "source": "hdbpmn",
+        "median_ged": 12.0
+      },
+      {
+        "writer": "writer0095",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 26.5
+      },
+      {
+        "writer": "writer0096",
+        "pages": 8,
+        "source": "hdbpmn",
+        "median_ged": 17.0
+      },
+      {
+        "writer": "writer0097",
+        "pages": 10,
+        "source": "hdbpmn",
+        "median_ged": 27.0
+      },
+      {
+        "writer": "writer0098",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 34.5
+      },
+      {
+        "writer": "writer0100",
+        "pages": 9,
+        "source": "hdbpmn",
+        "median_ged": 23.0
+      },
+      {
+        "writer": "writer0101",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 36.0
+      },
+      {
+        "writer": "writer0102",
+        "pages": 7,
+        "source": "hdbpmn",
+        "median_ged": 11.0
+      },
+      {
+        "writer": "writer0103",
+        "pages": 7,
+        "source": "hdbpmn",
+        "median_ged": 20.0
+      },
+      {
+        "writer": "writer0104",
+        "pages": 10,
+        "source": "hdbpmn",
+        "median_ged": 13.5
+      },
+      {
+        "writer": "writer0106",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 20.0
+      },
+      {
+        "writer": "writer015",
+        "pages": 12,
+        "source": "fa_bresler",
+        "median_ged": 2.5
+      },
+      {
+        "writer": "writer018",
+        "pages": 12,
+        "source": "fa_bresler",
+        "median_ged": 1.0
+      },
+      {
+        "writer": "writer021",
+        "pages": 12,
+        "source": "fa_bresler",
+        "median_ged": 1.0
+      },
+      {
+        "writer": "writer024",
+        "pages": 12,
+        "source": "fa_bresler",
+        "median_ged": 1.0
+      }
+    ],
+    "source": "reports/s5_test_large.json",
+    "worst": [
+      {
+        "writer": "writer0101",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 36.0
+      },
+      {
+        "writer": "writer0098",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 34.5
+      },
+      {
+        "writer": "writer0088",
+        "pages": 8,
+        "source": "hdbpmn",
+        "median_ged": 28.0
+      },
+      {
+        "writer": "writer0097",
+        "pages": 10,
+        "source": "hdbpmn",
+        "median_ged": 27.0
+      },
+      {
+        "writer": "writer0095",
+        "pages": 4,
+        "source": "hdbpmn",
+        "median_ged": 26.5
+      }
+    ]
+  },
+  "end_to_end": {
+    "rung": "predicted",
+    "source": "reports/error_propagation.json",
+    "writers": 22,
+    "spread": {
+      "n": 22,
+      "mean": 0.2072,
+      "median": 0.25,
+      "min": 0.0,
+      "max": 0.5,
+      "p10": 0.0,
+      "p90": 0.2857,
+      "spread_p90_p10": 0.2857
+    },
+    "worst": [
+      {
+        "writer": "writer0087",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer0090",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer015",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer018",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer021",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      }
+    ],
+    "per_writer": [
+      {
+        "writer": "writer0086",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0087",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer0088",
+        "pages": 8,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0089",
+        "pages": 8,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0090",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer0092",
+        "pages": 5,
+        "source": "hdbpmn",
+        "functional": 0.2
+      },
+      {
+        "writer": "writer0093",
+        "pages": 7,
+        "source": "hdbpmn",
+        "functional": 0.2857
+      },
+      {
+        "writer": "writer0094",
+        "pages": 7,
+        "source": "hdbpmn",
+        "functional": 0.4286
+      },
+      {
+        "writer": "writer0095",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0096",
+        "pages": 8,
+        "source": "hdbpmn",
+        "functional": 0.5
+      },
+      {
+        "writer": "writer0097",
+        "pages": 10,
+        "source": "hdbpmn",
+        "functional": 0.2
+      },
+      {
+        "writer": "writer0098",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0100",
+        "pages": 9,
+        "source": "hdbpmn",
+        "functional": 0.2222
+      },
+      {
+        "writer": "writer0101",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer0102",
+        "pages": 7,
+        "source": "hdbpmn",
+        "functional": 0.2857
+      },
+      {
+        "writer": "writer0103",
+        "pages": 7,
+        "source": "hdbpmn",
+        "functional": 0.2857
+      },
+      {
+        "writer": "writer0104",
+        "pages": 10,
+        "source": "hdbpmn",
+        "functional": 0.4
+      },
+      {
+        "writer": "writer0106",
+        "pages": 4,
+        "source": "hdbpmn",
+        "functional": 0.25
+      },
+      {
+        "writer": "writer015",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer018",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer021",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      },
+      {
+        "writer": "writer024",
+        "pages": 12,
+        "source": "fa_bresler",
+        "functional": 0.0
+      }
+    ]
+  },
+  "cross_stage": {
+    "shared_writers": 0,
+    "note": "S3 is scored on the validation writers and S5 on the test writers, so the two breakdowns barely overlap - the question cannot be answered on this corpus without rescoring one of them on the other's split, and is left open rather than answered from three points"
+  }
+}
