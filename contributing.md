@@ -577,7 +577,7 @@ becomes the code structure.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 15.1 | Experiment tracking | MLflow (or W&B) across detection / classification / parsing / generation | Every run logged with params, metrics, artifacts | ❌ |
+| 15.1 | Experiment tracking | MLflow (or W&B) across detection / classification / parsing / generation | `src/mlops/tracking.py` + `tests/test_mlops_tracking.py` (10 tests) + `mlruns/` (gitignored, regenerable) + `mlflow==2.17.2` in `requirements/dev.txt`: MLflow on a **local file backend** (`file:mlruns`), which needs no server, works offline, and is regenerable - a tracking server is a deployment decision this row does not need. **18 runs across seven experiments are in the store** - classification, detection, ocr, parsing, assembly, generation, pipeline and evaluation - each with its metrics, the parameters the run declared, and the artefact file itself attached. **The history is backfilled from the artefacts rather than invented or re-run**: fourteen phases of runs finished before this module existed and re-running them to populate a store would cost days of GPU time to learn nothing, so `--backfill` reads the JSON each run wrote and creates one MLflow run per artefact. **Every backfilled run is tagged `backfilled=true` with its `source_file` and the artefact's modification time**, so nothing in the store can be mistaken for a live run this module watched - a test asserts the tag and the source both survive the round trip. **A metric the artefact never carried is absent, not zero**, and the backfill result counts `metrics_absent` per run so a sparse artefact looks sparse rather than complete. `track(experiment, name, params=...)` is the interface for runs from here on: a context manager that logs parameters, takes metrics as they arrive, attaches artifacts, and marks the run `FAILED` rather than losing it when the body raises (pinned by a test). **A missing MLflow degrades to an in-memory recorder instead of an exception**, because a tracking library must never be the reason a training run dies. Browse with `mlflow ui --backend-store-uri file:mlruns` | ✅ |
 | 15.2 | Data versioning | DVC remotes for raw / interim / processed | `dvc repro` rebuilds the pipeline | ❌ |
 | 15.3 | Model registry | Staged versions (dev → staging → prod) per component | Registry populated | ❌ |
 | 15.4 | Pipeline DAG | DVC stages or a Prefect flow for the full pipeline | DAG runs end to end | ❌ |
@@ -755,7 +755,7 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 12 — LLM Fine-Tuning | 26 | 24 | ❌ |
 | 13 — Orchestration | 10 | 9 | ❌ |
 | 14 — Evaluation | 11 | 11 | ✅ |
-| 15 — MLOps | 12 | 0 | ❌ |
+| 15 — MLOps | 12 | 1 | ❌ |
 | 16 — Android App & Capture | 20 | 0 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **308** | **263** | ❌ |
+| **Total** | **308** | **264** | ❌ |
