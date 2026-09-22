@@ -1,0 +1,138 @@
+{
+  "each": 3,
+  "order": "reports/s5_test_large.json, ascending graph edit distance",
+  "entries": [
+    {
+      "band": "best",
+      "page": "fa_bresler__writer015_fa_001",
+      "source": "fa_bresler",
+      "ged": 0.0,
+      "node_f1": 1.0,
+      "edge_f1": 1.0,
+      "edits": {
+        "sub_text": 0,
+        "edge_insert": 0,
+        "edge_delete": 0,
+        "node_insert": 0,
+        "node_delete": 0
+      },
+      "functional_predicted": false,
+      "functional_reason": "no_acceptor",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/fa_bresler__writer015_fa_001.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d000\"\n    pending = []\n    while True:\n        if state == \"d000\":\n            ctx = q0(ctx)\n            if q0(ctx):\n                state = \"d000\"\n            else:\n                state = \"d002\"\n        elif state == \"d002\":\n            ctx = q1(ctx)\n            state = \"d001\"\n        elif state == \"d001\":\n            ctx = q2(ctx)\n            if q2(ctx):\n                state = \"d002\"\n            else:",
+      "code_lines": 24,
+      "note": ""
+    },
+    {
+      "band": "best",
+      "page": "fa_bresler__writer015_fa_004",
+      "source": "fa_bresler",
+      "ged": 0.0,
+      "node_f1": 1.0,
+      "edge_f1": 1.0,
+      "edits": {
+        "sub_text": 0,
+        "edge_insert": 0,
+        "edge_delete": 0,
+        "node_insert": 0,
+        "node_delete": 0
+      },
+      "functional_predicted": false,
+      "functional_reason": "no_acceptor",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/fa_bresler__writer015_fa_004.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d001\"\n    pending = []\n    while True:\n        if state == \"d001\":\n            ctx = q1(ctx)\n            if q1(ctx):\n                state = \"d001\"\n            else:\n                state = \"d000\"\n        elif state == \"d000\":\n            ctx = q0(ctx)\n            if q0(ctx):\n                state = \"d001\"\n            else:\n                state = \"d000\"\n        else:\n            if pending:",
+      "code_lines": 21,
+      "note": ""
+    },
+    {
+      "band": "best",
+      "page": "fa_bresler__writer015_fa_007",
+      "source": "fa_bresler",
+      "ged": 0.0,
+      "node_f1": 1.0,
+      "edge_f1": 1.0,
+      "edits": {
+        "sub_text": 0,
+        "edge_insert": 0,
+        "edge_delete": 0,
+        "node_insert": 0,
+        "node_delete": 0
+      },
+      "functional_predicted": false,
+      "functional_reason": "no_acceptor",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/fa_bresler__writer015_fa_007.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d002\"\n    pending = [\"d000\", \"d003\"]\n    while True:\n        if state == \"d002\":\n            ctx = q4(ctx)\n            state = \"d002\"\n        elif state == \"d000\":\n            ctx = q3(ctx)\n            state = \"d002\"\n        elif state == \"d003\":\n            ctx = q0(ctx)\n            if q0(ctx):\n                state = \"d000\"\n            elif q0(ctx):\n                state = \"d003\"\n            else:\n                state = \"d004\"",
+      "code_lines": 29,
+      "note": ""
+    },
+    {
+      "band": "worst",
+      "page": "hdbpmn__ex07_writer0088",
+      "source": "hdbpmn",
+      "ged": 46.0,
+      "node_f1": 0.9268,
+      "edge_f1": 0.069,
+      "edits": {
+        "sub_text": 16,
+        "edge_insert": 7,
+        "edge_delete": 20,
+        "node_insert": 1,
+        "node_delete": 2
+      },
+      "functional_predicted": false,
+      "functional_reason": "never_returns",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/hdbpmn__ex07_writer0088.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d031\"\n    pending = [\"d013\", \"d000\", \"d006\", \"d010\", \"d009\", \"d016\", \"d019\", \"d017\", \"d004\", \"d014\", \"d007\", \"d011\", \"d008\", \"d005\", \"d012\"]\n    while True:\n        if state == \"d031\":\n            ctx = send_welcome_pack(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d013\":\n            ctx = handling_department(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d000\":\n            ctx = files_results_of_expertise(ctx)",
+      "code_lines": 122,
+      "note": ""
+    },
+    {
+      "band": "worst",
+      "page": "hdbpmn__ex08_writer0101",
+      "source": "hdbpmn",
+      "ged": 46.0,
+      "node_f1": 0.8387,
+      "edge_f1": 0.717,
+      "edits": {
+        "sub_text": 21,
+        "edge_insert": 7,
+        "edge_delete": 7,
+        "node_insert": 9,
+        "node_delete": 1
+      },
+      "functional_predicted": false,
+      "functional_reason": "missing_operation",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/hdbpmn__ex08_writer0101.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d042\"\n    pending = [\"d024\", \"d002\", \"d027\", \"d020\", \"d016\", \"d026\", \"d050\", \"d000\", \"d030\", \"d005\", \"d013\", \"d028\", \"d032\"]\n    while True:\n        if state == \"d042\":\n            ctx = claims_officer(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d024\":\n            ctx = teacher(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d002\":\n            ctx = teacher(ctx)",
+      "code_lines": 191,
+      "note": ""
+    },
+    {
+      "band": "worst",
+      "page": "hdbpmn__ex09_writer0092",
+      "source": "hdbpmn",
+      "ged": 47.0,
+      "node_f1": 0.9545,
+      "edge_f1": 0.0625,
+      "edits": {
+        "sub_text": 15,
+        "edge_insert": 9,
+        "edge_delete": 21,
+        "node_insert": 0,
+        "node_delete": 2
+      },
+      "functional_predicted": true,
+      "functional_reason": "equal",
+      "functional_gold": true,
+      "image": "reports/figures/gallery/hdbpmn__ex09_writer0092.jpg",
+      "code_head": "def run_diagram(ctx):\n    state = \"d018\"\n    pending = [\"d009\", \"d003\", \"d014\", \"d015\", \"d005\", \"d008\", \"d013\", \"d016\", \"d010\", \"d019\", \"d007\", \"d020\", \"d006\", \"d000\", \"d012\"]\n    while True:\n        if state == \"d018\":\n            ctx = claims_officer(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d009\":\n            ctx = check_motivation_letter(ctx)\n            if pending:\n                state = pending.pop(0)\n                continue\n            return ctx\n        elif state == \"d003\":\n            ctx = generate_pdf(ctx)",
+      "code_lines": 133,
+      "note": ""
+    }
+  ]
+}
