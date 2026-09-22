@@ -1,0 +1,6 @@
+outs:
+- md5: 5d045c7e999434246a3f28850b9049fb.dir
+  size: 59071672
+  nfiles: 16126
+  hash: md5
+  path: text_crops

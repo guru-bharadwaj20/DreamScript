@@ -1,5 +1,5 @@
 outs:
-- md5: 35f109355b2c97497817d3e4310645b5
-  size: 520317
+- md5: 3e76c222da40b2704b971d632c6da933
+  size: 215271
   hash: md5
   path: handcrafted.parquet

@@ -4,3 +4,9 @@
     remote = local
 ['remote "local"']
     url = C:/Users/Temp/dreamscript-dvc-store
+['remote "raw"']
+    url = C:/Users/Temp/dreamscript-dvc-store/raw
+['remote "interim"']
+    url = C:/Users/Temp/dreamscript-dvc-store/interim
+['remote "processed"']
+    url = C:/Users/Temp/dreamscript-dvc-store/processed

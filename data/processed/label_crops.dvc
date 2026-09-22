@@ -1,0 +1,6 @@
+outs:
+- md5: 59e57418d514564b12c20003a8d140fe.dir
+  size: 66916517
+  nfiles: 16199
+  hash: md5
+  path: label_crops
