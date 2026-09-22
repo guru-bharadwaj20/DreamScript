@@ -1,0 +1,196 @@
+{
+  "human_study": "none was run; every human-side number below comes from the stated model",
+  "corpus": {
+    "diagrams": 162,
+    "median_nodes": 14.5,
+    "median_edges": 17.0,
+    "median_characters": 2355.0,
+    "mean_characters": 2459.0
+  },
+  "machine": {
+    "median_s": 2.71,
+    "mean_s": 2.9853,
+    "pages": 25,
+    "source": "reports/p13_cache.json (13.6 cold run)"
+  },
+  "pass_rate": {
+    "end_to_end": 0.1914,
+    "from_gold_ir": 0.784,
+    "by_source": {
+      "fa_bresler": 0.0,
+      "hdbpmn": 0.2719
+    },
+    "source": "reports/error_propagation.json"
+  },
+  "headline": {
+    "arm": "default",
+    "parameters": {
+      "seconds_per_node": 3.0,
+      "seconds_per_edge": 2.0,
+      "chars_per_minute": 200.0,
+      "verification_factor": 1.3,
+      "review_seconds": 45.0,
+      "repair_seconds": 240.0
+    },
+    "human_seconds": 1017.2,
+    "machine_seconds_if_correct": 47.7,
+    "machine_seconds_expected": 241.8,
+    "speedup_if_correct": 21.32,
+    "speedup_expected": 4.21,
+    "pass_rate_used": 0.1914,
+    "break_even_pass_rate": -3.0397
+  },
+  "sensitivity": [
+    {
+      "arm": "default",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 240.0
+      },
+      "human_seconds": 1017.2,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 241.8,
+      "speedup_if_correct": 21.32,
+      "speedup_expected": 4.21,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -3.0397
+    },
+    {
+      "arm": "fast_typist_300cpm",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 300.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 240.0
+      },
+      "human_seconds": 711.1,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 241.8,
+      "speedup_if_correct": 14.9,
+      "speedup_expected": 2.94,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -1.7641
+    },
+    {
+      "arm": "slow_typist_120cpm",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 120.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 240.0
+      },
+      "human_seconds": 1629.5,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 241.8,
+      "speedup_if_correct": 34.16,
+      "speedup_expected": 6.74,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -5.591
+    },
+    {
+      "arm": "quick_reader",
+      "parameters": {
+        "seconds_per_node": 1.5,
+        "seconds_per_edge": 1.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 240.0
+      },
+      "human_seconds": 967.9,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 241.8,
+      "speedup_if_correct": 20.29,
+      "speedup_expected": 4.0,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -2.8339
+    },
+    {
+      "arm": "careful_reader",
+      "parameters": {
+        "seconds_per_node": 6.0,
+        "seconds_per_edge": 4.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 240.0
+      },
+      "human_seconds": 1116.0,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 241.8,
+      "speedup_if_correct": 23.39,
+      "speedup_expected": 4.62,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -3.4514
+    },
+    {
+      "arm": "cheap_repair_60s",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 60.0
+      },
+      "human_seconds": 1017.2,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 96.2,
+      "speedup_if_correct": 21.32,
+      "speedup_expected": 10.57,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -15.159
+    },
+    {
+      "arm": "expensive_repair_600s",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 600.0
+      },
+      "human_seconds": 1017.2,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 532.9,
+      "speedup_if_correct": 21.32,
+      "speedup_expected": 1.91,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": -0.6159
+    },
+    {
+      "arm": "repair_equals_rewrite",
+      "parameters": {
+        "seconds_per_node": 3.0,
+        "seconds_per_edge": 2.0,
+        "chars_per_minute": 200.0,
+        "verification_factor": 1.3,
+        "review_seconds": 45.0,
+        "repair_seconds": 1021.1500000000001
+      },
+      "human_seconds": 1017.2,
+      "machine_seconds_if_correct": 47.7,
+      "machine_seconds_expected": 873.4,
+      "speedup_if_correct": 21.32,
+      "speedup_expected": 1.16,
+      "pass_rate_used": 0.1914,
+      "break_even_pass_rate": 0.0505
+    }
+  ],
+  "protocol_for_a_real_study": [
+    "10 participants who can write Python, none of them the author",
+    "8 diagrams each from the held-out test split, stratified by node count, order counterbalanced so fatigue does not land on the same pages",
+    "timed from first sight of the photograph to a program that passes 12.3.3's functional test for that diagram - the same test the pipeline is scored by",
+    "record think-aloud only after the timed run, so it does not slow the timing",
+    "report per-participant medians and the spread, never a single mean"
+  ]
+}
