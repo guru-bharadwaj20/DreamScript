@@ -136,13 +136,13 @@
       "stage": "classify",
       "model": "NB pipeline router",
       "metric": "test accuracy",
-      "value": null,
+      "value": 1.0,
       "target": null,
       "higher_is_better": true,
       "passes": null,
       "criterion": null,
-      "provenance": "reports/stagewise.json:classify.router.accuracy",
-      "available": false
+      "provenance": "reports/stagewise.json:classify.models.router.accuracy",
+      "available": true
     },
     {
       "stage": "detect",
@@ -664,25 +664,25 @@
       "stage": "classify",
       "model": "handcrafted logreg (14.2 rerun)",
       "metric": "macro F1",
-      "value": null,
+      "value": 0.9965,
       "target": null,
       "higher_is_better": true,
       "passes": null,
       "criterion": null,
-      "provenance": "reports/stagewise.json:classify.logreg.macro_f1",
-      "available": false
+      "provenance": "reports/stagewise.json:classify.models.logreg.macro_f1",
+      "available": true
     },
     {
       "stage": "classify",
       "model": "embedding SVM (14.2 rerun)",
       "metric": "macro F1",
-      "value": null,
+      "value": 1.0,
       "target": null,
       "higher_is_better": true,
       "passes": null,
       "criterion": null,
-      "provenance": "reports/stagewise.json:classify.embedding_svm.macro_f1",
-      "available": false
+      "provenance": "reports/stagewise.json:classify.models.embedding_svm.macro_f1",
+      "available": true
     }
   ]
 }

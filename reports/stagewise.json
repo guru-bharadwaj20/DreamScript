@@ -1,0 +1,196 @@
+{
+  "classify": {
+    "input": "raw page (no upstream)",
+    "published": {
+      "s1_accuracy": 0.9871,
+      "s1_rows": 1340,
+      "provenance": "reports/s1_heldout_scribes.json"
+    },
+    "models": {
+      "majority": {
+        "features": "33 handcrafted (4.2.1)",
+        "accuracy": 0.5094,
+        "accuracy_std": 0.0,
+        "macro_f1": 0.3375,
+        "macro_f1_std": 0.0,
+        "worst_repeat_accuracy": 0.5094,
+        "seeds": [
+          42,
+          43,
+          44
+        ]
+      },
+      "logreg": {
+        "features": "33 handcrafted (4.2.1)",
+        "accuracy": 0.9965,
+        "accuracy_std": 0.0006,
+        "macro_f1": 0.9965,
+        "macro_f1_std": 0.0006,
+        "worst_repeat_accuracy": 0.9958,
+        "seeds": [
+          42,
+          43,
+          44
+        ]
+      },
+      "knn": {
+        "features": "33 handcrafted (4.2.1)",
+        "accuracy": 0.9928,
+        "accuracy_std": 0.0009,
+        "macro_f1": 0.9928,
+        "macro_f1_std": 0.0009,
+        "worst_repeat_accuracy": 0.9916,
+        "seeds": [
+          42,
+          43,
+          44
+        ]
+      },
+      "tree": {
+        "features": "33 handcrafted (4.2.1)",
+        "accuracy": 0.9933,
+        "accuracy_std": 0.0003,
+        "macro_f1": 0.9933,
+        "macro_f1_std": 0.0003,
+        "worst_repeat_accuracy": 0.993,
+        "seeds": [
+          42,
+          43,
+          44
+        ]
+      },
+      "embedding_svm": {
+        "features": "CLIP ViT-B/32 grayscale, 128 PCA components",
+        "accuracy": 1.0,
+        "accuracy_std": 0.0,
+        "macro_f1": 1.0,
+        "macro_f1_std": 0.0,
+        "worst_repeat_accuracy": 1.0,
+        "seeds": [
+          42,
+          43,
+          44
+        ]
+      },
+      "router": {
+        "features": "detector class histogram (13.3 naive Bayes)",
+        "accuracy": 1.0,
+        "n": 162,
+        "by_type": {
+          "flowchart": {
+            "n": 114,
+            "accuracy": 1.0
+          },
+          "state_machine": {
+            "n": 48,
+            "accuracy": 1.0
+          }
+        },
+        "note": "two classes only; the router's label space is the pipeline's, not Phase 5's"
+      }
+    },
+    "corpus": {
+      "corpus": "real",
+      "rows": 1435,
+      "features": 33,
+      "classes": {
+        "flowchart": 704,
+        "wireframe": 731
+      },
+      "groups": 838,
+      "rows_with_a_known_scribe": 704,
+      "minority_share": 0.4906
+    },
+    "fit_seconds": 14.8
+  },
+  "detect": {
+    "input": "raw page (no upstream)",
+    "models": {
+      "yolo_components": {
+        "map50": 0.9107,
+        "hand_drawn_map50": 0.8787,
+        "pages": 308,
+        "target": 0.8,
+        "provenance": "reports/s2_component_detection.json"
+      },
+      "yolov8m_pose_arrows": {
+        "box_map50": 0.8446,
+        "pose_map50": 0.9356,
+        "epochs": 150,
+        "provenance": "experiments/detect/arrows/train_pose_m.json"
+      }
+    }
+  },
+  "ocr": {
+    "input": "annotated label crops (9.3.1 protocol, writer-disjoint val)",
+    "models": {
+      "trocr_large_selected": {
+        "cer": 0.2006,
+        "exact_match": 0.6656,
+        "wer": 0.264,
+        "crops": 2835,
+        "target": 0.15,
+        "provenance": "reports/s3_label_ocr.json"
+      },
+      "trocr_large_old_selection": {
+        "cer": 0.2133,
+        "provenance": "reports/s3_label_ocr_large.json"
+      }
+    }
+  },
+  "parse": {
+    "input": "ground-truth IR sequences (gold nodes and edges)",
+    "models": {
+      "hmm_roles": {
+        "macro_f1": 0.8003,
+        "accuracy": 0.7873,
+        "sequences": 993,
+        "target": 0.8,
+        "provenance": "reports/s4_role_labelling.json"
+      }
+    }
+  },
+  "assemble": {
+    "input": "predicted detections and predicted text (no gold upstream available)",
+    "note": "the only stage whose canonical scorer already runs on predicted input; 14.3 prices what that costs against the gold-IR codegen number below",
+    "models": {
+      "assembly_test": {
+        "median_ged": 13.0,
+        "mean_ged": 15.512,
+        "pass_share": 0.2593,
+        "pages": 162,
+        "target": 3.0,
+        "provenance": "reports/s5_test_large.json"
+      },
+      "assembly_val": {
+        "median_ged": 3.0,
+        "provenance": "reports/s5_graph_ged.json"
+      }
+    }
+  },
+  "codegen": {
+    "input": "ground-truth IR + traversal (12.1.1 pairs), never a predicted graph",
+    "models": {
+      "lora_r64": {
+        "functional": 0.7037,
+        "executes": 0.9877,
+        "syntax": 0.9938,
+        "structural": 0.8263,
+        "n": 162,
+        "provenance": "experiments/llm/quality/done.json"
+      },
+      "reference_emitter": {
+        "functional": 0.784,
+        "provenance": "experiments/llm/quality/done.json"
+      },
+      "zero_shot": {
+        "functional": 0.0309,
+        "provenance": "experiments/llm/compare/done.json"
+      },
+      "few_shot_k2": {
+        "functional": 0.3951,
+        "provenance": "experiments/llm/compare/done.json"
+      }
+    }
+  }
+}

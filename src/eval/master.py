@@ -198,7 +198,7 @@ ROWS: tuple[Row, ...] = (
     Row("classify", "handcrafted tree", "macro F1", MdCell(CLFREPORT, "model", "tree", "macro F1")),
     Row("classify", "handcrafted tree", "balanced accuracy", MdCell(CLFREPORT, "model", "tree", "balanced accuracy")),
     Row("classify", "majority baseline", "macro F1", MdCell(CLFREPORT, "model", "majority", "macro F1")),
-    Row("classify", "NB pipeline router", "test accuracy", Json(STAGEWISE, "classify", "router", "accuracy")),
+    Row("classify", "NB pipeline router", "test accuracy", Json(STAGEWISE, "classify", "models", "router", "accuracy")),
     # ---- Stage 2: component detection --------------------------------------------------
     Row("detect", "YOLO component detector", "mAP@0.5", Json(S2, "map50"), 0.80, criterion="S2"),
     Row("detect", "YOLO component detector", "hand-drawn mAP@0.5", Json(S2, "hand_drawn_map50")),
@@ -249,8 +249,8 @@ ROWS: tuple[Row, ...] = (
     Row("pipeline", "DreamScriptPipeline (golden, cold)", "median s", Json(CACHE, "cold", "median_s"), 10.0, higher_is_better=False, criterion="S8"),
     Row("pipeline", "DreamScriptPipeline (golden)", "pages producing code", Json(GOLDEN, "rate")),
     # ---- 14.2's stage-wise rerun, read if it exists -------------------------------------
-    Row("classify", "handcrafted logreg (14.2 rerun)", "macro F1", Json(STAGEWISE, "classify", "logreg", "macro_f1")),
-    Row("classify", "embedding SVM (14.2 rerun)", "macro F1", Json(STAGEWISE, "classify", "embedding_svm", "macro_f1")),
+    Row("classify", "handcrafted logreg (14.2 rerun)", "macro F1", Json(STAGEWISE, "classify", "models", "logreg", "macro_f1")),
+    Row("classify", "embedding SVM (14.2 rerun)", "macro F1", Json(STAGEWISE, "classify", "models", "embedding_svm", "macro_f1")),
 )
 
 NOT_DURABLE: tuple[tuple[str, str], ...] = (
