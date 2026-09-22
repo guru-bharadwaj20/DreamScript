@@ -1,0 +1,132 @@
+{
+  "protocol": {
+    "sampling": "percentile bootstrap over items, 10000 resamples, seed 20260922",
+    "seeds": "read from the criterion's own repeats; never estimated where absent"
+  },
+  "s1_classification": {
+    "metric": "diagram-type accuracy",
+    "point": 0.9871,
+    "target": 0.92,
+    "source": "reports/s1_heldout_scribes.json",
+    "seeds": 3,
+    "seed_mean": 0.9871,
+    "seed_std": 0.001,
+    "seed_min": 0.9858,
+    "seed_max": 0.9881,
+    "seed_interval": [
+      0.9858,
+      0.9881
+    ]
+  },
+  "s4_roles": {
+    "metric": "role macro F1",
+    "point": 0.8003,
+    "target": 0.8,
+    "source": "reports/s4_role_labelling.json",
+    "seeds": 10,
+    "seed_mean": 0.8003,
+    "seed_std": 0.001,
+    "seed_min": 0.7989,
+    "seed_max": 0.8024,
+    "seed_interval": [
+      0.7989,
+      0.8024
+    ]
+  },
+  "s3_ocr": {
+    "metric": "label OCR CER (val)",
+    "target": 0.15,
+    "published": 0.2006,
+    "per_crop_file_reproduces_published": true,
+    "seed_variance": "single run - S3 reports one training run per arm",
+    "source": "rescored from trocr_large + reports/s3_label_ocr.json",
+    "cer": {
+      "point": 0.2006,
+      "ci95": [
+        0.1886,
+        0.2153
+      ],
+      "half_width": 0.0134,
+      "items": 2835,
+      "resamples": 400,
+      "seed": 20260922
+    }
+  },
+  "s5_assembly": {
+    "metric": "median graph edit distance (test)",
+    "target": 3.0,
+    "median_ged": {
+      "point": 13.0,
+      "ci95": [
+        9.0,
+        16.0
+      ],
+      "half_width": 3.5,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    },
+    "pass_share": {
+      "point": 0.2593,
+      "ci95": [
+        0.1914,
+        0.3272
+      ],
+      "half_width": 0.0679,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    },
+    "seed_variance": "single run - S5 has no seeded repeats",
+    "source": "reports/s5_test_large.json"
+  },
+  "end_to_end": {
+    "metric": "functional pass@1 by rung (test)",
+    "source": "reports/error_propagation.json",
+    "seed_variance": "single run - the emitter is deterministic, so there is no seed",
+    "gold": {
+      "point": 0.784,
+      "ci95": [
+        0.716,
+        0.8457
+      ],
+      "half_width": 0.0648,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    },
+    "gold_structure": {
+      "point": 0.6543,
+      "ci95": [
+        0.5802,
+        0.7284
+      ],
+      "half_width": 0.0741,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    },
+    "gold_text": {
+      "point": 0.2284,
+      "ci95": [
+        0.1667,
+        0.2963
+      ],
+      "half_width": 0.0648,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    },
+    "predicted": {
+      "point": 0.1914,
+      "ci95": [
+        0.1358,
+        0.2531
+      ],
+      "half_width": 0.0586,
+      "items": 162,
+      "resamples": 10000,
+      "seed": 20260922
+    }
+  }
+}

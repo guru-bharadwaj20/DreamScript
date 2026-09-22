@@ -133,14 +133,16 @@ def classification_loso(model: str = "logreg", limit: int | None = None) -> dict
     }
 
 
-def ocr_per_writer(rescore: bool = True) -> dict:
-    """S3's val crops grouped by writer, from a rescore that must reproduce the published CER."""
-    from src.ocr.metrics import score
+def incumbent_predictions(rescore: bool = True):
+    """(truths, predictions, frame, source) for S3's val crops.
+
+    Shared with 14.10, which needs the same crops and the same provenance question: a per-crop
+    file on disk belongs to whichever run wrote it last, so a caller that wants the incumbent
+    has to ask for the rescore and then check the aggregate itself.
+    """
     from src.ocr.s3 import split
 
-    published = json.loads(S3_REPORT.read_text(encoding="utf-8")) if S3_REPORT.is_file() else {}
     files, truths, frame = split("val")
-
     if rescore:
         import torch
         from transformers import TrOCRProcessor, VisionEncoderDecoderModel
@@ -157,7 +159,15 @@ def ocr_per_writer(rescore: bool = True) -> dict:
         lookup = dict(zip(stored["files"], stored["predictions"], strict=True))
         predictions = [lookup.get(name, "") for name in frame["file"]]
         source = "experiments/ocr/s3_val.json (stored predictions)"
+    return list(truths), list(predictions), frame, source
 
+
+def ocr_per_writer(rescore: bool = True) -> dict:
+    """S3's val crops grouped by writer, from a rescore that must reproduce the published CER."""
+    from src.ocr.metrics import score
+
+    published = json.loads(S3_REPORT.read_text(encoding="utf-8")) if S3_REPORT.is_file() else {}
+    truths, predictions, frame, source = incumbent_predictions(rescore)
     aggregate = score(list(truths), list(predictions))
     entry: dict[str, Any] = {
         "source": source,
