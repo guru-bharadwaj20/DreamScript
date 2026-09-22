@@ -4,3 +4,4 @@ outs:
   nfiles: 198
   hash: md5
   path: cghd_extracted
+  remote: raw

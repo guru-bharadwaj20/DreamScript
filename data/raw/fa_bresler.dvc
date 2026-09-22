@@ -4,3 +4,4 @@ outs:
   nfiles: 607
   hash: md5
   path: fa_bresler
+  remote: raw

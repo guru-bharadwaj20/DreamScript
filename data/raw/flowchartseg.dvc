@@ -4,3 +4,4 @@ outs:
   nfiles: 10
   hash: md5
   path: flowchartseg
+  remote: raw

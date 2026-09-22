@@ -4,3 +4,4 @@ outs:
   nfiles: 19668
   hash: md5
   path: didi
+  remote: raw

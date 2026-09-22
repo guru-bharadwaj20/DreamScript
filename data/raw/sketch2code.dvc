@@ -4,3 +4,4 @@ outs:
   nfiles: 3406
   hash: md5
   path: sketch2code
+  remote: raw

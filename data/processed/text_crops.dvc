@@ -4,3 +4,4 @@ outs:
   nfiles: 16126
   hash: md5
   path: text_crops
+  remote: processed

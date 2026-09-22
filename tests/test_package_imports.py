@@ -30,6 +30,8 @@ PACKAGES = [
     "src.llm",
     "src.synth",
     "src.eval",
+    "src.pipeline",
+    "src.mlops",
     "src.serve",
     "src.utils",
 ]

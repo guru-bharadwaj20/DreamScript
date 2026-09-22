@@ -4,3 +4,4 @@ outs:
   nfiles: 262
   hash: md5
   path: chaos
+  remote: raw

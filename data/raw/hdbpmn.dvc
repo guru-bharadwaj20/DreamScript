@@ -4,3 +4,4 @@ outs:
   nfiles: 2119
   hash: md5
   path: hdbpmn
+  remote: raw

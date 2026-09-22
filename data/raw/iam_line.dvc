@@ -4,3 +4,4 @@ outs:
   nfiles: 12
   hash: md5
   path: iam_line
+  remote: raw

@@ -4,3 +4,4 @@ outs:
   nfiles: 2796
   hash: md5
   path: ir
+  remote: processed

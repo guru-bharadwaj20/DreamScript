@@ -7,16 +7,41 @@ __pycache__/
 .ipynb_checkpoints/
 
 # --- data: tracked by DVC, never committed raw ------------------------------
-# The contents stay out of git; the .dvc pointer files are exactly what git *should*
-# carry, so they are re-included below.
-data/raw/*
-data/interim/*
-data/processed/*
-data/features/*
-!data/raw/*.dvc
-!data/interim/*.dvc
-!data/processed/*.dvc
-!data/features/*.dvc
+# Payload paths are listed **by name**, one per line, rather than with a `data/<tier>/*`
+# wildcard plus a `!*.dvc` negation, and rather than with `data/<tier>/*/`. Both of those
+# shorter forms are read differently by git and by DVC's own walk: git honours the
+# negation and does not treat `data/processed/` as ignored, while DVC's matcher does -
+# so `dvc status` and `dvc repro` reported "no data or pipelines tracked" while a
+# targeted `dvc push` worked, which is how an empty remote went unnoticed once already.
+# A payload directory added later will show up in `git status` instead of vanishing
+# silently, which is the safer failure.
+data/raw/fa_bresler/
+data/raw/flowchartseg/
+data/raw/hdbpmn/
+data/raw/sketch2code/
+data/interim/edge_text/
+data/interim/node_text/
+data/interim/p13_golden/
+data/interim/page_text/
+data/interim/phashes.parquet
+data/interim/pipeline_cache/
+data/interim/primitives_detect/
+data/interim/state_text/
+data/processed/arrows/
+data/processed/codegen/
+data/processed/detect/
+data/processed/fa_render/
+data/processed/flowchartseg_images/
+data/processed/ir/
+data/processed/label_crops/
+data/processed/manifest.parquet
+data/processed/text_crops/
+data/features/descriptors.parquet
+data/features/embeddings.npy
+data/features/embeddings_index.parquet
+data/features/embeddings_meta.json
+data/features/embeddings_pca128.npy
+data/features/handcrafted.parquet
 
 # --- experiment outputs -----------------------------------------------------
 experiments/*

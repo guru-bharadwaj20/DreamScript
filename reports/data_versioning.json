@@ -1,0 +1,116 @@
+{
+  "remotes": {
+    "local": "C:/Users/Temp/dreamscript-dvc-store",
+    "raw": "C:/Users/Temp/dreamscript-dvc-store/raw",
+    "interim": "C:/Users/Temp/dreamscript-dvc-store/interim",
+    "processed": "C:/Users/Temp/dreamscript-dvc-store/processed"
+  },
+  "tracked": [
+    {
+      "path": "data/raw",
+      "reason": "source corpora; re-downloading is not reproducible and some sources are gone",
+      "exists": true,
+      "megabytes": 1455.4,
+      "pointer": null
+    },
+    {
+      "path": "data/processed/ir",
+      "reason": "the annotated graphs - the ground truth every criterion is scored on",
+      "exists": true,
+      "megabytes": 86.0,
+      "pointer": "ir.dvc"
+    },
+    {
+      "path": "data/processed/label_crops",
+      "reason": "9.3.1's crops, built by a CRAFT pass that costs GPU time",
+      "exists": true,
+      "megabytes": 66.9,
+      "pointer": "label_crops.dvc"
+    },
+    {
+      "path": "data/processed/text_crops",
+      "reason": "the OCR training corpus",
+      "exists": true,
+      "megabytes": 59.1,
+      "pointer": "text_crops.dvc"
+    },
+    {
+      "path": "data/processed/manifest.parquet",
+      "reason": "the split assignment; regenerating it would reshuffle it",
+      "exists": true,
+      "megabytes": 0.0,
+      "pointer": "manifest.parquet.dvc"
+    },
+    {
+      "path": "data/features/handcrafted.parquet",
+      "reason": "4.2's feature table, 2.5 pages a second to rebuild",
+      "exists": true,
+      "megabytes": 0.2,
+      "pointer": "handcrafted.parquet.dvc"
+    }
+  ],
+  "not_tracked": [
+    {
+      "path": "data/processed/codegen/synthetic",
+      "reason": "deterministic from a seed - 12.1.4 rebuilds 12,000 renders in 64.5 s, so a remote would store what a command reproduces",
+      "exists": true,
+      "megabytes": 649.9
+    },
+    {
+      "path": "data/processed/detect",
+      "reason": "the YOLO image tree, regenerated from the IR and the raw pages",
+      "exists": true,
+      "megabytes": 1054.8
+    },
+    {
+      "path": "data/processed/arrows",
+      "reason": "the arrow-detector dataset, likewise regenerated",
+      "exists": true,
+      "megabytes": 964.0
+    },
+    {
+      "path": "data/interim/pipeline_cache",
+      "reason": "13.6's cache - volatile by design and keyed on a code digest",
+      "exists": true,
+      "megabytes": 0.8
+    },
+    {
+      "path": "data/interim/primitives_detect",
+      "reason": "intermediate primitives, rebuilt by the preprocessing stage",
+      "exists": true,
+      "megabytes": 125.9
+    }
+  ],
+  "durability_note": "the remotes are local directories on the same machine as the workspace; that satisfies DVC's push/pull contract but is not off-machine durability, and the loss this row responds to happened on this machine",
+  "store": {
+    "raw": {
+      "exit_code": 0,
+      "up_to_date": true,
+      "missing_entries": 0,
+      "sample": []
+    },
+    "interim": {
+      "exit_code": 0,
+      "up_to_date": true,
+      "missing_entries": 0,
+      "sample": []
+    },
+    "processed": {
+      "exit_code": 0,
+      "up_to_date": true,
+      "missing_entries": 0,
+      "sample": []
+    }
+  },
+  "pointers_without_a_payload": [
+    "data/raw/cghd_extracted",
+    "data/raw/chaos",
+    "data/raw/didi",
+    "data/raw/iam_line"
+  ],
+  "totals": {
+    "tracked_megabytes": 1667.6,
+    "not_tracked_megabytes": 2795.4,
+    "tracked_paths": 6
+  }
+}

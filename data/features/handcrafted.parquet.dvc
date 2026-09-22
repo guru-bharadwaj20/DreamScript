@@ -3,3 +3,4 @@ outs:
   size: 215271
   hash: md5
   path: handcrafted.parquet
+  remote: processed
