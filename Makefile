@@ -23,7 +23,7 @@ OVERRIDES ?=
 .DEFAULT_GOAL := help
 .PHONY: help env verify verify-gpu verify-cv verify-classical verify-genai determinism \
         test test-fast lint format data preprocess features train-clf train-nn train-ens \
-        detect ocr parse rl finetune eval app serve clean clean-experiments
+        detect ocr parse rl finetune eval app serve clean clean-experiments repro dag
 
 ## -- environment -------------------------------------------------------------
 
@@ -125,3 +125,11 @@ clean:  ## remove caches and build artifacts
 
 clean-experiments:  ## delete every run directory (irreversible)
 	rm -rf experiments/*/
+
+## -- pipeline DAG (Phase 15.4) ------------------------------------------------
+
+repro:  ## Phase 15.4 — run the DVC DAG with the project venv on PATH
+	PATH="$(CURDIR)/$(dir $(PY)):$$PATH" $(PY) -m dvc repro $(STAGES)
+
+dag:  ## Phase 15.4 — print the pipeline graph
+	$(PY) -m dvc dag

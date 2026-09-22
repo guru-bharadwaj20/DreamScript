@@ -101,7 +101,7 @@
       "rows_with_a_known_scribe": 704,
       "minority_share": 0.4906
     },
-    "fit_seconds": 14.8
+    "fit_seconds": 12.4
   },
   "detect": {
     "input": "raw page (no upstream)",

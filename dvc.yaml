@@ -1,0 +1,186 @@
+# Phase 15.4 - the pipeline as a DAG.
+#
+#     dvc dag                 # the graph
+#     dvc repro --dry         # what would run, in order, without running it
+#     dvc repro evaluate      # the evaluation sub-DAG, which is cheap and CPU-only
+#     dvc repro               # everything, including the GPU stages
+#
+# Two rules decide what is a stage here.
+#
+# **A stage is something with declared inputs and declared outputs.** Every stage below names
+# its deps and outs, so `dvc repro` can tell what is stale. A step whose output is a checkpoint
+# nobody can rebuild bit-for-bit (a fine-tune) is still declared, because leaving it out would
+# make the DAG a picture of half the project - but see the next rule.
+#
+# **A stage that costs GPU-hours is declared `frozen`.** `frozen: true` means DVC records the
+# dependency edge and never re-runs the command on its own; 14.11 measured the LLM sweeps at
+# 10.8 GPU-hours and the arrow detector at 3.4, and an accidental `dvc repro` that spent a day
+# re-deriving them would be a worse outcome than a stale edge. Unfreeze one deliberately
+# (`dvc freeze/unfreeze <stage>`) when it is genuinely time to retrain - which is 15.8's rule.
+#
+# The cheap half - features, embeddings, the PCA, and every Phase 14 report - is not frozen and
+# really does run end to end.
+
+# **Run these with the project environment active.** `dvc repro` hands each `cmd` to the shell
+# and does not activate anything, so a bare `python` is whatever the shell finds - and on this
+# machine an unactivated shell finds the Windows Store stub, which exits 9009 without running a
+# line. Activate first (`.venv\Scripts\activate`, or `source .venv/bin/activate`) or prepend the
+# venv to PATH; `make repro` in the Makefile does that for you. Writing the interpreter path into
+# each command would fix it here and break it on Linux, so the requirement is stated instead.
+
+# **The report outputs are declared `cache: false`.** They are small text artefacts and they are
+# the project's evidence, so they live in git history where a reader can diff them across
+# commits - and a path cannot be owned by git and by DVC's cache at once (DVC refuses to build
+# the graph at all: "output is already tracked by SCM"). `cache: false` keeps the dependency edge
+# and the staleness check, which is what the DAG is for here, and leaves the bytes to git. The
+# large binary outputs - the feature tables, the embeddings, the checkpoints - are cached, because
+# those are the ones git must not carry.
+
+stages:
+  features:
+    cmd: python -m src.features.build --all
+    deps:
+      - src/features/build.py
+      - src/features/extractor.py
+      - data/processed/manifest.parquet
+    outs:
+      - data/features/handcrafted.parquet
+    desc: Phase 4.2.2 - the 33-column handcrafted table, one row per page.
+
+  embeddings:
+    cmd: python -m src.embed.cache --build
+    deps:
+      - src/embed/cache.py
+      - src/embed/backbone.py
+      - data/features/handcrafted.parquet
+    outs:
+      - data/features/embeddings.npy
+      - data/features/embeddings_index.parquet
+      - data/features/embeddings_meta.json
+    desc: Phase 6.1.2 - CLIP ViT-B/32 over the corpus, 138.7 s on the GPU.
+
+  reduce:
+    cmd: python -m src.embed.reduce
+    deps:
+      - src/embed/reduce.py
+      - data/features/embeddings.npy
+    outs:
+      - data/features/embeddings_pca128.npy
+    desc: Phase 6.1.3 - PCA to 128 components, the width every Phase 6 model reads.
+
+  descriptors:
+    cmd: python -m src.features.descriptors --build --jobs 1
+    deps:
+      - src/features/descriptors.py
+      - data/processed/ir
+    outs:
+      - data/features/descriptors.parquet
+    # `--jobs 1` is deliberate: the parallel path kills a loky worker with an access
+    # violation on this Windows build partway through the corpus, which takes the stage's
+    # output with it. Serial is slower and finishes.
+    desc: Phase 7.4.1 - shape descriptors for the GMM, hdbpmn only, built serially.
+
+  detector:
+    cmd: python -m src.detect.train
+    deps:
+      - src/detect/train.py
+      - data/processed/detect
+    outs:
+      - experiments/detect/final
+    frozen: true
+    desc: Phase 9.1.3 - the component detector. Frozen; GPU-hours.
+
+  arrows:
+    cmd: python -m src.detect.arrows --train
+    deps:
+      - src/detect/arrows.py
+      - data/processed/arrows
+    outs:
+      - experiments/detect/arrows/pose_m
+    frozen: true
+    desc: Phase 10's arrow detector, yolov8m-pose at 150 epochs. Frozen; 3.4 GPU-hours.
+
+  ocr:
+    cmd: python -m src.ocr.s3 --train --model microsoft/trocr-large-handwritten --epochs 16
+    deps:
+      - src/ocr/s3.py
+      - data/processed/label_crops
+    outs:
+      - experiments/ocr/trocr_large
+    frozen: true
+    desc: S3's incumbent reader. Frozen; the 16-epoch fine-tune is 5,497 s.
+
+  lora:
+    cmd: python -m src.llm.run train
+    deps:
+      - src/llm/train.py
+      - src/llm/run.py
+      - configs/llm.yaml
+      - data/processed/codegen/pairs
+    outs:
+      - experiments/llm/train
+    frozen: true
+    desc: Phase 12.2.5 - the QLoRA fine-tune. Frozen; 14.11 prices Phase 12 at 10.8 GPU-hours.
+
+  stagewise:
+    cmd: python -m src.eval.stagewise
+    deps:
+      - src/eval/stagewise.py
+      - data/features/handcrafted.parquet
+      - data/features/embeddings_pca128.npy
+    outs:
+      - reports/stagewise.json:
+          cache: false
+      - reports/stagewise.md:
+          cache: false
+    desc: Phase 14.2 - every stage on the input a perfect upstream would give it.
+
+  ablation:
+    cmd: python -m src.eval.ablate
+    deps:
+      - src/eval/ablate.py
+      - data/features/descriptors.parquet
+    outs:
+      - reports/ablation_matrix.json:
+          cache: false
+      - reports/ablation_matrix.md:
+          cache: false
+    desc: Phase 14.4 - the five-component ablation matrix.
+
+  compute:
+    cmd: python -m src.eval.compute
+    deps:
+      - src/eval/compute.py
+    outs:
+      - reports/compute.json:
+          cache: false
+      - reports/compute.md:
+          cache: false
+    desc: Phase 14.11 - GPU-hours, energy and cost per phase.
+
+  humanbaseline:
+    cmd: python -m src.eval.humanbaseline
+    deps:
+      - src/eval/humanbaseline.py
+      - reports/error_propagation.json
+    outs:
+      - reports/human_baseline.json:
+          cache: false
+      - reports/human_baseline.md:
+          cache: false
+    desc: Phase 14.8 - the modelled human baseline and the speedup that survives the pass rate.
+
+  evaluate:
+    cmd: python -m src.eval.master
+    deps:
+      - src/eval/master.py
+      - reports/stagewise.json
+      - reports/ablation_matrix.json
+      - reports/compute.json
+      - reports/human_baseline.json
+    outs:
+      - reports/master_results.json:
+          cache: false
+      - reports/master_results.md:
+          cache: false
+    desc: Phase 14.1 - the master table, read from every artefact above.
