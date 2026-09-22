@@ -1,0 +1,236 @@
+{
+  "model": {
+    "board_power_w": 210.0,
+    "utilisation": 0.75,
+    "pue": 1.15,
+    "usd_per_gpu_hour": 0.5,
+    "energy_note": "modelled, not metered: hours x watts x utilisation x PUE",
+    "cost_note": "rental equivalent; the hardware is owned and nothing was paid per hour"
+  },
+  "totals": {
+    "gpu_hours": 14.728,
+    "kwh": 2.668,
+    "usd": 7.36,
+    "is_lower_bound": true,
+    "runs_recorded": 17,
+    "runs_missing_a_duration": 3
+  },
+  "by_phase": {
+    "12 - LLM": {
+      "gpu_hours": 10.829,
+      "runs": 10,
+      "unrecorded": 0,
+      "kwh": 1.961,
+      "usd": 5.41
+    },
+    "14 - evaluation": {
+      "gpu_hours": 0.2,
+      "runs": 4,
+      "unrecorded": 0,
+      "kwh": 0.036,
+      "usd": 0.1
+    },
+    "9 - OCR": {
+      "gpu_hours": 0.112,
+      "runs": 4,
+      "unrecorded": 3,
+      "kwh": 0.02,
+      "usd": 0.06
+    },
+    "9 - detection": {
+      "gpu_hours": 3.587,
+      "runs": 2,
+      "unrecorded": 0,
+      "kwh": 0.65,
+      "usd": 1.79
+    }
+  },
+  "runs": [
+    {
+      "phase": "9 - detection",
+      "run": "arrow detector, yolov8s 40 epochs",
+      "source": "experiments/detect/arrows/train.json",
+      "seconds": 744.5,
+      "gpu_hours": 0.207,
+      "recorded": true
+    },
+    {
+      "phase": "9 - detection",
+      "run": "arrow detector, yolov8m-pose 150 epochs",
+      "source": "experiments/detect/arrows/train_pose_m.json",
+      "seconds": 12169.4,
+      "gpu_hours": 3.38,
+      "recorded": true
+    },
+    {
+      "phase": "9 - OCR",
+      "run": "trocr_large, 16 epochs",
+      "source": "reports/s3_label_ocr_large.json",
+      "seconds": null,
+      "gpu_hours": null,
+      "recorded": false
+    },
+    {
+      "phase": "9 - OCR",
+      "run": "trocr_large, 28 epochs",
+      "source": "reports/s3_label_ocr_large28.json",
+      "seconds": null,
+      "gpu_hours": null,
+      "recorded": false
+    },
+    {
+      "phase": "9 - OCR",
+      "run": "trocr, strong augmentation",
+      "source": "reports/s3_label_ocr_aug.json",
+      "seconds": null,
+      "gpu_hours": null,
+      "recorded": false
+    },
+    {
+      "phase": "9 - OCR",
+      "run": "trocr_fa specialist",
+      "source": "reports/s3_fa_specialist.json",
+      "seconds": 402.9,
+      "gpu_hours": 0.112,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "base-model benchmark",
+      "source": "experiments/llm/benchmark/done.json",
+      "seconds": 8365.4,
+      "gpu_hours": 2.324,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "LoRA rank sweep",
+      "source": "experiments/llm/lora_sweep/done.json",
+      "seconds": 6410.0,
+      "gpu_hours": 1.781,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "hyperparameter sweep",
+      "source": "experiments/llm/hparam_sweep/done.json",
+      "seconds": 9059.9,
+      "gpu_hours": 2.517,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "final training run",
+      "source": "experiments/llm/train/done.json",
+      "seconds": 2819.0,
+      "gpu_hours": 0.783,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "three-way comparison",
+      "source": "experiments/llm/compare/done.json",
+      "seconds": 8342.5,
+      "gpu_hours": 2.317,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "quality scoring",
+      "source": "experiments/llm/quality/done.json",
+      "seconds": 53.9,
+      "gpu_hours": 0.015,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "repair loop",
+      "source": "experiments/llm/repair/done.json",
+      "seconds": 2049.2,
+      "gpu_hours": 0.569,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "latency study",
+      "source": "experiments/llm/latency/done.json",
+      "seconds": 1642.9,
+      "gpu_hours": 0.456,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "merge and export",
+      "source": "experiments/llm/export/done.json",
+      "seconds": 218.4,
+      "gpu_hours": 0.061,
+      "recorded": true
+    },
+    {
+      "phase": "12 - LLM",
+      "run": "similarity scoring",
+      "source": "experiments/llm/similarity/done.json",
+      "seconds": 20.7,
+      "gpu_hours": 0.006,
+      "recorded": true
+    },
+    {
+      "phase": "14 - evaluation",
+      "run": "error propagation ladder",
+      "source": "reports/error_propagation.json",
+      "seconds": 305.6,
+      "gpu_hours": 0.085,
+      "recorded": true
+    },
+    {
+      "phase": "14 - evaluation",
+      "run": "robustness sweep",
+      "source": "reports/robustness_pipeline.json",
+      "seconds": 326.6,
+      "gpu_hours": 0.091,
+      "recorded": true
+    },
+    {
+      "phase": "14 - evaluation",
+      "run": "unseen-type study",
+      "source": "reports/unseen_type.json",
+      "seconds": 82.1,
+      "gpu_hours": 0.023,
+      "recorded": true
+    },
+    {
+      "phase": "14 - evaluation",
+      "run": "ablation matrix re-fits",
+      "source": "reports/ablation_matrix.json",
+      "seconds": 3.8,
+      "gpu_hours": 0.001,
+      "recorded": true
+    }
+  ],
+  "unrecorded": [
+    {
+      "phase": "9 - OCR",
+      "what": "the three trocr_large fine-tunes (16 epochs, 28 epochs, strong augmentation). No artefact carries their duration; the plan's S3 row records 5,497 s for the 16-epoch run in prose, and the other two ran the same schedule, so roughly 4.5 GPU-hours sit outside this table - named here rather than typed into it"
+    },
+    {
+      "phase": "9 - detection",
+      "what": "the component detector's own training (experiments/detect/train.json keeps no duration)"
+    },
+    {
+      "phase": "9 - OCR",
+      "what": "the CRNN generation of 9.3 - four architectures, no duration kept"
+    },
+    {
+      "phase": "5-8 - classical",
+      "what": "every classifier, ensemble, HMM and clustering sweep - artefacts lost with the DVC store"
+    },
+    {
+      "phase": "11 - RL",
+      "what": "Q-learning, SARSA and DQN training across three seeds"
+    },
+    {
+      "phase": "1-3 - data",
+      "what": "corpus rebuild, rendering and preprocessing"
+    }
+  ]
+}
