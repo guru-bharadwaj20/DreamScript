@@ -129,3 +129,55 @@ jobs:
         # trained with no dataset present. This proves the training path imports, fits and scores
         # on CPU - not that any metric is good, which needs the corpus and is 15.12's job.
         run: python -m src.mlops.smoke --check
+
+  image:
+    name: docker build + container health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: reclaim disk for a CUDA image
+        # The base is `nvidia/cuda:12.4.1-runtime` and the torch layer is the `+cu124` wheel set:
+        # together they do not fit beside the runner's preinstalled toolchains. Removing what this
+        # job provably does not use (dotnet, Android, GHC, the preloaded image cache) is the
+        # difference between a build and a "no space left on device" at the last layer.
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost /usr/share/swift "$AGENT_TOOLSDIRECTORY" || true
+          sudo docker image prune -af || true
+          df -h /
+
+      - name: the compose file parses and says what it claims
+        # Parsing is not the same as being correct, so this also asserts the two properties the
+        # row argues for: `model` starts by default and `app` does not, because app/backend and
+        # app/frontend hold only .gitkeep until Phase 16.
+        run: |
+          docker compose config >/dev/null
+          test "$(docker compose config --services)" = "model"
+          docker compose --profile app config --services | grep -qx app
+
+      - name: build the serve target
+        # `target: serve` is what compose builds, so it is what CI builds. No push: this job
+        # proves the image exists and runs, not that a registry has it.
+        run: docker build --target serve -t dreamscript/model:ci .
+
+      - name: the image is not root and imports its entry point
+        run: |
+          test "$(docker run --rm dreamscript/model:ci id -u)" = "10001"
+          docker run --rm dreamscript/model:ci python -c "import cv2, torch; print(cv2.__version__, torch.__version__)"
+
+      - name: the container serves /health
+        # The whole point of 15.11's /health not loading the model: it answers on a runner with no
+        # GPU and no weights mounted. If it ever starts loading the checkpoint, this step is where
+        # that regression shows up rather than in a container that restart-loops in production.
+        run: |
+          docker run -d --name model -p 8000:8000 dreamscript/model:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then echo; ok=1; break; fi
+            sleep 2
+          done
+          docker logs model
+          test "${ok:-0}" = "1"
+          curl -fsS http://127.0.0.1:8000/version; echo
+          docker rm -f model
