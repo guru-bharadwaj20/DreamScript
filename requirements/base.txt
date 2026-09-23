@@ -27,3 +27,8 @@ pydantic==2.13.5       # src/pipeline/contracts.py
 joblib==1.6.0          # src/classify/torchnet.py and the sklearn stages' model persistence
 hypothesis==6.168.0    # tests/test_pipeline_fuzz.py
 psutil==7.2.2          # tests/test_rl_sandbox.py
+
+# Moved here from dev.txt: tests/test_preprocess_exif.py needs it, and CI installs the runtime
+# layers rather than the developer tooling, so a test dependency parked in dev.txt is a test that
+# never runs on a runner. One pin, in the layer that actually requires it.
+piexif==1.1.3
