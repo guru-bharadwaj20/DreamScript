@@ -263,7 +263,9 @@ def collect(with_pixels: bool = True) -> dict[str, Any]:
     if with_pixels:
         arms["new_drawing_style"] = arm_new_drawing_style(frame)
     controls = [arms["null"], arms["self"]]
-    shifts = [a for k, a in arms.items() if k not in ("null", "self") and a.get("passes") is not None]
+    shifts = [
+        a for k, a in arms.items() if k not in ("null", "self") and a.get("passes") is not None
+    ]
     return {
         "what": "15.5 - PSI / KS drift detection, with the controls that make an alarm mean something",
         "table": {"path": "data/features/handcrafted.parquet", "rows": int(len(frame))},

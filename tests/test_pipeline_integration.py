@@ -57,7 +57,10 @@ def test_a_stage_that_raises_becomes_a_stop_not_a_traceback():
     pipeline = DreamScriptPipeline()
     result = Result(source="x.png")
     value = pipeline._stage(
-        result, "detect", "k", lambda: (_ for _ in ()).throw(RuntimeError("card fell out")),
+        result,
+        "detect",
+        "k",
+        lambda: (_ for _ in ()).throw(RuntimeError("card fell out")),
         cache=False,
     )
     assert value is None
@@ -215,9 +218,9 @@ def test_the_golden_set_is_the_shape_it_claims(golden):
 @pytest.mark.slow
 def test_every_golden_page_produces_code_or_a_reason(golden_results):
     for result in golden_results:
-        assert result.ok or result.stopped_at or result.needs_confirmation, (
-            f"{result.source} returned neither code nor a reason"
-        )
+        assert (
+            result.ok or result.stopped_at or result.needs_confirmation
+        ), f"{result.source} returned neither code nor a reason"
 
 
 @pytest.mark.gpu
@@ -226,9 +229,9 @@ def test_generated_code_parses_when_it_is_produced(golden_results):
     produced = [r for r in golden_results if r.ok]
     assert produced, "no golden page produced code at all"
     verified = [r for r in produced if r.stages[-1].name == "verify" and r.stages[-1].ok]
-    assert len(verified) / len(produced) >= 0.95, (
-        f"only {len(verified)}/{len(produced)} generated programs parse"
-    )
+    assert (
+        len(verified) / len(produced) >= 0.95
+    ), f"only {len(verified)}/{len(produced)} generated programs parse"
 
 
 @pytest.mark.gpu

@@ -68,7 +68,8 @@ def _spread(values: list[float]) -> dict[str, Any]:
         "p10": round(ordered[max(0, int(0.10 * (len(ordered) - 1)))], 4),
         "p90": round(ordered[int(0.90 * (len(ordered) - 1))], 4),
         "spread_p90_p10": round(
-            ordered[int(0.90 * (len(ordered) - 1))] - ordered[max(0, int(0.10 * (len(ordered) - 1)))],
+            ordered[int(0.90 * (len(ordered) - 1))]
+            - ordered[max(0, int(0.10 * (len(ordered) - 1)))],
             4,
         ),
     }

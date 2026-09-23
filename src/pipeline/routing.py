@@ -133,7 +133,8 @@ def route(boxes: list[dict], model_path: Path = MODEL) -> tuple[str, float]:
         return UNKNOWN, 0.0
 
     scores = {
-        kind: payload["log_prior"][kind] + float(np.dot(counts, np.array(payload["log_rate"][kind])))
+        kind: payload["log_prior"][kind]
+        + float(np.dot(counts, np.array(payload["log_rate"][kind])))
         for kind in payload["types"]
     }
     best = max(scores, key=lambda k: scores[k])

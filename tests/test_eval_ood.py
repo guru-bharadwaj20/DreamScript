@@ -77,7 +77,15 @@ def test_the_control_types_are_the_two_the_router_was_fitted_on():
 
 def test_render_states_the_headline_counts():
     rows = [_row(code_chars=500), _row(true_type="flowchart", unseen=False, code_chars=900)]
-    text = ood.render({"confidence_floor": 0.6, "corpus": "synthetic", "seconds": 1.0, **ood.summarise(rows), "rows": rows})
+    text = ood.render(
+        {
+            "confidence_floor": 0.6,
+            "corpus": "synthetic",
+            "seconds": 1.0,
+            **ood.summarise(rows),
+            "rows": rows,
+        }
+    )
     assert "confident, runnable, wrong code" in text
     assert "er_diagram" in text
 

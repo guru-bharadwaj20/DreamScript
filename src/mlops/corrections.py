@@ -53,7 +53,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -79,7 +79,7 @@ class Rejected(Exception):
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def ir_path(diagram_id: str) -> Path:
@@ -200,13 +200,9 @@ def export(rows: list[dict] | None = None, out: Path | None = None):
 
     rows = read() if rows is None else rows
     final = latest(rows)
-    bad = {
-        (r["diagram_id"], r["target"], r["target_id"], r["field"]) for r in stale(final)
-    }
+    bad = {(r["diagram_id"], r["target"], r["target_id"], r["field"]) for r in stale(final)}
     usable = [
-        r
-        for r in final
-        if (r["diagram_id"], r["target"], r["target_id"], r["field"]) not in bad
+        r for r in final if (r["diagram_id"], r["target"], r["target_id"], r["field"]) not in bad
     ]
     frame = pd.DataFrame(
         usable,
@@ -281,11 +277,13 @@ def stats(store: Path = STORE) -> dict[str, Any]:
         "by_field": dict(collections.Counter(r["field"] for r in final)),
         "by_source": dict(collections.Counter(r.get("source") for r in final)),
         "note": (
-            "no real user corrections exist yet: 16.2.8, the screen that produces them, is Phase"
-            " 16 and is not built. An empty store is reported as empty rather than seeded."
-        )
-        if not rows
-        else None,
+            (
+                "no real user corrections exist yet: 16.2.8, the screen that produces them, is Phase"
+                " 16 and is not built. An empty store is reported as empty rather than seeded."
+            )
+            if not rows
+            else None
+        ),
     }
 
 
@@ -314,9 +312,7 @@ def render(result: dict) -> str:
             "| edit | count | share |",
             "| :--- | ---: | ---: |",
         ]
-        for kind, count in sorted(
-            worth["edit_mass"].items(), key=lambda kv: -kv[1]
-        ):
+        for kind, count in sorted(worth["edit_mass"].items(), key=lambda kv: -kv[1]):
             lines.append(f"| `{kind}` | {count} | {worth['edit_share'].get(kind, 0):.1%} |")
         lines += [
             "",
@@ -359,7 +355,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.record:
         payload = Path(args.record)
-        entry = json.loads(payload.read_text(encoding="utf-8") if payload.is_file() else args.record)
+        entry = json.loads(
+            payload.read_text(encoding="utf-8") if payload.is_file() else args.record
+        )
         try:
             stored = record(entry)
         except Rejected as exc:

@@ -55,8 +55,8 @@ CHECKPOINT = ROOT / "experiments" / "ocr" / "trocr_fa"
 #: **CER 0.2133 / exact 0.6526 against `trocr_s3`'s 0.2364 / 0.6198** over the same 2,835 crops
 #: and 23 writer-disjoint evaluation writers - and because `sub_text` is more than half of
 #: hdbpmn's median GED, so this is the only remaining lever on S5.
-HDBPMN_CHECKPOINT = ROOT / "experiments" / "ocr" / os.environ.get(
-    "HDBPMN_RECOGNISER", "trocr_large"
+HDBPMN_CHECKPOINT = (
+    ROOT / "experiments" / "ocr" / os.environ.get("HDBPMN_RECOGNISER", "trocr_large")
 )
 
 #: Which recogniser reads which corpus. The split is not a preference - each model is blind to

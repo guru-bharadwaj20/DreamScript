@@ -124,9 +124,7 @@ def distribution(confidence: np.ndarray) -> dict[str, Any]:
     return {
         "n": int(len(values)),
         "mean": round(float(values.mean()), 4),
-        "percentiles": {
-            f"p{p}": round(float(np.percentile(values, p)), 4) for p in PERCENTILES
-        },
+        "percentiles": {f"p{p}": round(float(np.percentile(values, p)), 4) for p in PERCENTILES},
         "low_confidence_share": round(float((values < LOW_CONFIDENCE).mean()), 4),
     }
 
@@ -149,7 +147,9 @@ def spike(baseline_share: float, batch: np.ndarray) -> dict[str, Any]:
         "ratio_required": SPIKE_RATIO,
         "floor": SPIKE_FLOOR,
         "spiked": bool(
-            np.isfinite(share) and share >= SPIKE_FLOOR and (not np.isfinite(ratio) or ratio >= SPIKE_RATIO)
+            np.isfinite(share)
+            and share >= SPIKE_FLOOR
+            and (not np.isfinite(ratio) or ratio >= SPIKE_RATIO)
         ),
     }
 
@@ -224,7 +224,11 @@ def collect(with_pixels: bool = True) -> dict[str, Any]:
         "when_wrong": distribution(wrong),
         "controls": controls(frame, baseline) if with_pixels else {},
     }
-    arms = [a for a in result["controls"].values() if isinstance(a, dict) and a.get("passes") is not None]
+    arms = [
+        a
+        for a in result["controls"].values()
+        if isinstance(a, dict) and a.get("passes") is not None
+    ]
     result["verdict"] = {
         "controls_pass": bool(arms) and all(a["passes"] for a in arms),
         "baseline_low_confidence_share": baseline,

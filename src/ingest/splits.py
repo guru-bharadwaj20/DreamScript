@@ -28,9 +28,8 @@ exclude them.
 
 from __future__ import annotations
 
-import hashlib
-
 import argparse
+import hashlib
 import json
 import sys
 

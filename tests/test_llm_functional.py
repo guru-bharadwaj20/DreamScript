@@ -129,17 +129,18 @@ def test_a_signature_past_the_sandboxs_default_keep_cap_still_parses() -> None:
     """
     n = 26
     nodes = [
-        {"id": f"node_{i:02d}_long_identifier_text", "text": f"step number {i}",
-         "semantic_role": "process"}
+        {
+            "id": f"node_{i:02d}_long_identifier_text",
+            "text": f"step number {i}",
+            "semantic_role": "process",
+        }
         for i in range(n)
     ]
     nodes[0]["semantic_role"] = "start"
     diagram = {
         "diagram_type": "flowchart",
         "nodes": nodes,
-        "edges": [
-            {"src": nodes[i]["id"], "dst": nodes[i + 1]["id"]} for i in range(n - 1)
-        ],
+        "edges": [{"src": nodes[i]["id"], "dst": nodes[i + 1]["id"]} for i in range(n - 1)],
     }
     body = []
     for i in range(12):
@@ -158,4 +159,4 @@ def test_a_signature_past_the_sandboxs_default_keep_cap_still_parses() -> None:
 
     sig = F.signature(code, diagram, timeout_s=180.0)
     assert sig["ok"] is True, sig
-    assert len(sig["paths"]) == 2 ** F.MAX_BITS
+    assert len(sig["paths"]) == 2**F.MAX_BITS

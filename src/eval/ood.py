@@ -97,7 +97,7 @@ def score_page(pipeline, path: Path, kind: str, unseen: bool) -> dict[str, Any]:
         "code_chars": len(result.code),
         "language": result.language,
         "parses": _parses(result.code, result.language),
-        "nodes": len(((result.ir or {}).get("nodes") or [])),
+        "nodes": len((result.ir or {}).get("nodes") or []),
         "seconds": round(time.time() - started, 3),
     }
     for stage in result.stages:
@@ -141,7 +141,9 @@ def summarise(rows: list[dict]) -> dict[str, Any]:
 def run(limit: int = 8, floor: float | None = None) -> dict:
     from src.pipeline.core import CONFIDENCE_FLOOR, DreamScriptPipeline
 
-    pipeline = DreamScriptPipeline(confidence_floor=floor if floor is not None else CONFIDENCE_FLOOR)
+    pipeline = DreamScriptPipeline(
+        confidence_floor=floor if floor is not None else CONFIDENCE_FLOOR
+    )
     started = time.time()
     rows: list[dict] = []
     for kind in UNSEEN + SEEN:

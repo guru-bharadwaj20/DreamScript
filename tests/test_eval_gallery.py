@@ -15,7 +15,13 @@ from src.eval import gallery
 
 def _rows():
     return [
-        {"page": f"p{index}", "source": "hdbpmn", "ged": float(index), "node_f1": 1.0, "edge_f1": 1.0}
+        {
+            "page": f"p{index}",
+            "source": "hdbpmn",
+            "ged": float(index),
+            "node_f1": 1.0,
+            "edge_f1": 1.0,
+        }
         for index in range(10)
     ]
 

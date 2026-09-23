@@ -73,10 +73,12 @@ def test_a_tracked_run_lands_in_the_store(store, tmp_path):
 
 @pytest.mark.skipif(not tracking.available(), reason="mlflow is not installed")
 def test_a_failing_run_is_recorded_as_failed_rather_than_lost(store):
-    with pytest.raises(ValueError):
-        with tracking.track("ocr", "bad_run", store_uri=store) as run:
-            run.log_metric("cer", 0.9)
-            raise ValueError("training diverged")
+    with (
+        pytest.raises(ValueError),
+        tracking.track("ocr", "bad_run", store_uri=store) as run,
+    ):
+        run.log_metric("cer", 0.9)
+        raise ValueError("training diverged")
 
     rows = tracking.listing(store)
     assert rows[0]["status"] == "FAILED"

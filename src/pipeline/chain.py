@@ -50,7 +50,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 from src.embed.cache import aligned
-from src.pipeline.fallback import IDENTITY, TABLE, _model, load
+from src.pipeline.fallback import IDENTITY, _model, load
 from src.utils.config import ROOT
 
 PCA128 = ROOT / "data" / "features" / "embeddings_pca128.npy"
@@ -139,7 +139,9 @@ class PageCNN:
         # Class weights, because flowchart is two thirds of the corpus and an unweighted loss
         # would find "always flowchart" a good local minimum on the rung that matters least.
         counts = np.array([(y == c).sum() for c in self.classes], dtype=np.float64)
-        weight = torch.tensor(counts.sum() / (len(counts) * np.maximum(counts, 1)), dtype=torch.float32)
+        weight = torch.tensor(
+            counts.sum() / (len(counts) * np.maximum(counts, 1)), dtype=torch.float32
+        )
         loss_fn = nn.CrossEntropyLoss(weight=weight.to(self.device))
         optimiser = torch.optim.AdamW(self.net.parameters(), lr=3e-4, weight_decay=1e-4)
         schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, T_max=self.epochs)
@@ -258,9 +260,11 @@ def apply_chain(fitted: dict, taus: dict[str, float], mask: np.ndarray) -> dict[
         per_rung[rung] = {
             "answered": int(picked.sum()),
             "share": round(float(picked.mean()), 4) if n else 0.0,
-            "accuracy": round(float(accuracy_score(truth[picked], predicted[picked])), 4)
-            if picked.any()
-            else None,
+            "accuracy": (
+                round(float(accuracy_score(truth[picked], predicted[picked])), 4)
+                if picked.any()
+                else None
+            ),
         }
     return {
         "n": n,
@@ -304,9 +308,7 @@ def collect(cnn_epochs: int = 30) -> dict[str, Any]:
 
     chain = apply_chain(fitted, chosen["taus"], test)
     # The bar the chain has to clear: its own first rung, answering everything alone.
-    alone = apply_chain(
-        fitted, {"handcrafted": 0.0, "embedding": 0.0, "cnn": 0.0}, test
-    )
+    alone = apply_chain(fitted, {"handcrafted": 0.0, "embedding": 0.0, "cnn": 0.0}, test)
     classes = np.array(fitted["classes"])
     solo = {
         rung: round(

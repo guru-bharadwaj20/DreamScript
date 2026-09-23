@@ -41,11 +41,13 @@ re-measured component moves stage on its own rather than needing someone to reme
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from src.mlops.tracking import STORE_URI, _dig, available
@@ -189,7 +191,7 @@ def _metric(artefact: str, key: str) -> float | None:
     except (OSError, ValueError):
         return None
     value = _dig(payload, key)
-    return float(value) if isinstance(value, (int, float)) else None
+    return float(value) if isinstance(value, int | float) else None
 
 
 def _imports(path: Path) -> set[str]:
@@ -215,7 +217,7 @@ def reachable_packages() -> set[str]:
     when a page is processed.
     """
     seen: set[str] = set()
-    queue = [p for p in PIPELINE_PACKAGE.glob("*.py")]
+    queue = list(PIPELINE_PACKAGE.glob("*.py"))
     while queue:
         current = queue.pop()
         for module in _imports(current):
@@ -343,10 +345,9 @@ def populate(store_uri: str = STORE_URI, rows: list[dict[str, Any]] | None = Non
 
     for row in rows:
         try:
-            try:
+            # Already registered is the normal case on a re-run, not an error.
+            with contextlib.suppress(Exception):
                 client.create_registered_model(row["name"])
-            except Exception:  # noqa: BLE001 - already there is the normal case on a re-run
-                pass
             version = client.create_model_version(
                 name=row["name"],
                 source=str((ROOT / row["artefact"]).as_posix()),
@@ -363,7 +364,7 @@ def populate(store_uri: str = STORE_URI, rows: list[dict[str, Any]] | None = Non
                     "on_pipeline_path": str(row["on_pipeline_path"]),
                     "direct_call_site": str(row.get("direct_call_site")),
                     "role": row["role"],
-                    "registered_at": datetime.now(timezone.utc).isoformat(),
+                    "registered_at": datetime.now(UTC).isoformat(),
                 },
             )
             target = MLFLOW_STAGE[row["stage"]]
@@ -496,7 +497,7 @@ def render(result: dict) -> str:
         " 14.4's question - does `src/pipeline/*.py` call this component itself - and on its own"
         " it calls OCR unreached, while every golden page decodes label crops through it via"
         " `src.assemble`. *Reached at all* follows imports transitively and is the honest answer"
-        " to \"does a page touch this\", but it is permissive enough to reach packages nothing"
+        ' to "does a page touch this", but it is permissive enough to reach packages nothing'
         " on the hot path uses. Neither is the whole truth, so both are printed.",
         "",
         "## Superseded candidates",

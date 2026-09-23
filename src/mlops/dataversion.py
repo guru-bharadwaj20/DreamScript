@@ -205,9 +205,7 @@ def render(result: dict) -> str:
     ]
     for row in result["tracked"]:
         pointer = f"`{row['pointer']}`" if row["pointer"] else "*none*"
-        lines.append(
-            f"| `{row['path']}` | {row['megabytes']} | {pointer} | {row['reason']} |"
-        )
+        lines.append(f"| `{row['path']}` | {row['megabytes']} | {pointer} | {row['reason']} |")
     lines += [
         "",
         f"## Deliberately not tracked ({result['totals']['not_tracked_megabytes']} MB)",
@@ -231,7 +229,13 @@ def render(result: dict) -> str:
         ]
         lines += [f"* `{path}`" for path in orphans]
     if result.get("store"):
-        lines += ["", "## Store check (`dvc status --cloud`)", "", "| remote | in sync | missing |", "| :--- | :---: | ---: |"]
+        lines += [
+            "",
+            "## Store check (`dvc status --cloud`)",
+            "",
+            "| remote | in sync | missing |",
+            "| :--- | :---: | ---: |",
+        ]
         for name, entry in result["store"].items():
             lines.append(
                 f"| `{name}` | {'yes' if entry['up_to_date'] else '**no**'} |"
@@ -243,7 +247,9 @@ def render(result: dict) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="exit non-zero if the store is missing data")
+    ap.add_argument(
+        "--check", action="store_true", help="exit non-zero if the store is missing data"
+    )
     ap.add_argument("--out", type=Path, default=REPORT_MD)
     ap.add_argument("--json", dest="out_json", type=Path, default=REPORT_JSON)
     args = ap.parse_args(argv)
@@ -254,7 +260,9 @@ def main(argv: list[str] | None = None) -> int:
     args.out_json.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"remotes": result["remotes"], "totals": result["totals"]}, indent=2))
     if args.check:
-        stale = [name for name, entry in (result.get("store") or {}).items() if not entry["up_to_date"]]
+        stale = [
+            name for name, entry in (result.get("store") or {}).items() if not entry["up_to_date"]
+        ]
         if stale:
             print(f"remotes missing data: {', '.join(stale)}", file=sys.stderr)
             return 1

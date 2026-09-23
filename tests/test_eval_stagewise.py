@@ -66,7 +66,9 @@ class _Data:
 def test_cross_validation_holds_the_writer_out():
     from sklearn.dummy import DummyClassifier
 
-    result = stagewise._cross_validate(_Data(), lambda: DummyClassifier(strategy="most_frequent"), (42,), 2)
+    result = stagewise._cross_validate(
+        _Data(), lambda: DummyClassifier(strategy="most_frequent"), (42,), 2
+    )
     # With the writer held out the training side never contains the held-out class, so a model
     # that only knows the majority class must score zero - a leak would show up as > 0.
     assert result["accuracy"] == 0.0

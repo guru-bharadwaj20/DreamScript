@@ -203,7 +203,13 @@ def domain_probe(frame: pd.DataFrame) -> dict[str, Any]:
 
 #: 14.5's degradations, at the severity its own sweep calls the middle of the range. A fallback
 #: rung fires when the page is bad, so the rung has to be measured on bad pages.
-DEGRADATIONS = (("blur", 5), ("rotation", 6.0), ("lighting", 0.7), ("occlusion", 0.1), ("resolution", 0.5))
+DEGRADATIONS = (
+    ("blur", 5),
+    ("rotation", 6.0),
+    ("lighting", 0.7),
+    ("occlusion", 0.1),
+    ("resolution", 0.5),
+)
 
 
 def degraded_features(

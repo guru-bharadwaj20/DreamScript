@@ -82,7 +82,7 @@ def transplant_text(into, source, *, match: str = "geometric"):
     from src.assemble import irdiff
 
     pairs = irdiff.match_nodes(list(into.nodes), list(source.nodes), match)
-    partner = {i: j for i, j in pairs}
+    partner = dict(pairs)
     nodes = [
         replace(node, text=(source.nodes[partner[index]].text if index in partner else ""))
         for index, node in enumerate(into.nodes)

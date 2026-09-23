@@ -18,8 +18,7 @@ def diagram(texts, *, offset: float = 0.0, kind: str = "flowchart") -> Diagram:
         for i, text in enumerate(texts)
     ]
     edges = [
-        Edge(id=f"e{i}", src=f"n{i}", dst=f"n{i + 1}", directed=True)
-        for i in range(len(nodes) - 1)
+        Edge(id=f"e{i}", src=f"n{i}", dst=f"n{i + 1}", directed=True) for i in range(len(nodes) - 1)
     ]
     return Diagram(id="d", diagram_type=kind, nodes=nodes, edges=edges)
 

@@ -32,7 +32,6 @@ import json
 import sys
 import textwrap
 from pathlib import Path
-from typing import Any
 
 from src.utils.config import ROOT
 
@@ -112,7 +111,13 @@ def build(each: int = 3) -> dict:
                 "edge_f1": row.get("edge_f1"),
                 "edits": {
                     key: row[key]
-                    for key in ("sub_text", "edge_insert", "edge_delete", "node_insert", "node_delete")
+                    for key in (
+                        "sub_text",
+                        "edge_insert",
+                        "edge_delete",
+                        "node_insert",
+                        "node_delete",
+                    )
                     if key in row
                 },
                 "functional_predicted": (rungs.get("predicted") or {}).get("functional"),
@@ -153,7 +158,11 @@ def render(result: dict) -> str:
             verdict_text = (
                 "not in the 14.3 run"
                 if verdict is None
-                else ("passes its functional test" if verdict else f"fails: `{entry['functional_reason']}`")
+                else (
+                    "passes its functional test"
+                    if verdict
+                    else f"fails: `{entry['functional_reason']}`"
+                )
             )
             lines += [
                 f"* node F1 {entry['node_f1']}, edge F1 {entry['edge_f1']}",
@@ -170,7 +179,7 @@ def render(result: dict) -> str:
                 lines += [f"> {entry['note']}", ""]
             if entry["code_head"]:
                 lines += [
-                    f"```python",
+                    "```python",
                     entry["code_head"],
                     "```",
                     "",

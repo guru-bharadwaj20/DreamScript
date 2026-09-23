@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 
 import numpy as np
-import pytest
 
 from src.eval import crossscribe
 

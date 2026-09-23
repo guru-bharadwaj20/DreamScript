@@ -13,7 +13,6 @@ import pytest
 
 from src.pipeline import fallback
 
-
 #: `_model()` is HistGradientBoostingClassifier, whose `min_samples_leaf` defaults to 20. A
 #: fixture smaller than that cannot split at all and silently collapses to a majority-class
 #: constant - which passes or fails for reasons that have nothing to do with what is being tested.
@@ -173,9 +172,11 @@ def test_the_verdict_reads_the_control_and_not_the_headline(monkeypatch):
         fallback, "out_of_fold", lambda *_, **__: {"accuracy": 1.0, "macro_f1": 1.0}
     )
     monkeypatch.setattr(fallback, "domain_probe", lambda *_: {"accuracy": 1.0, "macro_f1": 1.0})
-    monkeypatch.setattr(fallback, "degraded_rendering", lambda *_, **__: {
-        "per_degradation": {}, "mean": None, "worst": None
-    })
+    monkeypatch.setattr(
+        fallback,
+        "degraded_rendering",
+        lambda *_, **__: {"per_degradation": {}, "mean": None, "worst": None},
+    )
     # A perfect headline and a failing control: the verdict must follow the control.
     monkeypatch.setattr(
         fallback,

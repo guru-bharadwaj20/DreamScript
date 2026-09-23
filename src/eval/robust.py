@@ -190,8 +190,8 @@ def aggregate(rows: list[dict]) -> dict[str, Any]:
             continue
         point = curves.setdefault(row["kind"], {}).setdefault(str(row["severity"]), {"rows": []})
         point["rows"].append(row)
-    for kind, points in curves.items():
-        for severity, point in points.items():
+    for points in curves.values():
+        for point in points.values():
             scored = point.pop("rows")
             point["pages"] = len(scored)
             point["node_f1"] = round(sum(r["node_f1"] for r in scored) / len(scored), 4)
@@ -308,7 +308,11 @@ def render(result: dict) -> str:
                 values.append("-" if value is None else f"{value:.4f}".rstrip("0").rstrip("."))
             lines.append(f"| {metric} | " + " | ".join(values) + " |")
         errors = sum(points[severity].get("errors", 0) for severity in severities)
-        lines += ["", f"pages per point: {points[severities[0]]['pages']}; stage errors: {errors}", ""]
+        lines += [
+            "",
+            f"pages per point: {points[severities[0]]['pages']}; stage errors: {errors}",
+            "",
+        ]
     return "\n".join(lines)
 
 

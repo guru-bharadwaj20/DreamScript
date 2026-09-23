@@ -26,12 +26,10 @@ never be is a traceback escaping into the caller.
 
 from __future__ import annotations
 
+import numpy as np
 import pytest
-
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-
-import numpy as np
 
 from src.pipeline.cache import StageCache
 from src.pipeline.contracts import Outcome, Result, StageReport

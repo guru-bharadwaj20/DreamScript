@@ -74,13 +74,15 @@ def test_the_floor_stops_the_ratio_being_hysterical_near_zero():
 
 def test_both_conditions_are_required():
     # Above the floor but not the ratio.
-    assert monitor.spike(0.05, np.concatenate([np.full(60, 0.1), np.full(940, 0.99)]))[
-        "spiked"
-    ] is False
+    assert (
+        monitor.spike(0.05, np.concatenate([np.full(60, 0.1), np.full(940, 0.99)]))["spiked"]
+        is False
+    )
     # Above the ratio but not the floor.
-    assert monitor.spike(0.0001, np.concatenate([np.full(5, 0.1), np.full(995, 0.99)]))[
-        "spiked"
-    ] is False
+    assert (
+        monitor.spike(0.0001, np.concatenate([np.full(5, 0.1), np.full(995, 0.99)]))["spiked"]
+        is False
+    )
 
 
 def test_a_quiet_batch_does_not_spike():

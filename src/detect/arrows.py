@@ -149,8 +149,7 @@ def pose_lines(page, diagram: dict[str, Any]) -> list[str]:
         if not all(0.0 <= v <= 1.0 for v in (cx, cy, tx, ty, hx, hy)):
             continue
         lines.append(
-            f"0 {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f} "
-            f"{tx:.6f} {ty:.6f} 2 {hx:.6f} {hy:.6f} 2"
+            f"0 {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f} " f"{tx:.6f} {ty:.6f} 2 {hx:.6f} {hy:.6f} 2"
         )
     return lines
 
@@ -239,9 +238,7 @@ def export(out: Path = OUT, sources=SOURCES, limit: int | None = None) -> dict:
         )
         counts[split] += 1
         arrows += len(lines)
-        index.append(
-            {"name": name, "source": page.source, "split": split, "arrows": len(lines)}
-        )
+        index.append({"name": name, "source": page.source, "split": split, "arrows": len(lines)})
 
     yaml = "\n".join(
         [
@@ -378,7 +375,9 @@ def _detector(weights: str = ""):
 
 def detect(image_path, conf: float = CONF, imgsz: int = IMGSZ, weights: str = "") -> list[dict]:
     """Every arrow the detector finds, with its two keypoints in image pixels."""
-    prediction = _detector(weights).predict(str(image_path), verbose=False, imgsz=imgsz, conf=conf)[0]
+    prediction = _detector(weights).predict(str(image_path), verbose=False, imgsz=imgsz, conf=conf)[
+        0
+    ]
     keypoints = prediction.keypoints
     out = []
     if keypoints is None:

@@ -7,8 +7,6 @@ that is not actually a change, must never reach an export.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from src.mlops import corrections as C

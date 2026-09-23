@@ -50,15 +50,30 @@ RATE_USD_PER_HOUR = 0.50
 
 #: (phase, label, file, key path). Durations are read, never typed.
 SOURCES: tuple[tuple[str, str, str, tuple[str, ...]], ...] = (
-    ("9 - detection", "arrow detector, yolov8s 40 epochs", "experiments/detect/arrows/train.json", ("seconds",)),
-    ("9 - detection", "arrow detector, yolov8m-pose 150 epochs", "experiments/detect/arrows/train_pose_m.json", ("seconds",)),
+    (
+        "9 - detection",
+        "arrow detector, yolov8s 40 epochs",
+        "experiments/detect/arrows/train.json",
+        ("seconds",),
+    ),
+    (
+        "9 - detection",
+        "arrow detector, yolov8m-pose 150 epochs",
+        "experiments/detect/arrows/train_pose_m.json",
+        ("seconds",),
+    ),
     ("9 - OCR", "trocr_large, 16 epochs", "reports/s3_label_ocr_large.json", ("train_seconds",)),
     ("9 - OCR", "trocr_large, 28 epochs", "reports/s3_label_ocr_large28.json", ("train_seconds",)),
     ("9 - OCR", "trocr, strong augmentation", "reports/s3_label_ocr_aug.json", ("train_seconds",)),
     ("9 - OCR", "trocr_fa specialist", "reports/s3_fa_specialist.json", ("train_seconds",)),
     ("12 - LLM", "base-model benchmark", "experiments/llm/benchmark/done.json", ("stage_wall_s",)),
     ("12 - LLM", "LoRA rank sweep", "experiments/llm/lora_sweep/done.json", ("stage_wall_s",)),
-    ("12 - LLM", "hyperparameter sweep", "experiments/llm/hparam_sweep/done.json", ("stage_wall_s",)),
+    (
+        "12 - LLM",
+        "hyperparameter sweep",
+        "experiments/llm/hparam_sweep/done.json",
+        ("stage_wall_s",),
+    ),
     ("12 - LLM", "final training run", "experiments/llm/train/done.json", ("stage_wall_s",)),
     ("12 - LLM", "three-way comparison", "experiments/llm/compare/done.json", ("stage_wall_s",)),
     ("12 - LLM", "quality scoring", "experiments/llm/quality/done.json", ("stage_wall_s",)),
@@ -81,9 +96,15 @@ UNRECORDED: tuple[tuple[str, str], ...] = (
         " run in prose, and the other two ran the same schedule, so roughly 4.5 GPU-hours sit"
         " outside this table - named here rather than typed into it",
     ),
-    ("9 - detection", "the component detector's own training (experiments/detect/train.json keeps no duration)"),
+    (
+        "9 - detection",
+        "the component detector's own training (experiments/detect/train.json keeps no duration)",
+    ),
     ("9 - OCR", "the CRNN generation of 9.3 - four architectures, no duration kept"),
-    ("5-8 - classical", "every classifier, ensemble, HMM and clustering sweep - artefacts lost with the DVC store"),
+    (
+        "5-8 - classical",
+        "every classifier, ensemble, HMM and clustering sweep - artefacts lost with the DVC store",
+    ),
     ("11 - RL", "Q-learning, SARSA and DQN training across three seeds"),
     ("1-3 - data", "corpus rebuild, rendering and preprocessing"),
 )
@@ -98,7 +119,7 @@ def _read(path: str, keys: tuple[str, ...]) -> float | None:
         if not isinstance(value, dict) or key not in value:
             return None
         value = value[key]
-    return float(value) if isinstance(value, (int, float)) else None
+    return float(value) if isinstance(value, int | float) else None
 
 
 def collect(
@@ -161,7 +182,11 @@ def sensitivity(result: dict) -> list[dict]:
     watts = result["model"]["board_power_w"]
     pue = result["model"]["pue"]
     out = []
-    for name, utilisation in (("idle-heavy 0.50", 0.50), ("assumed 0.75", 0.75), ("saturated 1.00", 1.0)):
+    for name, utilisation in (
+        ("idle-heavy 0.50", 0.50),
+        ("assumed 0.75", 0.75),
+        ("saturated 1.00", 1.0),
+    ):
         out.append(
             {
                 "arm": name,
@@ -211,7 +236,13 @@ def render(result: dict) -> str:
     ]
     for arm in sensitivity(result):
         lines.append(f"| {arm['arm']} | {arm['kwh']} |")
-    lines += ["", "## Runs", "", "| phase | run | GPU-hours | source |", "| :--- | :--- | ---: | :--- |"]
+    lines += [
+        "",
+        "## Runs",
+        "",
+        "| phase | run | GPU-hours | source |",
+        "| :--- | :--- | ---: | :--- |",
+    ]
     for run in result["runs"]:
         hours = run["gpu_hours"] if run["recorded"] else "*unrecorded*"
         lines.append(f"| {run['phase']} | {run['run']} | {hours} | `{run['source']}` |")

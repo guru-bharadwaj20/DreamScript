@@ -82,7 +82,9 @@ def test_a_page_whose_stage_failed_is_counted_as_an_error_not_as_a_score():
 
 
 def test_render_names_the_sample_and_every_metric():
-    rows = [{"kind": "blur", "severity": 0, "ged": 4.0, "node_f1": 1.0, "edge_f1": 0.9, "routed": 1}]
+    rows = [
+        {"kind": "blur", "severity": 0, "ged": 4.0, "node_f1": 1.0, "edge_f1": 0.9, "routed": 1}
+    ]
     text = robust.render(
         {
             "split": "test",

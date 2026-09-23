@@ -18,6 +18,7 @@ configuration is a miss rather than a wrong answer.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from functools import lru_cache
@@ -119,14 +120,12 @@ class StageCache:
             return value
         path = self._path(stage, key)
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:
+        # A stage whose output will not serialise is simply not cached; it is not an error.
+        with contextlib.suppress(OSError, TypeError, ValueError):
             path.write_text(
                 json.dumps({"key": key, "code": code_key(), "value": value}, default=str),
                 encoding="utf-8",
             )
-        except (OSError, TypeError, ValueError):
-            # A stage whose output will not serialise is simply not cached; it is not an error.
-            pass
         return value
 
     def stats(self) -> dict[str, int]:

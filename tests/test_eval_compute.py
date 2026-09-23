@@ -32,7 +32,10 @@ def test_a_duration_is_read_from_a_key_path(tmp_path, monkeypatch):
 
 def _tree(tmp_path, seconds):
     (tmp_path / "one.json").write_text(json.dumps({"seconds": seconds}), encoding="utf-8")
-    return (("9 - detection", "a run", "one.json", ("seconds",)), ("9 - OCR", "lost", "gone.json", ("seconds",)))
+    return (
+        ("9 - detection", "a run", "one.json", ("seconds",)),
+        ("9 - OCR", "lost", "gone.json", ("seconds",)),
+    )
 
 
 def test_energy_and_cost_follow_the_printed_parameters(tmp_path, monkeypatch):

@@ -74,9 +74,9 @@ def test_the_golden_set_covers_both_routed_types():
 
 def test_every_golden_page_has_an_annotation_to_be_judged_against():
     report = _report()
-    assert report["with_truth"] == report["pages"], (
-        "a page with no ground truth cannot be a golden page; it can only be a smoke test"
-    )
+    assert (
+        report["with_truth"] == report["pages"]
+    ), "a page with no ground truth cannot be a golden page; it can only be a smoke test"
 
 
 def test_the_node_count_stays_near_the_annotation():
@@ -84,9 +84,9 @@ def test_the_node_count_stays_near_the_annotation():
     report = _report()
     truth = report["totals"]["nodes_truth"]
     predicted = report["totals"]["nodes_pred"]
-    assert abs(predicted - truth) / truth <= NODE_COUNT_TOLERANCE, (
-        f"{predicted} nodes against {truth} annotated"
-    )
+    assert (
+        abs(predicted - truth) / truth <= NODE_COUNT_TOLERANCE
+    ), f"{predicted} nodes against {truth} annotated"
 
 
 def test_edge_labels_are_produced_and_not_wildly_over_produced():
@@ -101,9 +101,9 @@ def test_edge_labels_are_produced_and_not_wildly_over_produced():
     predicted = report["totals"]["edge_labels_pred"]
     assert truth > 0, "the annotation must carry edge labels for this to measure anything"
     assert predicted >= EDGE_LABELS_FLOOR, f"only {predicted} edge labels read"
-    assert predicted / truth <= EDGE_LABEL_RATIO_CEILING, (
-        f"{predicted} labels against {truth} annotated"
-    )
+    assert (
+        predicted / truth <= EDGE_LABEL_RATIO_CEILING
+    ), f"{predicted} labels against {truth} annotated"
 
 
 def test_no_generated_state_machine_is_vacuous():
@@ -118,9 +118,9 @@ def test_no_generated_state_machine_is_vacuous():
     machines = report["state_machines"]
     vacuous = report["state_machines_with_zero_transitions"]
     assert machines > 0
-    assert vacuous <= VACUOUS_MACHINES_ALLOWED, (
-        f"{vacuous} of {machines} generated machines have no transitions"
-    )
+    assert (
+        vacuous <= VACUOUS_MACHINES_ALLOWED
+    ), f"{vacuous} of {machines} generated machines have no transitions"
 
 
 @pytest.mark.gpu

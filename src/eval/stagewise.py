@@ -150,7 +150,9 @@ def detect_stage() -> dict:
         "models": {
             "yolo_components": {
                 "map50": _read("reports/s2_component_detection.json", "map50"),
-                "hand_drawn_map50": _read("reports/s2_component_detection.json", "hand_drawn_map50"),
+                "hand_drawn_map50": _read(
+                    "reports/s2_component_detection.json", "hand_drawn_map50"
+                ),
                 "pages": _read("reports/s2_component_detection.json", "pages"),
                 "target": _read("reports/s2_component_detection.json", "target_map50"),
                 "provenance": "reports/s2_component_detection.json",
@@ -240,7 +242,11 @@ def codegen_stage() -> dict:
             },
             "zero_shot": {
                 "functional": _read(
-                    "experiments/llm/compare/done.json", "results", "zero-shot", "summary", "functional"
+                    "experiments/llm/compare/done.json",
+                    "results",
+                    "zero-shot",
+                    "summary",
+                    "functional",
                 ),
                 "provenance": "experiments/llm/compare/done.json",
             },

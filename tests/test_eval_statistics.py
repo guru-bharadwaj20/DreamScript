@@ -92,10 +92,28 @@ def test_a_missing_artefact_is_a_note_not_a_number(tmp_path, monkeypatch):
 def test_render_separates_sampling_from_seed_uncertainty():
     result = {
         "protocol": {"sampling": "percentile bootstrap, 10 resamples", "seeds": "read"},
-        "s1_classification": {"metric": "a", "point": 0.9, "target": 0.92, "seeds": 3, "seed_std": 0.001, "seed_min": 0.89, "seed_max": 0.91},
+        "s1_classification": {
+            "metric": "a",
+            "point": 0.9,
+            "target": 0.92,
+            "seeds": 3,
+            "seed_std": 0.001,
+            "seed_min": 0.89,
+            "seed_max": 0.91,
+        },
         "s4_roles": {"metric": "b", "point": 0.8, "target": 0.8, "seed_variance": "single run"},
-        "s3_ocr": {"metric": "c", "target": 0.15, "cer": {"point": 0.2, "ci95": [0.19, 0.21], "resamples": 400, "items": 2835}, "seed_variance": "single run"},
-        "s5_assembly": {"metric": "d", "target": 3.0, "median_ged": {"point": 13.0, "ci95": [9.0, 16.0]}, "seed_variance": "single run"},
+        "s3_ocr": {
+            "metric": "c",
+            "target": 0.15,
+            "cer": {"point": 0.2, "ci95": [0.19, 0.21], "resamples": 400, "items": 2835},
+            "seed_variance": "single run",
+        },
+        "s5_assembly": {
+            "metric": "d",
+            "target": 3.0,
+            "median_ged": {"point": 13.0, "ci95": [9.0, 16.0]},
+            "seed_variance": "single run",
+        },
         "end_to_end": {
             "gold": {"point": 0.78, "ci95": [0.72, 0.85], "half_width": 0.06},
             "gold_structure": {"point": 0.65, "ci95": [0.58, 0.73], "half_width": 0.07},

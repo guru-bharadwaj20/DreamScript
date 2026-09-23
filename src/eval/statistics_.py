@@ -35,8 +35,9 @@ import json
 import random
 import statistics
 import sys
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from src.utils.config import ROOT
 

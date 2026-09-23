@@ -129,7 +129,9 @@ def test_an_edge_without_a_polyline_is_not_exported():
 
 def test_the_keypoints_are_the_polyline_ends_in_order():
     page = _page(1000, 1000)
-    diagram = {"edges": [{"polyline": [[100, 200], [500, 500], [900, 800]], "src": "a", "dst": "b"}]}
+    diagram = {
+        "edges": [{"polyline": [[100, 200], [500, 500], [900, 800]], "src": "a", "dst": "b"}]
+    }
     parts = arrows.pose_lines(page, diagram)[0].split()
     assert abs(float(parts[5]) - 0.1) < 1e-6
     assert abs(float(parts[6]) - 0.2) < 1e-6

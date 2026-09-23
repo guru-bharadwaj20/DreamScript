@@ -128,9 +128,7 @@ class DreamScriptPipeline:
             return result
         result.code, result.language = code
 
-        self._stage(
-            result, "verify", key, lambda: self._verify(result.code, result.diagram_type)
-        )
+        self._stage(result, "verify", key, lambda: self._verify(result.code, result.diagram_type))
         return result
 
     def _stage(

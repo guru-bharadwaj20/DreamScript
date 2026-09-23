@@ -157,7 +157,9 @@ def sensitivity(shape: dict, machine: dict, rates: dict) -> list[dict]:
     }
     out = []
     for name, model in arms.items():
-        out.append({"arm": name, "parameters": asdict(model), **compare(model, shape, machine, rates)})
+        out.append(
+            {"arm": name, "parameters": asdict(model), **compare(model, shape, machine, rates)}
+        )
     return out
 
 
@@ -241,7 +243,9 @@ def render(result: dict) -> str:
             f" {arm['speedup_expected']}x |"
         )
     lines += ["", "## The study this row did not run", ""]
-    lines += [f"{index}. {step}" for index, step in enumerate(result["protocol_for_a_real_study"], 1)]
+    lines += [
+        f"{index}. {step}" for index, step in enumerate(result["protocol_for_a_real_study"], 1)
+    ]
     lines.append("")
     return "\n".join(lines)
 

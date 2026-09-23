@@ -41,10 +41,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from src.utils.config import ROOT
 
@@ -290,7 +291,7 @@ def backfill(store_uri: str = STORE_URI, rows=BACKFILL) -> dict:
             missing.append(path)
             continue
         payload = json.loads(artefact.read_text(encoding="utf-8"))
-        modified = datetime.fromtimestamp(artefact.stat().st_mtime, tz=timezone.utc).isoformat()
+        modified = datetime.fromtimestamp(artefact.stat().st_mtime, tz=UTC).isoformat()
         with track(
             experiment,
             name,
