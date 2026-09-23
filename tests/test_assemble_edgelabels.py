@@ -102,9 +102,7 @@ def test_candidates_applies_the_ink_gate(tmp_path, monkeypatch):
             {"id": "blank", "polyline": [[10, 80], [80, 10]]},
         ],
     }
-    monkeypatch.setattr(
-        "src.ocr.textcrops.edge_label_box", lambda *a, **k: (10, 10, 30, 30)
-    )
+    monkeypatch.setattr("src.ocr.textcrops.edge_label_box", lambda *a, **k: (10, 10, 30, 30))
     monkeypatch.setattr("src.ocr.textcrops.cut", lambda image, box: np.zeros((8, 8), np.uint8))
     seen = []
 
