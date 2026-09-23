@@ -1,190 +1,227 @@
-"""Phase 10.1.6 - binding a floating text region to its edge, and typing the bound label."""
+"""Phase 10.1.6 - reading the trigger written beside a connector.
+
+**This file was rewritten.** It previously tested `classify`, `bind` and `match_read`, an API
+`467d7e3` replaced wholesale when the module stopped guessing labels from geometry and started
+reading pixels beside the polyline. Those 23 tests had been failing with `AttributeError` ever
+since, which is worse than no tests: they cost a red suite and protected nothing, because the code
+they exercised no longer existed.
+
+What is tested here is the module as it is, and the parts that can go wrong silently. The decode
+itself needs a 1.3 GB checkpoint and a GPU, so it is not exercised; everything around it - the ink
+gate that decides what is decoded at all, and the cache that decides whether a decode happens -
+is, because both have already caused real defects this project had to find the hard way.
+"""
 
 from __future__ import annotations
 
+import json
+import types
+
+import numpy as np
+import pytest
+
 from src.assemble import edgelabels as E
 
-# -- classify() -----------------------------------------------------------------------------
+
+class FakePage:
+    def __init__(self, tmp_path, name="p1", source="fa_bresler"):
+        self.name = name
+        self.id = name
+        self.source = source
+        self._image = tmp_path / f"{name}.png"
+
+    @property
+    def image(self):
+        return self._image
 
 
-def test_yes_and_its_synonyms_classify_as_yes():
-    assert E.classify("Yes") == "yes"
-    assert E.classify("true") == "yes"
-    assert E.classify("ja") == "yes"
+@pytest.fixture()
+def fingerprint(monkeypatch):
+    """Pin the checkpoint fingerprint so the cache tests are about the cache."""
+    calls = {"value": "checkpoint-A"}
+    monkeypatch.setattr(
+        "src.assemble.statelabels.checkpoint_fingerprint", lambda *_: calls["value"]
+    )
+    return calls
 
 
-def test_no_and_its_synonyms_classify_as_no():
-    assert E.classify("No") == "no"
-    assert E.classify("false") == "no"
-    assert E.classify("non") == "no"
+@pytest.fixture()
+def cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(E, "CACHE", tmp_path / "edge_text")
+    return tmp_path / "edge_text"
 
 
-def test_bare_y_and_n_are_not_read_as_yes_no():
-    """fa_bresler's alphabet is single letters; a rule that reads `n` as no would mistype it."""
-    assert E.classify("y") != "yes"
-    assert E.classify("n") != "no"
+def test_the_ink_floor_is_the_lowest_value_that_was_swept():
+    """The docstring's finding: precision falls as the floor rises, so it must not be tuned up."""
+    assert E.MIN_INK == 0.001
 
 
-def test_er_cardinality_notation_classifies_as_cardinality():
-    assert E.classify("1..*") == "cardinality"
-    assert E.classify("0..n") == "cardinality"
-    assert E.classify("(0,n)") == "cardinality"
-    assert E.classify("*") == "cardinality"
+def test_only_the_corpora_whose_edges_carry_labels_are_listed():
+    assert set(E.SOURCES) == {"fa_bresler", "hdbpmn"}
 
 
-def test_single_letter_automaton_symbols_classify_as_symbol():
-    assert E.classify("a") == "symbol"
-    assert E.classify("0") == "symbol"
-    assert E.classify("a,b") == "symbol"
-    assert E.classify("0,1") == "symbol"
+def test_unit_falls_back_to_the_page_when_no_node_has_a_box():
+    """A predicted diagram can arrive with no usable boxes; the crop rule still needs a scale."""
+    unit = E._unit({"nodes": []}, (1200.0, 900.0))
+    assert unit == pytest.approx(max(8.0, 900.0 / 60.0))
 
 
-def test_a_phrase_with_letters_and_no_other_shape_classifies_as_condition():
-    assert E.classify("risk above threshold") == "condition"
-    assert E.classify("application rejected") == "condition"
+def test_unit_is_page_relative_when_nodes_have_boxes():
+    small = E._unit({"nodes": [{"bbox": [0, 0, 60, 60]}]}, (1200.0, 900.0))
+    large = E._unit({"nodes": [{"bbox": [0, 0, 600, 600]}]}, (1200.0, 900.0))
+    assert large > small
 
 
-def test_an_empty_label_classifies_as_other():
-    assert E.classify("") == "other"
-    assert E.classify("   ") == "other"
+def test_candidates_is_empty_when_the_page_image_is_unreadable(tmp_path):
+    """A missing image must be nothing to decode, not a crash mid-assembly."""
+    page = FakePage(tmp_path)  # the file is never written
+    ids, patches = E.candidates(page, {"edges": [{"id": "e1", "polyline": [[0, 0], [10, 10]]}]})
+    assert ids == []
+    assert patches == []
 
 
-def test_has_condition_marker_distinguishes_a_boolean_phrase_from_a_bare_noun():
-    assert E.has_condition_marker("risk above threshold") is True
-    assert E.has_condition_marker("insurance claim") is False
+def test_candidates_skips_an_edge_with_no_polyline(tmp_path, monkeypatch):
+    import cv2
+
+    page = FakePage(tmp_path)
+    cv2.imwrite(str(page.image), np.full((100, 100), 255, dtype=np.uint8))
+    ids, _ = E.candidates(page, {"edges": [{"id": "e1"}, {"id": "e2", "points": None}]})
+    assert ids == []
 
 
-# -- geometry: distance and arc position -----------------------------------------------------
+def test_candidates_applies_the_ink_gate(tmp_path, monkeypatch):
+    """The gate is what stops a decoder being asked to read blank paper and answering anyway."""
+    import cv2
+
+    page = FakePage(tmp_path)
+    cv2.imwrite(str(page.image), np.full((100, 100), 255, dtype=np.uint8))
+    diagram = {
+        "nodes": [{"bbox": [0, 0, 20, 20]}],
+        "edges": [
+            {"id": "inked", "polyline": [[10, 10], [80, 80]]},
+            {"id": "blank", "polyline": [[10, 80], [80, 10]]},
+        ],
+    }
+    monkeypatch.setattr(
+        "src.ocr.textcrops.edge_label_box", lambda *a, **k: (10, 10, 30, 30)
+    )
+    monkeypatch.setattr("src.ocr.textcrops.cut", lambda image, box: np.zeros((8, 8), np.uint8))
+    seen = []
+
+    def gate(image, box, polyline, unit, floor):
+        seen.append(floor)
+        return polyline[0] == [10, 10]  # only the first edge has ink beside it
+
+    monkeypatch.setattr("src.ocr.textcrops.off_line_ink", gate)
+
+    ids, patches = E.candidates(page, diagram)
+    assert ids == ["inked"]
+    assert len(patches) == 1
+    # And the gate is asked with the swept floor, not some other number.
+    assert set(seen) == {E.MIN_INK}
 
 
-def test_a_point_on_the_polyline_has_zero_distance():
-    polyline = [(0, 0), (10, 0), (10, 10)]
-    d, arc = E.polyline_distance((10, 0), polyline)
-    assert d == 0.0
-    assert 0.0 < arc < 1.0
+def test_candidates_skips_an_edge_whose_box_falls_off_the_page(tmp_path, monkeypatch):
+    import cv2
+
+    page = FakePage(tmp_path)
+    cv2.imwrite(str(page.image), np.full((100, 100), 255, dtype=np.uint8))
+    monkeypatch.setattr("src.ocr.textcrops.edge_label_box", lambda *a, **k: None)
+    ids, _ = E.candidates(page, {"edges": [{"id": "e1", "polyline": [[0, 0], [9, 9]]}]})
+    assert ids == []
 
 
-def test_arc_position_is_zero_at_the_start_and_one_at_the_end():
-    polyline = [(0, 0), (10, 0)]
-    _, arc_start = E.polyline_distance((0, 0), polyline)
-    _, arc_end = E.polyline_distance((10, 0), polyline)
-    assert arc_start == 0.0
-    assert arc_end == 1.0
+def test_store_and_cached_round_trip(tmp_path, cache, fingerprint):
+    page = FakePage(tmp_path)
+    E.store(page, {"e1": "a", "e2": "b"})
+    assert E.cached(page) == {"e1": "a", "e2": "b"}
 
 
-def test_arc_position_of_the_true_midpoint_of_a_straight_edge_is_one_half():
-    polyline = [(0, 0), (10, 0)]
-    _, arc = E.polyline_distance((5, 0), polyline)
-    assert arc == 0.5
+def test_an_empty_read_is_stored_so_the_page_is_not_decoded_again(tmp_path, cache, fingerprint):
+    """`cached` has to distinguish 'no file' from 'read it, found nothing'."""
+    page = FakePage(tmp_path)
+    assert E.cached(page) is None  # no file
+    E.store(page, {})
+    assert E.cached(page) == {}  # read, found none - and not None
 
 
-def test_midpoint_of_an_l_shaped_polyline_is_not_at_the_corner():
-    """An L with a long first leg and a short second leg puts the arc midpoint on the first leg,
-    which is the case the plan's "near edge midpoint" phrasing has to survive: a label sitting at
-    the corner is not at the midpoint unless the two legs happen to be equal length."""
-    polyline = [(0, 0), (90, 0), (90, 10)]
-    mx, my = E.midpoint(polyline)
-    assert (mx, my) == (50.0, 0.0)
+def test_a_retrain_invalidates_the_cache(tmp_path, cache, fingerprint):
+    """The defect this fingerprint exists for: 338 stale files survived two S3 retrains.
+
+    Without it the cache outlives the model, S5 re-scores text the previous checkpoint produced,
+    and the report comes back byte-identical - which reads as "the change did nothing" rather
+    than "the change was never applied".
+    """
+    page = FakePage(tmp_path)
+    E.store(page, {"e1": "a"})
+    assert E.cached(page) == {"e1": "a"}
+
+    fingerprint["value"] = "checkpoint-B"  # a retrain rewrote the weights
+    assert E.cached(page) is None
 
 
-def test_a_single_point_polyline_does_not_crash_distance_or_midpoint():
-    d, arc = E.polyline_distance((3, 4), [(0, 0)])
-    assert d == 5.0
-    assert arc == 0.5
-    assert E.midpoint([(0, 0)]) == (0.0, 0.0)
+def test_a_corrupt_cache_file_reads_as_absent_rather_than_raising(tmp_path, cache, fingerprint):
+    page = FakePage(tmp_path)
+    E.store(page, {"e1": "a"})
+    path = cache / f"{page.source}__{page.id}.json"
+    path.write_text("{not json", encoding="utf-8")
+    assert E.cached(page) is None
 
 
-# -- bind(): the binding rule, node refusal, and the competition case ------------------------
+def test_a_cache_file_without_labels_reads_as_absent(tmp_path, cache, fingerprint):
+    page = FakePage(tmp_path)
+    path = cache / f"{page.source}__{page.id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"checkpoint": "checkpoint-A"}), encoding="utf-8")
+    assert E.cached(page) is None
 
 
-def _edge(edge_id: str, polyline: list[tuple[float, float]]) -> dict:
-    return {"id": edge_id, "label": edge_id, "polyline": polyline}
+def test_two_sources_do_not_share_a_cache_entry(tmp_path, cache, fingerprint):
+    a = FakePage(tmp_path, name="same", source="fa_bresler")
+    b = FakePage(tmp_path, name="same", source="hdbpmn")
+    E.store(a, {"e1": "from_fa"})
+    assert E.cached(b) is None
 
 
-def test_a_label_near_one_edge_and_far_from_another_binds_to_the_near_one():
-    edges = [_edge("e0", [(0, 0), (100, 0)]), _edge("e1", [(0, 500), (100, 500)])]
-    bindings = E.bind(edges, [[45, -2, 10, 4]], diagonal=1000.0)
-    assert len(bindings) == 1
-    assert bindings[0].edge == "e0"
-    assert bindings[0].rejected is None
+def test_apply_writes_labels_onto_dict_edges(tmp_path, cache, fingerprint):
+    page = FakePage(tmp_path)
+    E.store(page, {"e1": "a", "e2": "b"})
+    diagram = {"edges": [{"id": "e1"}, {"id": "e2"}, {"id": "e3"}]}
+    written = E.apply(page, diagram)
+    assert written == 2
+    assert diagram["edges"][0]["label"] == "a"
+    assert diagram["edges"][1]["label"] == "b"
+    assert "label" not in diagram["edges"][2]
 
 
-def test_a_region_mostly_inside_a_node_box_is_refused_even_though_an_edge_is_closer():
-    """The interesting failure mode this module must not have: stealing a node's own text."""
-    edges = [_edge("e0", [(0, 0), (100, 0)])]
-    node_boxes = [[0, -5, 20, 10]]
-    bindings = E.bind(edges, [[2, -3, 10, 6]], node_boxes=node_boxes, diagonal=1000.0)
-    assert bindings[0].edge is None
-    assert bindings[0].rejected == "node"
+def test_apply_writes_labels_onto_object_edges(tmp_path, cache, fingerprint):
+    page = FakePage(tmp_path)
+    E.store(page, {"e1": "a"})
+    edge = types.SimpleNamespace(id="e1", label="")
+    diagram = types.SimpleNamespace(edges=[edge], to_dict=lambda: {"edges": [{"id": "e1"}]})
+    assert E.apply(page, diagram) == 1
+    assert edge.label == "a"
 
 
-def test_a_region_far_from_every_edge_is_left_unbound_rather_than_forced_to_the_nearest():
-    edges = [_edge("e0", [(0, 0), (100, 0)])]
-    bindings = E.bind(edges, [[5000, 5000, 10, 10]], diagonal=1000.0)
-    assert bindings[0].edge is None
-    assert bindings[0].rejected == "far"
+def test_apply_reads_nothing_when_the_cache_says_the_page_is_blank(tmp_path, cache, fingerprint):
+    """A stored empty result must short-circuit the decode, not fall through to it."""
+    page = FakePage(tmp_path)
+    E.store(page, {})
+
+    def explode(*_a, **_k):
+        raise AssertionError("read_page must not be called when the cache has an answer")
+
+    original = E.read_page
+    E.read_page = explode
+    try:
+        assert E.apply(page, {"edges": [{"id": "e1"}]}) == 0
+    finally:
+        E.read_page = original
 
 
-def test_a_label_between_two_parallel_flows_out_of_one_gateway_is_marked_contested():
-    """The competition case: two edges leaving a gateway close enough together that a label
-    sitting between them could plausibly belong to either."""
-    edges = [
-        _edge("e0", [(0, 0), (100, 20)]),
-        _edge("e1", [(0, 0), (100, -20)]),
-    ]
-    bindings = E.bind(edges, [[48, -2, 4, 4]], diagonal=1000.0)
-    assert bindings[0].edge is not None
-    assert bindings[0].contested is True
-
-
-def test_a_label_clearly_closer_to_one_of_two_edges_is_not_contested():
-    edges = [
-        _edge("e0", [(0, 0), (100, 0)]),
-        _edge("e1", [(0, 500), (100, 500)]),
-    ]
-    bindings = E.bind(edges, [[50, 1, 4, 4]], diagonal=1000.0)
-    assert bindings[0].contested is False
-
-
-def test_the_midpoint_rule_binds_a_region_near_the_corner_of_an_l_to_the_wrong_edge_end():
-    """`rule="midpoint"` scores the plan's literal wording. A region sitting right at the corner
-    of a long L-shaped edge is far from that edge's midpoint (which sits on the long leg) and can
-    lose to a short straight edge whose midpoint happens to be nearer - the scenario the write-up's
-    arc-position measurement says is common on this corpus."""
-    edges = [
-        _edge("e0", [(0, 0), (100, 0), (100, 100)]),  # midpoint at (50, 0)
-        _edge("e1", [(96, 96), (104, 96)]),  # short edge whose midpoint is near the L's corner
-    ]
-    region = [96, 92, 4, 4]  # near the L's corner (100, 100), far from its own midpoint
-    polyline_binding = E.bind(edges, [region], diagonal=1000.0, rule="polyline")[0]
-    midpoint_binding = E.bind(edges, [region], diagonal=1000.0, rule="midpoint")[0]
-    assert polyline_binding.edge == "e0"
-    assert midpoint_binding.edge == "e1"
-
-
-# -- match_read(): the ground-truth construction ---------------------------------------------
-
-
-def test_an_exact_read_after_normalisation_matches_its_label():
-    label, how = E.match_read("Yes", ["yes", "no"])
-    assert label == "yes"
-    assert how == "exact"
-
-
-def test_a_near_read_within_the_cer_gate_matches_a_multi_character_label():
-    label, how = E.match_read("compiete", ["complete"])
-    assert label == "complete"
-    assert how == "near"
-
-
-def test_a_single_character_read_never_matches_by_near_agreement():
-    """At length 1 every string is within one edit of every other; only an exact read counts."""
-    label, how = E.match_read("b", ["a"])
-    assert label is None
-    assert how == "none"
-
-
-def test_a_read_that_matches_nothing_returns_none():
-    label, how = E.match_read("xyz123", ["yes", "no", "complete"])
-    assert label is None
-    assert how == "none"
+def test_apply_returns_zero_rather_than_raising_on_an_edge_it_has_no_label_for(
+    tmp_path, cache, fingerprint
+):
+    page = FakePage(tmp_path)
+    E.store(page, {"unrelated": "x"})
+    assert E.apply(page, {"edges": [{"id": "e1"}]}) == 0
