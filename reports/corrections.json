@@ -1,0 +1,45 @@
+{
+  "value": {
+    "available": true,
+    "pages": 162,
+    "edit_mass": {
+      "node_insert": 105,
+      "node_delete": 70,
+      "sub_text": 1275,
+      "sub_shape": 12,
+      "edge_insert": 604,
+      "edge_delete": 395,
+      "unprojectable": 52
+    },
+    "edit_share": {
+      "node_insert": 0.0418,
+      "node_delete": 0.0279,
+      "sub_text": 0.5074,
+      "sub_shape": 0.0048,
+      "edge_insert": 0.2404,
+      "edge_delete": 0.1572,
+      "unprojectable": 0.0207
+    },
+    "ladder": {
+      "as_assembled": 13.0,
+      "perfect_text": 4.0,
+      "perfect_edges": 9.0,
+      "both_perfect": 0.0
+    },
+    "text_share": 0.5074,
+    "median_ged_as_assembled": 13.0,
+    "median_ged_with_perfect_text": 4.0,
+    "median_ged_with_perfect_edges": 9.0,
+    "reading": "text corrections are half the edit mass and take the median GED from 13.0 to 4.0, while every other correction type together takes it to 9.0 - so a screen that only lets a user retype a label captures the larger half for the smaller effort"
+  },
+  "stats": {
+    "store": "data\\interim\\corrections.jsonl",
+    "exists": false,
+    "records": 0,
+    "after_last_wins": 0,
+    "stale": 0,
+    "by_field": {},
+    "by_source": {},
+    "note": "no real user corrections exist yet: 16.2.8, the screen that produces them, is Phase 16 and is not built. An empty store is reported as empty rather than seeded."
+  }
+}
