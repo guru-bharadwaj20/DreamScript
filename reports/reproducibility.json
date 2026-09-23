@@ -2,33 +2,7 @@
   "what": "15.12 - does this machine reproduce what the record claims",
   "environment": {
     "pins": 49,
-    "mismatched": [
-      {
-        "package": "omegaconf",
-        "pinned": "2.3.0",
-        "installed": "2.3.1"
-      },
-      {
-        "package": "pyarrow",
-        "pinned": "18.1.0",
-        "installed": "17.0.0"
-      },
-      {
-        "package": "pywin32",
-        "pinned": "308",
-        "installed": "312"
-      },
-      {
-        "package": "pyyaml",
-        "pinned": "6.0.2",
-        "installed": "6.0.3"
-      },
-      {
-        "package": "tqdm",
-        "pinned": "4.67.1",
-        "installed": "4.70.1"
-      }
-    ],
+    "mismatched": [],
     "local_builds": [
       {
         "package": "torch",
@@ -48,7 +22,7 @@
       }
     ],
     "shadowed_imports": [],
-    "ok": false,
+    "ok": true,
     "reading": "a shadowed import is the failure this check exists for: it is invisible to a plain version comparison, because the pin is satisfied and a different distribution is the one actually imported"
   },
   "not_attempted": [
@@ -128,9 +102,9 @@
     "ok": true
   },
   "verdict": {
-    "environment_ok": false,
+    "environment_ok": true,
     "metrics_ok": true,
     "metrics_checked": true,
-    "reproducible": false
+    "reproducible": true
   }
 }

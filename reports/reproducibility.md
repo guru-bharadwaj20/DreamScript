@@ -10,15 +10,7 @@ Two questions in order, and the order is the finding: **the environment first**,
 
 No shadowed imports: every checked module is provided by exactly one distribution.
 
-**Installed does not match pinned:**
-
-| package | pinned | installed |
-| :--- | :--- | :--- |
-| `omegaconf` | 2.3.0 | **2.3.1** |
-| `pyarrow` | 18.1.0 | **17.0.0** |
-| `pywin32` | 308 | **312** |
-| `pyyaml` | 6.0.2 | **6.0.3** |
-| `tqdm` | 4.67.1 | **4.70.1** |
+Every installed pin matches its requirement.
 
 Local builds of the pinned version, which are not drift: `torch` 2.5.1+cu124, `torchvision` 0.20.1+cu124. PEP 440 calls `+cu124` a local version identifier; a requirements file cannot name one without pinning a wheel index too.
 
