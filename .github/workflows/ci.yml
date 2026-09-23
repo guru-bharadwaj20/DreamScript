@@ -56,7 +56,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install jsonschema==4.23.0
+      - run: pip install jsonschema==4.26.0
       - name: every schema in schemas/ is itself valid JSON Schema
         # A malformed schema does not fail loudly - it fails by validating nothing, which is the
         # failure mode worth catching in CI rather than in a report six phases later.
@@ -84,15 +84,26 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - name: the shared libraries OpenCV loads at import
+        # Without them `import cv2` fails with an error naming neither OpenCV nor the missing
+        # library. The same two the Dockerfile installs, for the same reason.
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
       - name: install the CPU stack
         # The CPU torch index, because the default wheel pulls a CUDA runtime this runner has no
-        # use for and the download alone is longer than the whole job.
+        # use for and the download alone is longer than the whole job. `-r requirements/torch.txt`
+        # rather than a bare `torch`: unpinned, the index resolved to 2.14.0 against a pinned
+        # 2.5.1, so CI was testing a torch four minor versions from the one every metric in this
+        # repo was measured on - the exact drift 15.12 exists to catch, in CI's own install step.
         run: |
-          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install --index-url https://download.pytorch.org/whl/cpu -r requirements/torch.txt
           pip install -r requirements/base.txt
           pip install -r requirements/classical.txt
           pip install -r requirements/cv.txt
-          pip install pytest==8.3.4
+          pip install -r requirements/serve.txt
+          pip install -r requirements/genai.txt
+      # genai and serve are installed because their tests need no corpus, only their declared
+      # dependencies - without them 12 tests across test_llm_quant, test_ocr_s3, test_ocr_styled
+      # and test_llm_train failed as ModuleNotFoundError while claiming to be code failures.
       - name: the suite, with corpus-dependent modules skipping
         run: python -m pytest tests -q
       - name: what was skipped, and why
@@ -108,9 +119,11 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - name: the shared libraries OpenCV loads at import
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
       - run: |
-          pip install --index-url https://download.pytorch.org/whl/cpu torch
-          pip install -r requirements/base.txt -r requirements/classical.txt
+          pip install --index-url https://download.pytorch.org/whl/cpu -r requirements/torch.txt
+          pip install -r requirements/base.txt -r requirements/classical.txt -r requirements/cv.txt
       - name: train something end to end on the committed fixtures
         # 0.2.7's five synthetic sketches are committed (~15 KB) precisely so something can be
         # trained with no dataset present. This proves the training path imports, fits and scores

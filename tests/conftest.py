@@ -147,6 +147,12 @@ NEEDS_PAYLOAD = {
     "test_assemble_irdiff",
     "test_assemble_nodes",
     "test_assemble_propagate",
+    # Added in 15.9's second pass. Missed the first time because this machine's payload is
+    # *partially* present - `data/processed/ir` exists but its didi artefacts do not - so the
+    # module failed on a content assertion rather than on an empty corpus, which reads like a
+    # data bug and not like a missing payload. Its `CORPUS_FILES` is `data/processed/ir`, so on
+    # a runner with no payload at all it asserts five sources against none.
+    "test_assemble_serialise",
     "test_embed_backbone",
     "test_eval_master",
     "test_eval_robust",
