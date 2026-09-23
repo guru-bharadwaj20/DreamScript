@@ -1,0 +1,55 @@
+# Phase 15.10 - the model server, and where the app will sit when Phase 16 builds it.
+#
+#   docker compose up model          # the inference service on :8000
+#   docker compose --profile app up  # once app/ is built; see the note on that service
+#
+# The `model` service is real and runs 15.11. The `app` service is behind a profile and does not
+# start by default, because `app/backend` and `app/frontend` are empty placeholders - Phase 16 has
+# not been built. Shipping a compose file whose default `up` fails on a service that cannot exist
+# would make the whole file untrustworthy, so the boundary is declared rather than implied.
+
+services:
+  model:
+    build:
+      context: .
+      target: serve
+    image: dreamscript/model:15.10
+    ports:
+      - "8000:8000"
+    volumes:
+      # Read-only: the server loads checkpoints and data, and has no business writing either.
+      # mlruns is writable because 15.3's registry is read through it and a future write path
+      # (a served run logging itself) should not need the compose file changed.
+      - ./experiments:/app/experiments:ro
+      - ./data:/app/data:ro
+      - ./mlruns:/app/mlruns
+    environment:
+      PYTHONUTF8: "1"
+      # Torch allocates lazily; capping here rather than in code keeps the GPU rules in one place
+      # for anything else sharing the card.
+      PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Phase 16's client. Declared so the composition is legible and profiled off so `up` does not
+  # fail: app/backend and app/frontend hold only .gitkeep today. When 16.1 lands, drop the profile.
+  app:
+    profiles: ["app"]
+    build:
+      context: ./app
+    image: dreamscript/app:16
+    ports:
+      - "3000:3000"
+    environment:
+      # The client talks to the model server by service name; the two are separate processes,
+      # which is 15.11's whole point.
+      MODEL_URL: "http://model:8000"
+    depends_on:
+      model:
+        condition: service_healthy
