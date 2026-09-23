@@ -41,6 +41,8 @@ from src.utils.config import ROOT
 
 OUT = ROOT / "data" / "processed" / "manifest.parquet"
 RAW = ROOT / "data" / "raw"
+FA_RENDER = ROOT / "data" / "processed" / "fa_render"
+FCSEG_IMAGES = ROOT / "data" / "processed" / "flowchartseg_images"
 
 COLUMNS = [
     "id",
@@ -121,16 +123,29 @@ def from_flowchartseg() -> list[dict]:
     import pyarrow.parquet as pq
 
     rows = []
+    # `src.ir.convert.flowchartseg` walks the same sorted shards with one global counter and
+    # writes each page out as `flowchartseg_images/fcseg_<counter>.png`, so the counter is the
+    # only thing needed to address an extracted page. Where that PNG exists the row points at
+    # it, because a path of the form `<shard>.parquet#5` is not a file and every consumer that
+    # asks "does this page exist on disk" - the feature builder above all - silently drops it.
+    # That is why the 4.2 table had no flowcharts from this source at all.
+    written = 0
     for shard in sorted(root.rglob("*.parquet")):
         split = "train" if "train" in shard.name else "validation"
         n = pq.read_metadata(shard).num_rows
         rel = str(shard.relative_to(ROOT)).replace("\\", "/")
         for i in range(n):
+            image = FCSEG_IMAGES / f"fcseg_{written:05d}.png"
+            written += 1
             rows.append(
                 _row(
                     id=f"flowchartseg/{split}/{i:05d}",
                     source="flowchartseg",
-                    path=f"{rel}#{i}",
+                    path=(
+                        str(image.relative_to(ROOT)).replace("\\", "/")
+                        if image.is_file()
+                        else f"{rel}#{i}"
+                    ),
                     diagram_type="flowchart",
                     scribe_id=None,  # writer identity not published - cannot be split by scribe
                     has_structure=True,  # node masks, but no edges
@@ -224,6 +239,42 @@ def from_sketch2code() -> list[dict]:
     return rows
 
 
+def from_fa_bresler() -> list[dict]:
+    """The 300 state machines, addressed by their rendered page.
+
+    This source carries the only `state_machine` rows in the corpus, and it was missing from the
+    manifest entirely - which is why 13.4's classifier rung had no class to route to and why the
+    feature table was two classes wide. The raw archive is inkml stroke trajectories, so there is
+    no photograph to point at; `chaos_builder.render_inkml` draws each trajectory into the same
+    1024px canvas the IR coordinates live in, and `data/processed/fa_render/` holds the result.
+
+    That rendering is a real property of the data and it travels with the row: `medium` says
+    `rendered_ink`, so any model trained on these pages can be asked whether it learned the
+    diagram type or the renderer. 13.4 asks exactly that.
+    """
+    if not FA_RENDER.is_dir():
+        return []
+    rows = []
+    for img in sorted(FA_RENDER.glob("*.png")):
+        ir = ROOT / "data" / "processed" / "ir" / "fa_bresler" / f"{img.stem}.ir.json"
+        writer = img.stem.split("_", 1)[0]  # writerNNN_fa_MMM
+        rows.append(
+            _row(
+                id=f"fa_bresler/{img.stem}",
+                source="fa_bresler",
+                path=str(img.relative_to(ROOT)).replace("\\", "/"),
+                diagram_type="state_machine",
+                scribe_id=f"fa:{writer}",  # the archive publishes the writer, so splits can be disjoint
+                medium="rendered_ink",
+                has_structure=ir.is_file(),
+                has_text=ir.is_file(),
+                native_split=None,
+                adverse=False,
+            )
+        )
+    return rows
+
+
 def from_chaos() -> list[dict]:
     rows = []
     for r in collected():
@@ -252,6 +303,7 @@ SOURCES = {
     "didi": from_didi,
     "iam_line": from_iam,
     "sketch2code": from_sketch2code,
+    "fa_bresler": from_fa_bresler,
     "chaos": from_chaos,
 }
 

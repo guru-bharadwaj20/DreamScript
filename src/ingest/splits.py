@@ -28,6 +28,8 @@ exclude them.
 
 from __future__ import annotations
 
+import hashlib
+
 import argparse
 import json
 import sys
@@ -147,7 +149,15 @@ def assign(df: pd.DataFrame, seed: int = 42) -> pd.DataFrame:
 
     rest = df["split"].isna()
     if rest.any():
-        h = df.loc[rest, "id"].map(lambda s: int.from_bytes(s.encode()[:8], "little") % 100)
+        # A digest of the **whole** id, not `int.from_bytes(s.encode()[:8])`. Ids here are
+        # `<source>/<page>`, so the first eight bytes are the source name for every row of a
+        # source: all 731 sketch2code pages hashed identically and landed in one split, leaving
+        # the test set with no wireframes at all. blake2b is stable across runs and processes,
+        # which `hash()` is not.
+        h = df.loc[rest, "id"].map(
+            lambda s: int.from_bytes(hashlib.blake2b(s.encode(), digest_size=8).digest(), "little")
+            % 100
+        )
         df.loc[rest, "split"] = pd.cut(
             h, bins=[-1, 69, 84, 99], labels=["train", "validation", "test"]
         ).astype(str)
