@@ -1,75 +1,217 @@
 {
-  "what": "13.4 classifier fallback chain - feasibility on the data that survived the rebuild",
-  "handcrafted_rung": {
-    "table": "data/features/handcrafted.parquet (rebuilt: 1435 rows, 33 features, 566.3s, 2.5 pages/s)",
-    "classes": {
-      "flowchart": 704,
-      "wireframe": 731
+  "what": "13.4 - the three fallback chains, and the control the classifier rung turns on",
+  "table": {
+    "path": "data/features/handcrafted.parquet",
+    "rows": 3054,
+    "sources": {
+      "flowchartseg": 1319,
+      "sketch2code": 731,
+      "hdbpmn": 704,
+      "fa_bresler": 300
     },
-    "evaluation": "grouped 5-fold x 3 seeds (src.classify.cv.splitter, groups=writer)",
-    "accuracy": 0.9961,
-    "accuracy_std": 0.0028,
-    "macro_f1": 0.996,
-    "macro_f1_std": 0.0028,
-    "confusion_summed": {
-      "flowchart": [
-        2102,
-        10
-      ],
-      "wireframe": [
-        7,
-        2186
-      ]
+    "classes": {
+      "flowchart": 2023,
+      "wireframe": 731,
+      "state_machine": 300
     }
   },
-  "value_it_would_add": {
-    "claim": "the NB router is confidently WRONG on wireframe pages, and this rung is right",
-    "pages": [
-      {
-        "id": "sketch2code/10018_0",
-        "truth": "wireframe",
-        "nb": [
-          "flowchart",
-          0.9965
-        ],
-        "handcrafted_oof": [
-          "wireframe",
-          0.9998
-        ]
+  "arms": {
+    "full": {
+      "n": 3054,
+      "classes": {
+        "flowchart": 2023,
+        "wireframe": 731,
+        "state_machine": 300
       },
-      {
-        "id": "sketch2code/1002_0",
-        "truth": "wireframe",
-        "nb": [
-          "flowchart",
-          0.9999
+      "features": 34,
+      "groups": 2182,
+      "evaluation": "stratified grouped 5-fold x 3 seeds, groups=writer",
+      "accuracy": 0.9944,
+      "accuracy_std": 0.0007,
+      "macro_f1": 0.9946,
+      "macro_f1_std": 0.0008,
+      "labels": [
+        "flowchart",
+        "state_machine",
+        "wireframe"
+      ],
+      "confusion": {
+        "flowchart": [
+          2014,
+          0,
+          9
         ],
-        "handcrafted_oof": [
-          "wireframe",
-          1.0
-        ]
-      },
-      {
-        "id": "sketch2code/10032_0",
-        "truth": "wireframe",
-        "nb": [
-          "unknown",
-          0.0
+        "state_machine": [
+          0,
+          300,
+          0
         ],
-        "handcrafted_oof": [
-          "wireframe",
-          0.9995
+        "wireframe": [
+          9,
+          0,
+          722
         ]
       }
-    ]
+    },
+    "rendered_only": {
+      "n": 2350,
+      "classes": {
+        "flowchart": 1319,
+        "wireframe": 731,
+        "state_machine": 300
+      },
+      "features": 34,
+      "groups": 2075,
+      "evaluation": "stratified grouped 5-fold x 3 seeds, groups=writer",
+      "accuracy": 0.9935,
+      "accuracy_std": 0.0005,
+      "macro_f1": 0.9946,
+      "macro_f1_std": 0.0004,
+      "labels": [
+        "flowchart",
+        "state_machine",
+        "wireframe"
+      ],
+      "confusion": {
+        "flowchart": [
+          1311,
+          0,
+          8
+        ],
+        "state_machine": [
+          0,
+          300,
+          0
+        ],
+        "wireframe": [
+          9,
+          0,
+          722
+        ]
+      }
+    },
+    "domain_probe": {
+      "n": 3054,
+      "classes": {
+        "rendered": 2350,
+        "photographed": 704
+      },
+      "features": 34,
+      "groups": 2182,
+      "evaluation": "stratified grouped 5-fold x 3 seeds, groups=writer",
+      "accuracy": 0.9971,
+      "accuracy_std": 0.0005,
+      "macro_f1": 0.9958,
+      "macro_f1_std": 0.0007,
+      "labels": [
+        "photographed",
+        "rendered"
+      ],
+      "confusion": {
+        "photographed": [
+          697,
+          7
+        ],
+        "rendered": [
+          3,
+          2347
+        ]
+      },
+      "reading": "this is how well rendered can be told from photographed using nothing but the handcrafted features; the closer to 1.0, the less the headline arm proves on its own"
+    },
+    "cross_domain": {
+      "train": {
+        "sources": [
+          "flowchartseg",
+          "fa_bresler"
+        ],
+        "domain": "rendered (constant, so it cannot carry the label)",
+        "n": 1619,
+        "classes": {
+          "flowchart": 1319,
+          "state_machine": 300
+        }
+      },
+      "test": {
+        "source": "hdbpmn",
+        "domain": "photographed (never seen in training)",
+        "n": 704,
+        "truth": "flowchart, every page"
+      },
+      "accuracy": 0.858,
+      "predicted_counts": {
+        "flowchart": 604,
+        "state_machine": 100
+      },
+      "floor": 0.8,
+      "reading": "a model that learned the renderer would call these state machines"
+    },
+    "degraded_rendering": {
+      "per_degradation": {
+        "blur": {
+          "severity": 5,
+          "pages": 120,
+          "routed_state_machine": 107,
+          "accuracy": 0.8917
+        },
+        "rotation": {
+          "severity": 6.0,
+          "pages": 120,
+          "routed_state_machine": 94,
+          "accuracy": 0.7833
+        },
+        "lighting": {
+          "severity": 0.7,
+          "pages": 120,
+          "routed_state_machine": 120,
+          "accuracy": 1.0
+        },
+        "occlusion": {
+          "severity": 0.1,
+          "pages": 120,
+          "routed_state_machine": 120,
+          "accuracy": 1.0
+        },
+        "resolution": {
+          "severity": 0.5,
+          "pages": 120,
+          "routed_state_machine": 63,
+          "accuracy": 0.525
+        }
+      },
+      "worst": 0.525,
+      "mean": 0.84,
+      "floor": 0.8,
+      "reading": "held-out fa_bresler pages, degraded by 14.5's own sweep and re-extracted from the degraded pixels; a rung that keys on clean synthetic ink collapses here"
+    }
   },
-  "why_it_is_not_wired": {
-    "no_state_machine_class": "the rung has no state_machine class; on 8 golden fa_bresler pages it predicts wireframe 6/8, flowchart 2/8, mean confidence 0.8236, max 0.9978 - so no threshold separates it, and wiring it would trade the router's correct 48/48 state machines for a wireframe label nothing downstream can consume",
-    "cannot_add_the_class_honestly": "fa_bresler's raw data is 300 inkml stroke files, not photographs; its PNGs are rendered from strokes while every row in the table is a photograph or scan, so a 3-class model would separate rendering domain rather than diagram type - and the 2-class model already groups rendered fa_bresler with clean sketch2code line drawings, which is that confound showing up directly",
-    "upper_rungs_blocked_too": "the embedding (CLIP) and CNN rungs sit on the same two-class data; the synthetic corpus that covered all five types evenly is 0 rows after the rebuild"
+  "verdict": {
+    "classifier_rung_wired": true,
+    "criterion": "the cross-domain arm must reach 0.80 on pages whose rendering domain was never in its training set",
+    "cross_domain_accuracy": 0.858
   },
-  "what_is_built_and_demonstrated": {
-    "ocr_to_placeholder": "3 rungs, each verified to still produce code that passes 12.3.1: OCR text (q0/q1/q2) -> node id (s14/s15/s16) -> literal placeholder from _ident(fallback)",
-    "model_to_emitter": "src/pipeline/generate.py emit(): served adapter, else 12.1.6's emitter, marked degraded=True"
+  "ocr_chain": [
+    {
+      "rung": "read label",
+      "identifier": "q0",
+      "source": "the OCR reading of the drawn text",
+      "verified": "12.3.1 contract check passes"
+    },
+    {
+      "rung": "node id",
+      "identifier": "s14",
+      "source": "the IR node id, when OCR returns nothing usable",
+      "verified": "12.3.1 contract check passes"
+    },
+    {
+      "rung": "literal fallback",
+      "identifier": "step",
+      "source": "`targets._ident`'s fallback, when there is no id either",
+      "verified": "12.3.1 contract check passes"
+    }
+  ],
+  "model_chain": {
+    "where": "src/pipeline/generate.py",
+    "behaviour": "an emitter answer is marked degraded=True so no measurement mixes it with a model answer"
   }
 }
