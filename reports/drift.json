@@ -1,0 +1,371 @@
+{
+  "what": "15.5 - PSI / KS drift detection, with the controls that make an alarm mean something",
+  "table": {
+    "path": "data/features/handcrafted.parquet",
+    "rows": 3054
+  },
+  "thresholds": {
+    "psi_moderate": 0.1,
+    "psi_significant": 0.25,
+    "min_drifted_features": 3,
+    "bins": 10
+  },
+  "arms": {
+    "null": {
+      "reference_rows": 1184,
+      "current_rows": 1184,
+      "features": 34,
+      "drifted": 0,
+      "moderate": 0,
+      "alarm": false,
+      "worst": [
+        {
+          "feature": "edges_per_node",
+          "psi": 0.0345,
+          "band": "none",
+          "ks_statistic": 0.0374,
+          "ks_pvalue": 0.577
+        },
+        {
+          "feature": "conn_components",
+          "psi": 0.0258,
+          "band": "none",
+          "ks_statistic": 0.034,
+          "ks_pvalue": 0.694
+        },
+        {
+          "feature": "text_per_node",
+          "psi": 0.024,
+          "band": "none",
+          "ks_statistic": 0.0384,
+          "ks_pvalue": 0.544
+        },
+        {
+          "feature": "shape_frac_freeform",
+          "psi": 0.0233,
+          "band": "none",
+          "ks_statistic": 0.0505,
+          "ks_pvalue": 0.221
+        },
+        {
+          "feature": "shape_frac_diamond",
+          "psi": 0.0205,
+          "band": "none",
+          "ks_statistic": 0.0652,
+          "ks_pvalue": 0.052
+        },
+        {
+          "feature": "edge_count",
+          "psi": 0.0185,
+          "band": "none",
+          "ks_statistic": 0.027,
+          "ks_pvalue": 0.78
+        },
+        {
+          "feature": "layout_row_regularity",
+          "psi": 0.0182,
+          "band": "none",
+          "ks_statistic": 0.0291,
+          "ks_pvalue": 0.945
+        },
+        {
+          "feature": "line_to_curve",
+          "psi": 0.0175,
+          "band": "none",
+          "ks_statistic": 0.0409,
+          "ks_pvalue": 0.461
+        }
+      ],
+      "criterion": "alarm when at least 3 features reach PSI >= 0.25",
+      "must_alarm": false,
+      "passes": true,
+      "reading": "two random halves of the same distribution; an alarm here is sampling noise and would make every other number in this report uninterpretable"
+    },
+    "self": {
+      "reference_rows": 2368,
+      "current_rows": 2368,
+      "features": 34,
+      "drifted": 0,
+      "moderate": 0,
+      "alarm": false,
+      "worst": [
+        {
+          "feature": "node_count",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "edge_count",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "arrowhead_count",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "text_block_count",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "line_to_curve",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "arrows_per_node",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "text_per_node",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        },
+        {
+          "feature": "edges_per_node",
+          "psi": 0.0,
+          "band": "none",
+          "ks_statistic": 0.0,
+          "ks_pvalue": 1.0
+        }
+      ],
+      "criterion": "alarm when at least 3 features reach PSI >= 0.25",
+      "must_alarm": false,
+      "passes": true,
+      "max_psi": 0,
+      "reading": "identical inputs; PSI is 0 by construction and anything else is a bug"
+    },
+    "new_diagram_type": {
+      "reference_rows": 2754,
+      "current_rows": 300,
+      "features": 34,
+      "drifted": 31,
+      "moderate": 2,
+      "alarm": true,
+      "worst": [
+        {
+          "feature": "global_bbox_fill",
+          "psi": 12.576,
+          "band": "significant",
+          "ks_statistic": 0.8439,
+          "ks_pvalue": 4.7e-209
+        },
+        {
+          "feature": "global_aspect",
+          "psi": 12.4547,
+          "band": "significant",
+          "ks_statistic": 0.6707,
+          "ks_pvalue": 6.78e-119
+        },
+        {
+          "feature": "dir_flow_axis",
+          "psi": 8.1165,
+          "band": "significant",
+          "ks_statistic": 0.7884,
+          "ks_pvalue": 9.26e-175
+        },
+        {
+          "feature": "dir_angle_entropy",
+          "psi": 8.0802,
+          "band": "significant",
+          "ks_statistic": 0.9057,
+          "ks_pvalue": 4.8e-258
+        },
+        {
+          "feature": "global_ink_coverage",
+          "psi": 7.8406,
+          "band": "significant",
+          "ks_statistic": 0.5415,
+          "ks_pvalue": 2.87e-74
+        },
+        {
+          "feature": "dir_axis_aligned",
+          "psi": 7.2912,
+          "band": "significant",
+          "ks_statistic": 0.822,
+          "ks_pvalue": 1.18e-194
+        },
+        {
+          "feature": "edge_count",
+          "psi": 6.6805,
+          "band": "significant",
+          "ks_statistic": 0.6094,
+          "ks_pvalue": 5.94e-96
+        },
+        {
+          "feature": "line_to_curve",
+          "psi": 4.5149,
+          "band": "significant",
+          "ks_statistic": 0.5356,
+          "ks_pvalue": 1.93e-69
+        }
+      ],
+      "criterion": "alarm when at least 3 features reach PSI >= 0.25",
+      "must_alarm": true,
+      "passes": true,
+      "reading": "fa_bresler state machines against a reference that contains none"
+    },
+    "new_capture_device": {
+      "reference_rows": 2350,
+      "current_rows": 704,
+      "features": 34,
+      "drifted": 25,
+      "moderate": 6,
+      "alarm": true,
+      "worst": [
+        {
+          "feature": "global_aspect",
+          "psi": 6.3802,
+          "band": "significant",
+          "ks_statistic": 0.6222,
+          "ks_pvalue": 1.83e-198
+        },
+        {
+          "feature": "text_block_count",
+          "psi": 6.0161,
+          "band": "significant",
+          "ks_statistic": 0.9192,
+          "ks_pvalue": 2.1e-322
+        },
+        {
+          "feature": "text_label_length",
+          "psi": 3.3067,
+          "band": "significant",
+          "ks_statistic": 0.4024,
+          "ks_pvalue": 1.18e-62
+        },
+        {
+          "feature": "dir_axis_aligned",
+          "psi": 2.6445,
+          "band": "significant",
+          "ks_statistic": 0.5344,
+          "ks_pvalue": 1.05e-142
+        },
+        {
+          "feature": "arrowhead_count",
+          "psi": 2.6216,
+          "band": "significant",
+          "ks_statistic": 0.6846,
+          "ks_pvalue": 1.96e-245
+        },
+        {
+          "feature": "arrows_per_node",
+          "psi": 2.4559,
+          "band": "significant",
+          "ks_statistic": 0.6394,
+          "ks_pvalue": 1.36e-181
+        },
+        {
+          "feature": "global_ink_coverage",
+          "psi": 2.2397,
+          "band": "significant",
+          "ks_statistic": 0.6083,
+          "ks_pvalue": 6.38e-189
+        },
+        {
+          "feature": "text_area_frac",
+          "psi": 1.9134,
+          "band": "significant",
+          "ks_statistic": 0.5371,
+          "ks_pvalue": 1.49e-144
+        }
+      ],
+      "criterion": "alarm when at least 3 features reach PSI >= 0.25",
+      "must_alarm": true,
+      "passes": true,
+      "reading": "photographs of paper against a reference of rendered pages"
+    },
+    "new_drawing_style": {
+      "reference_rows": 2368,
+      "current_rows": 600,
+      "features": 34,
+      "drifted": 31,
+      "moderate": 2,
+      "alarm": true,
+      "worst": [
+        {
+          "feature": "global_aspect",
+          "psi": 11.3654,
+          "band": "significant",
+          "ks_statistic": 0.6499,
+          "ks_pvalue": 1.49e-193
+        },
+        {
+          "feature": "global_bbox_fill",
+          "psi": 9.4795,
+          "band": "significant",
+          "ks_statistic": 0.7386,
+          "ks_pvalue": 4.38e-259
+        },
+        {
+          "feature": "global_ink_coverage",
+          "psi": 7.6507,
+          "band": "significant",
+          "ks_statistic": 0.5502,
+          "ks_pvalue": 1e-134
+        },
+        {
+          "feature": "dir_angle_entropy",
+          "psi": 6.7358,
+          "band": "significant",
+          "ks_statistic": 0.8117,
+          "ks_pvalue": 8.25e-322
+        },
+        {
+          "feature": "edge_count",
+          "psi": 6.5003,
+          "band": "significant",
+          "ks_statistic": 0.5772,
+          "ks_pvalue": 2.64e-149
+        },
+        {
+          "feature": "dir_flow_axis",
+          "psi": 5.7948,
+          "band": "significant",
+          "ks_statistic": 0.6996,
+          "ks_pvalue": 2.16e-228
+        },
+        {
+          "feature": "node_count",
+          "psi": 5.7463,
+          "band": "significant",
+          "ks_statistic": 0.5034,
+          "ks_pvalue": 1.49e-111
+        },
+        {
+          "feature": "dir_axis_aligned",
+          "psi": 5.178,
+          "band": "significant",
+          "ks_statistic": 0.7348,
+          "ks_pvalue": 8.95e-256
+        }
+      ],
+      "criterion": "alarm when at least 3 features reach PSI >= 0.25",
+      "must_alarm": true,
+      "passes": true,
+      "reading": "the same pages put through 14.5's degradations and re-extracted"
+    }
+  },
+  "verdict": {
+    "controls_pass": true,
+    "every_shift_detected": true,
+    "usable": true
+  }
+}

@@ -206,6 +206,56 @@ def domain_probe(frame: pd.DataFrame) -> dict[str, Any]:
 DEGRADATIONS = (("blur", 5), ("rotation", 6.0), ("lighting", 0.7), ("occlusion", 0.1), ("resolution", 0.5))
 
 
+def degraded_features(
+    frame: pd.DataFrame, limit: int = 120, source: str = "fa_bresler"
+) -> pd.DataFrame | None:
+    """One row of 4.2 features per (page, degradation), extracted from the degraded pixels.
+
+    Factored out of `degraded_rendering` because 15.5's drift detector needs exactly the same
+    thing - the same pages captured worse - and two implementations of "degrade then re-extract"
+    would drift apart and quietly stop comparing like with like.
+
+    Every degraded page is written first and extracted in one parallel pass, so 4.2's extractor
+    pays its process-pool startup once rather than once per degradation. Returns None when no
+    page could be read at all.
+    """
+    import tempfile
+
+    import cv2
+
+    from src.eval.robust import degrade
+    from src.features.extractor import FeatureExtractor
+
+    held = frame[frame["source"] == source].head(limit)
+    if held.empty:
+        return None
+
+    with tempfile.TemporaryDirectory() as tmp:
+        jobs: list[tuple[str, str, Path]] = []
+        for kind, severity in DEGRADATIONS:
+            for page_id in held["id"]:
+                stem = page_id.split("/")[-1]
+                src = ROOT / "data" / "processed" / "fa_render" / f"{stem}.png"
+                if not src.is_file():
+                    continue
+                gray = cv2.imread(str(src), cv2.IMREAD_GRAYSCALE)
+                if gray is None:
+                    continue
+                out = Path(tmp) / f"{kind}__{stem}.png"
+                cv2.imwrite(str(out), degrade(gray, kind, float(severity)))
+                jobs.append((kind, page_id, out))
+        if not jobs:
+            return None
+        extractor = FeatureExtractor()
+        matrix = extractor.fit_transform([path for _, _, path in jobs])
+        names = list(extractor.get_feature_names_out())
+
+    out_frame = pd.DataFrame(matrix, columns=names)
+    out_frame.insert(0, "id", [f"{page_id}@{kind}" for kind, page_id, _ in jobs])
+    out_frame.insert(1, "degradation", [kind for kind, _, _ in jobs])
+    return out_frame
+
+
 def degraded_rendering(frame: pd.DataFrame, limit: int = 120) -> dict[str, Any]:
     """Does the rung survive fa_bresler's renders being made to look photographed?
 
@@ -220,13 +270,6 @@ def degraded_rendering(frame: pd.DataFrame, limit: int = 120) -> dict[str, Any]:
     extractor, and routed. A rung that needs clean ink collapses here; one that learned the
     shape of a state machine does not.
     """
-    import tempfile
-
-    import cv2
-
-    from src.eval.robust import degrade
-    from src.features.extractor import FeatureExtractor
-
     fa = frame[frame["source"] == "fa_bresler"]
     held = fa.head(limit)
     # Trained without a single state machine the model could not predict one, so the question
@@ -236,46 +279,31 @@ def degraded_rendering(frame: pd.DataFrame, limit: int = 120) -> dict[str, Any]:
     X_train, columns = features(train)
     model = _model().fit(X_train, train["diagram_type"].to_numpy())
 
+    extracted = degraded_features(frame, limit=limit)
     rows: dict[str, Any] = {}
-    with tempfile.TemporaryDirectory() as tmp:
-        # Every degraded page is written first and extracted in one parallel pass: 4.2's
-        # extractor pays its process-pool startup once, not once per degradation.
-        jobs: list[tuple[str, Path]] = []
-        for kind, severity in DEGRADATIONS:
-            for page_id in held["id"]:
-                stem = page_id.split("/")[-1]
-                src = ROOT / "data" / "processed" / "fa_render" / f"{stem}.png"
-                if not src.is_file():
-                    continue
-                gray = cv2.imread(str(src), cv2.IMREAD_GRAYSCALE)
-                if gray is None:
-                    continue
-                out = Path(tmp) / f"{kind}__{stem}.png"
-                cv2.imwrite(str(out), degrade(gray, kind, float(severity)))
-                jobs.append((kind, out))
-        if jobs:
-            matrix = FeatureExtractor().fit_transform([path for _, path in jobs])
-            names = list(FeatureExtractor().get_feature_names_out())
-            index = {name: i for i, name in enumerate(names)}
-            # The table's column order is what the model was fit on; the extractor's own order
-            # need not match it, so every column is looked up by name rather than by position.
-            picked = np.full((len(jobs), len(columns)), np.nan, dtype=float)
-            for j, column in enumerate(columns):
-                if column in index:
-                    picked[:, j] = matrix[:, index[column]]
-            predicted = model.predict(picked)
-            for kind, _ in DEGRADATIONS:
-                mask = np.array([k == kind for k, _ in jobs])
-                if not mask.any():
-                    continue
-                hit = int((predicted[mask] == "state_machine").sum())
-                total = int(mask.sum())
-                rows[kind] = {
-                    "severity": dict(DEGRADATIONS)[kind],
-                    "pages": total,
-                    "routed_state_machine": hit,
-                    "accuracy": round(hit / total, 4),
-                }
+    if extracted is None or extracted.empty:
+        return {"per_degradation": {}, "worst": None, "mean": None, "floor": CROSS_DOMAIN_FLOOR}
+
+    # The table's column order is what the model was fit on; the extractor's own order need not
+    # match it, so every column is looked up by name rather than by position.
+    picked = np.full((len(extracted), len(columns)), np.nan, dtype=float)
+    for j, column in enumerate(columns):
+        if column in extracted.columns:
+            picked[:, j] = extracted[column].to_numpy(dtype=float)
+    predicted = model.predict(picked)
+    kinds = extracted["degradation"].to_numpy()
+    for kind, severity in DEGRADATIONS:
+        mask = kinds == kind
+        if not mask.any():
+            continue
+        hit = int((predicted[mask] == "state_machine").sum())
+        total = int(mask.sum())
+        rows[kind] = {
+            "severity": severity,
+            "pages": total,
+            "routed_state_machine": hit,
+            "accuracy": round(hit / total, 4),
+        }
     scores = [v["accuracy"] for v in rows.values()]
     return {
         "per_degradation": rows,
