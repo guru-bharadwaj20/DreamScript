@@ -35,6 +35,7 @@ data/processed/flowchartseg_images/
 data/processed/ir/
 data/processed/label_crops/
 data/processed/manifest.parquet
+data/processed/targets/
 data/processed/text_crops/
 data/features/descriptors.parquet
 data/features/embeddings.npy
