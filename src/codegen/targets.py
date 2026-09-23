@@ -369,6 +369,32 @@ def _reachable(start: str, succ: dict[str, list[str]], blocked: str) -> set[str]
     return seen
 
 
+def _concat_components(blocks: list[list[str]]) -> list[str]:
+    """Several disconnected regions, one after another, with no unreachable tail.
+
+    A hdbpmn page routinely draws more than one pool, so `_structured` emits more than one
+    region, and each region that reaches a drawn end node ends in `return ctx`. Concatenating
+    them puts a top-level `return` in the middle of the function and **every operation after it
+    is dead code** - `ex00_writer0089` emitted eight operations and only three could run. That is
+    the single largest reason 12.1.6's own reference programs fail 12.3.3's tests, and it is
+    scored as `missing_operation`.
+
+    Only a *trailing* top-level `return` is dropped, and only from a region that is not the last.
+    A `return` anywhere else genuinely ends a path - inside an `if`, or before a region's own
+    later statements - and rewriting those changes behaviour rather than restoring it.
+    """
+    real = [b for b in blocks if b]
+    if len(real) <= 1:
+        return real[0] if real else []
+    body: list[str] = []
+    for index, suite in enumerate(real):
+        last = index == len(real) - 1
+        if not last and suite and suite[-1].startswith("return"):
+            suite = suite[:-1]
+        body += suite
+    return body
+
+
 def _structured(
     diagram: dict, order: list[str], succ: dict[str, list[str]], back: set[tuple[str, str]]
 ) -> list[str]:
@@ -416,8 +442,17 @@ def _structured(
                 # meet again. Sequential execution of each arm is the faithful reading, and it is
                 # what makes every drawn operation reachable.
                 meet = _join_point(targets[0], targets[1], succ, rank)
-                for arm in targets if meet is None else targets:
-                    lines += block(arm, stop | ({meet} if meet else frozenset()), depth + 1)
+                # The arms are concatenated into one flat suite, so an arm that reaches a drawn
+                # end node ends in `return ctx` and every later arm becomes dead code. On
+                # `ex00_writer0089` that is five of eight drawn operations, scored as
+                # `missing_operation` - and it is the largest single reason 12.1.6's own
+                # reference programs fail 12.3.3.
+                lines += _concat_components(
+                    [
+                        block(arm, stop | ({meet} if meet else frozenset()), depth + 1)
+                        for arm in targets
+                    ]
+                )
                 current = None if (meet is None or meet == "__exit__") else meet
                 continue
 
@@ -449,11 +484,12 @@ def _structured(
         return min(shared, key=lambda n: ranking[n])
 
     roots = [n for n in order if n not in emitted]
-    body: list[str] = []
+    components: list[list[str]] = []
     for root in roots:
         if root in emitted:
             continue
-        body += block(root, frozenset(), 0)
+        components.append(block(root, frozenset(), 0))
+    body = _concat_components(components)
     if len(emitted) < len(nodes):
         # a node the traversal never placed in a region: refuse rather than silently drop it
         raise _Irreducible("not every node was emitted")
