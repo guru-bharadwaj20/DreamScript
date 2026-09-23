@@ -55,6 +55,15 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             if "gpu" in item.keywords:
                 item.add_marker(no_gpu)
 
+    if sys.platform != "win32":
+        not_windows = pytest.mark.skip(
+            reason="Windows-only: drives tasks.ps1 through powershell.exe, or a Win32 job object"
+        )
+        for item in items:
+            name = item.name.split("[")[0]
+            if Path(item.fspath).stem in NEEDS_WINDOWS or name in NEEDS_WINDOWS_TESTS:
+                item.add_marker(not_windows)
+
     if not payload_present():
         no_data = pytest.mark.skip(
             reason="needs the DVC payload (data/processed, data/features); run `dvc pull`"
@@ -163,6 +172,22 @@ NEEDS_PAYLOAD = {
     "test_pipeline_integration",
     "test_preprocess_binarize",
     "test_rl_curriculum",
+}
+
+
+#: Modules that are Windows-only by construction rather than by accident. `tasks.ps1` is a
+#: PowerShell task runner and `test_task_runner` invokes it through `powershell.exe`, which a
+#: Linux runner does not have - there is no cross-platform behaviour being skipped here, only a
+#: shell that does not exist. Named rather than detected, for the same reason NEEDS_PAYLOAD is.
+NEEDS_WINDOWS = {
+    "test_task_runner",
+}
+
+#: Individual tests whose *module* is cross-platform but which are not. The sandbox reports
+#: `peak_memory_bytes` from a Win32 job object; on POSIX the containment is real but the
+#: accounting is not, so the assertion is None-against-not-None rather than a missed limit.
+NEEDS_WINDOWS_TESTS = {
+    "test_runaway_allocation_is_contained",
 }
 
 
