@@ -8,3 +8,7 @@ bitsandbytes==0.45.0
 sentencepiece==0.2.0
 safetensors==0.4.5
 huggingface-hub==0.27.0
+
+# Phase 9.3 - CER/WER for src/ocr/styled.py's `score`. Imported but never declared, so a
+# clean environment failed 5 tests in test_ocr_styled.py with ModuleNotFoundError.
+jiwer==3.0.5
