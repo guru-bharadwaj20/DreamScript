@@ -183,9 +183,34 @@ def test_the_corpus_is_exactly_the_handcrafted_table():
     assert len(labels) == len(expected)
 
 
-def test_the_corpus_is_not_just_whatever_is_on_disk():
+def test_the_corpus_is_not_just_whatever_is_on_disk(tmp_path, monkeypatch):
+    """`corpus()` must follow the feature table, not walk the images.
+
+    This used to assert `len(ids) < on_disk`, which held only while 4.2.2 built its table from a
+    stratified sample. 13.4 rebuilt it with `--all`, so the table legitimately covers every page
+    on disk and the strict inequality became false without anything regressing - the size
+    relation was incidental, not the property.
+
+    What the property actually is: a page present on disk but absent from the table must not
+    appear in the corpus. That is asserted here directly by handing `corpus()` a table with a row
+    removed, which is a stronger check than the count comparison and does not depend on how the
+    table was built.
+    """
+    import pandas as pd
+
+    from src.classify.data import TABLE
     from src.features.build import collect
 
-    on_disk = len([row for row in collect(None) if not row["synthetic"]])
+    frame = pd.read_parquet(TABLE)
+    real = frame[~frame["synthetic"].astype(bool)]
+    assert len(real) > 1, "needs at least two real rows to drop one"
+
+    dropped = real.iloc[0]["id"]
+    trimmed = tmp_path / "handcrafted.parquet"
+    frame[frame["id"] != dropped].to_parquet(trimmed)
+    monkeypatch.setattr("src.classify.data.TABLE", trimmed)
+
     _, _, ids = backbone.corpus()
-    assert len(ids) < on_disk
+    assert dropped not in set(ids)
+    # ...and the page really is on disk, so its absence is the table's doing and not the disk's.
+    assert dropped in {row["id"] for row in collect(None)}
