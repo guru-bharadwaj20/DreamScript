@@ -1,0 +1,147 @@
+{
+  "what": "15.6 - the routing classifier's confidence, logged, with a spike alarm",
+  "monitored": "out-of-fold max predict_proba of 13.4's routing rung, grouped by writer",
+  "not_monitored": "runs/p13_golden stage confidences: six of seven stages are exactly 1.0 over 26 pages and the IR node confidences are all 1.0, so a monitor over them would report a straight line and call it a distribution",
+  "thresholds": {
+    "low_confidence": 0.7,
+    "spike_ratio": 3.0,
+    "spike_floor": 0.02
+  },
+  "overall": {
+    "n": 3054,
+    "mean": 0.9983,
+    "percentiles": {
+      "p1": 0.9898,
+      "p5": 0.9999,
+      "p10": 1.0,
+      "p25": 1.0,
+      "p50": 1.0,
+      "p75": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+    },
+    "low_confidence_share": 0.0023
+  },
+  "by_source": {
+    "fa_bresler": {
+      "n": 300,
+      "mean": 1.0,
+      "percentiles": {
+        "p1": 0.9989,
+        "p5": 1.0,
+        "p10": 1.0,
+        "p25": 1.0,
+        "p50": 1.0,
+        "p75": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "low_confidence_share": 0.0
+    },
+    "flowchartseg": {
+      "n": 1319,
+      "mean": 0.999,
+      "percentiles": {
+        "p1": 0.9962,
+        "p5": 1.0,
+        "p10": 1.0,
+        "p25": 1.0,
+        "p50": 1.0,
+        "p75": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "low_confidence_share": 0.0008
+    },
+    "hdbpmn": {
+      "n": 704,
+      "mean": 0.9995,
+      "percentiles": {
+        "p1": 0.9977,
+        "p5": 1.0,
+        "p10": 1.0,
+        "p25": 1.0,
+        "p50": 1.0,
+        "p75": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "low_confidence_share": 0.0
+    },
+    "sketch2code": {
+      "n": 731,
+      "mean": 0.9953,
+      "percentiles": {
+        "p1": 0.8507,
+        "p5": 0.9992,
+        "p10": 0.9999,
+        "p25": 1.0,
+        "p50": 1.0,
+        "p75": 1.0,
+        "p90": 1.0,
+        "p99": 1.0
+      },
+      "low_confidence_share": 0.0082
+    }
+  },
+  "when_correct": {
+    "n": 3035,
+    "mean": 0.9992,
+    "percentiles": {
+      "p1": 0.9956,
+      "p5": 1.0,
+      "p10": 1.0,
+      "p25": 1.0,
+      "p50": 1.0,
+      "p75": 1.0,
+      "p90": 1.0,
+      "p99": 1.0
+    },
+    "low_confidence_share": 0.001
+  },
+  "when_wrong": {
+    "n": 19,
+    "mean": 0.8529,
+    "percentiles": {
+      "p1": 0.5123,
+      "p5": 0.5472,
+      "p10": 0.6046,
+      "p25": 0.7512,
+      "p50": 0.92,
+      "p75": 0.9984,
+      "p90": 0.9997,
+      "p99": 1.0
+    },
+    "low_confidence_share": 0.2105
+  },
+  "controls": {
+    "quiet": {
+      "n": 120,
+      "low_confidence_share": 0.0,
+      "baseline_share": 0.0023,
+      "ratio": 0.0,
+      "ratio_required": 3.0,
+      "floor": 0.02,
+      "spiked": false,
+      "must_spike": false,
+      "passes": true,
+      "reading": "clean held-out pages, never trained on; a spike here is the split talking"
+    },
+    "spike": {
+      "n": 600,
+      "low_confidence_share": 0.0867,
+      "baseline_share": 0.0023,
+      "ratio": 37.68,
+      "ratio_required": 3.0,
+      "floor": 0.02,
+      "spiked": true,
+      "must_spike": true,
+      "passes": true,
+      "reading": "the same pages through 14.5's degradations, re-extracted"
+    }
+  },
+  "verdict": {
+    "controls_pass": true,
+    "baseline_low_confidence_share": 0.0023
+  }
+}
