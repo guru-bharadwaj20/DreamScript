@@ -42,6 +42,8 @@ $Tasks = [ordered]@{
     "test-fast"         = @{ Cmd = @("-m", "pytest", "-m", "not slow");        Help = "skip anything marked slow" }
     "lint"              = @{ Cmd = @("-m", "ruff", "check", "src", "tests", "scripts"); Help = "ruff check" }
     "format"            = @{ Cmd = @("-m", "black", "src", "tests", "scripts");Help = "apply black formatting" }
+    "repro"             = @{ Cmd = @("-m", "dvc", "repro");                   Help = "Phase 15.4 - run the DVC DAG" }
+    "dag"               = @{ Cmd = @("-m", "dvc", "dag");                     Help = "Phase 15.4 - print the pipeline graph" }
 
     # pipeline stages
     "data"              = @{ Module = "src.ingest";     Help = "Phase 1 - build the corpus manifest and splits" }

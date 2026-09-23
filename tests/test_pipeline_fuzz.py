@@ -61,7 +61,10 @@ def _real_png(directory, size=(320, 240)):
 def _pipeline(monkeypatch, boxes):
     """A pipeline whose detector returns `boxes` - or raises, if `boxes` is an exception."""
 
-    def fake_detect(path, min_score=0.25):
+    # Mirrors `vision.detect_boxes`, keyword-only `keep_arrowheads` included: core.py calls it
+    # with that argument, and a stub that does not accept it raises TypeError before the test's
+    # own exception can be reached - so every fuzz case was exercising the wrong failure.
+    def fake_detect(path, min_score=0.25, *, keep_arrowheads=False):
         if isinstance(boxes, BaseException):
             raise boxes
         return boxes
