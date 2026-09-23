@@ -116,7 +116,8 @@ def measure_condition(img: np.ndarray) -> tuple[str, dict]:
     lines = cv2.HoughLinesP(binary, 1, np.pi / 180, 60, minLineLength=hh // 3, maxLineGap=10)
     if lines is not None and len(lines):
         angles = []
-        for x1, y1, x2, y2 in lines[:, 0][:200]:
+        # (N, 1, 4) on OpenCV 4, (N, 4) on 5; reshape reads both.
+        for x1, y1, x2, y2 in np.asarray(lines).reshape(-1, 4)[:200]:
             a = np.degrees(np.arctan2(y2 - y1, x2 - x1)) % 90
             angles.append(min(a, 90 - a))
         skew = float(np.median(angles)) if angles else 0.0
@@ -461,7 +462,7 @@ def neatness(img: np.ndarray) -> float:
     if lines is None:
         return 0.0
     mask = np.zeros_like(binary)
-    for x1, y1, x2, y2 in lines[:, 0]:
+    for x1, y1, x2, y2 in np.asarray(lines).reshape(-1, 4):
         cv2.line(mask, (x1, y1), (x2, y2), 255, 3)
     return float(((mask > 0) & (binary > 0)).sum() / ink)
 

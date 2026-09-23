@@ -79,7 +79,10 @@ def estimate(mask: np.ndarray) -> float:
     # content outvote the structure.
     angles: list[float] = []
     weights: list[float] = []
-    for x1, y1, x2, y2 in segments[:, 0]:
+    # `HoughLinesP` returns (N, 1, 4) on OpenCV 4 and (N, 4) on 5, so `[:, 0]` yields a column
+    # of scalars on this build rather than rows of four. `reshape(-1, 4)` reads both - the same
+    # normalisation 14.4 applied to `convexityDefects`, and `primitives/segments.py` already uses.
+    for x1, y1, x2, y2 in np.asarray(segments).reshape(-1, 4):
         length = float(np.hypot(x2 - x1, y2 - y1))
         if length <= 0:
             continue
