@@ -163,9 +163,16 @@ jobs:
         run: docker build --target serve -t dreamscript/model:ci .
 
       - name: the image is not root and imports its entry point
+        # `| tail -1`, and it is not cosmetic. The CUDA base ships an ENTRYPOINT that prints a
+        # licence banner to stdout on every run, so a bare `$(docker run ... id -u)` captures the
+        # banner *and* the uid and never equals "10001". The first version of this step failed
+        # for exactly that reason while the image underneath it was correct - the check was wrong,
+        # not the Dockerfile.
         run: |
-          test "$(docker run --rm dreamscript/model:ci id -u)" = "10001"
-          docker run --rm dreamscript/model:ci python -c "import cv2, torch; print(cv2.__version__, torch.__version__)"
+          uid="$(docker run --rm dreamscript/model:ci id -u | tail -1)"
+          echo "uid=$uid"
+          test "$uid" = "10001"
+          docker run --rm dreamscript/model:ci python -c "import cv2, torch; print('cv2', cv2.__version__, 'torch', torch.__version__)" | tail -1
 
       - name: the container serves /health
         # The whole point of 15.11's /health not loading the model: it answers on a runner with no
