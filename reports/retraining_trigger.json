@@ -1,0 +1,57 @@
+{
+  "what": "15.8 - when to retrain a component, and when to refuse",
+  "signals": {
+    "drift": {
+      "available": true,
+      "controls_pass": true,
+      "shifts_detected": [
+        "new_diagram_type",
+        "new_capture_device",
+        "new_drawing_style"
+      ],
+      "fires": false,
+      "why": "the shifts in reports/drift.json are this row's own calibration arms - a new diagram type, a new capture device, 14.5's degradations - not observed production traffic. They prove the detector works; they are not evidence that the input has moved. `--against <batch>` is what scores real traffic"
+    },
+    "confidence": {
+      "available": true,
+      "controls_pass": true,
+      "baseline_low_confidence_share": 0.0023,
+      "fires": false,
+      "why": "the spike arm is the degradation control, not production traffic; a real batch is scored with `python -m src.mlops.monitor --against <batch>`"
+    },
+    "corrections": {
+      "available": true,
+      "records": 0,
+      "usable": 0,
+      "threshold": 500,
+      "fires": false,
+      "why": "0 usable corrections against a threshold of 500; 16.2.8 is Phase 16 and not built, so no user has yet had a way to make one"
+    }
+  },
+  "decisions": [
+    {
+      "component": "classification",
+      "verdict": "no",
+      "firing_signals": [],
+      "reason": "no signal is asking for a retrain"
+    },
+    {
+      "component": "generation",
+      "verdict": "no",
+      "firing_signals": [],
+      "reason": "no signal is asking for a retrain; and if one did, the lever is 12.1.6's emitter, not the model",
+      "evidence": "12.3.3 grades against the reference programs, so every point the emitter gains raises the bar too; the model is at 0.7037 under a 0.784 ceiling and cannot pass by imitating an emitter that is itself failing 35 of 162"
+    },
+    {
+      "component": "ocr",
+      "verdict": "no",
+      "firing_signals": [],
+      "reason": "no signal is asking for a retrain; and if one did, the lever is crop selection, not the reader",
+      "evidence": "S3: more epochs +0.0089 CER, stronger augmentation +0.0040, retrain-on-reselection +0.0067 - three retrains, all worse. The oracle over the crops already in hand is 0.0737 against the learned ranker's 0.1890, so the remaining distance is selection"
+    }
+  ],
+  "verdict": {
+    "any_due": false,
+    "refusals": []
+  }
+}
