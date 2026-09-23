@@ -1,0 +1,136 @@
+{
+  "what": "15.12 - does this machine reproduce what the record claims",
+  "environment": {
+    "pins": 49,
+    "mismatched": [
+      {
+        "package": "omegaconf",
+        "pinned": "2.3.0",
+        "installed": "2.3.1"
+      },
+      {
+        "package": "pyarrow",
+        "pinned": "18.1.0",
+        "installed": "17.0.0"
+      },
+      {
+        "package": "pywin32",
+        "pinned": "308",
+        "installed": "312"
+      },
+      {
+        "package": "pyyaml",
+        "pinned": "6.0.2",
+        "installed": "6.0.3"
+      },
+      {
+        "package": "tqdm",
+        "pinned": "4.67.1",
+        "installed": "4.70.1"
+      }
+    ],
+    "local_builds": [
+      {
+        "package": "torch",
+        "pinned": "2.5.1",
+        "installed": "2.5.1+cu124"
+      },
+      {
+        "package": "torchvision",
+        "pinned": "0.20.1",
+        "installed": "0.20.1+cu124"
+      }
+    ],
+    "missing": [
+      {
+        "package": "pre-commit",
+        "pinned": "4.0.1"
+      }
+    ],
+    "shadowed_imports": [],
+    "ok": false,
+    "reading": "a shadowed import is the failure this check exists for: it is invisible to a plain version comparison, because the pin is satisfied and a different distribution is the one actually imported"
+  },
+  "not_attempted": [
+    {
+      "criterion": "S3 label OCR CER",
+      "why": "needs the TrOCR checkpoint and the label-crop corpus"
+    },
+    {
+      "criterion": "S5 graph edit distance",
+      "why": "needs the detector, TrOCR and the full assemble stage"
+    },
+    {
+      "criterion": "S6 / S8 pipeline runs",
+      "why": "needs a GPU and the golden page set"
+    },
+    {
+      "criterion": "every training row",
+      "why": "hours of GPU; 15.4's DVC DAG is the entry point, not this module"
+    }
+  ],
+  "metrics": {
+    "checked": [
+      {
+        "name": "S1 diagram-type accuracy",
+        "artefact": "reports/s1_heldout_scribes.json",
+        "key": "accuracy",
+        "expected": 0.9871,
+        "tolerance": 0.0005,
+        "found": 0.9871,
+        "delta": 0.0,
+        "status": "matches"
+      },
+      {
+        "name": "S2 detection mAP@0.5",
+        "artefact": "reports/s2_component_detection.json",
+        "key": "map50",
+        "expected": 0.9107,
+        "tolerance": 0.0005,
+        "found": 0.9107,
+        "delta": 0.0,
+        "status": "matches"
+      },
+      {
+        "name": "S4 role macro F1",
+        "artefact": "reports/s4_role_labelling.json",
+        "key": "macro_f1",
+        "expected": 0.8003,
+        "tolerance": 0.0005,
+        "found": 0.8003,
+        "delta": 0.0,
+        "status": "matches"
+      },
+      {
+        "name": "S7 functional pass@1",
+        "artefact": "experiments/llm/quality/done.json",
+        "key": "lora.functional",
+        "expected": 0.7037,
+        "tolerance": 0.0005,
+        "found": 0.7037,
+        "delta": 0.0,
+        "status": "matches"
+      },
+      {
+        "name": "12.3.3 reference ceiling",
+        "artefact": "experiments/llm/quality/done.json",
+        "key": "reference.functional",
+        "expected": 0.784,
+        "tolerance": 0.0005,
+        "found": 0.784,
+        "delta": 0.0,
+        "status": "matches"
+      }
+    ],
+    "matched": 5,
+    "diverged": 0,
+    "unavailable": 0,
+    "ok": true
+  },
+  "verdict": {
+    "environment_ok": false,
+    "metrics_ok": true,
+    "metrics_checked": true,
+    "reproducible": false
+  }
+}

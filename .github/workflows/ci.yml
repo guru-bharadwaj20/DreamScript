@@ -6,6 +6,13 @@
 # worktree with exactly it, 40 tests across 16 modules failed for want of the corpus - and
 # `tests/conftest.py` now skips those with a reason instead. What is left runs here honestly.
 #
+# A runner installs from `requirements/`, which is the other half of why this job is worth having.
+# On the development machine three OpenCV distributions were installed at once - the pinned
+# `opencv-contrib-python==4.10.0.84` plus `opencv-python` and `opencv-python-headless` at 5.0.0.93,
+# neither of them in any requirements file - and the undeclared 5.0 shadowed the pin. Four tests
+# failed against `cv2.MSER` and `cv2.HoughLinesP` for that reason alone and were briefly mistaken
+# for code regressions. A clean install from the pins is exactly what catches that.
+#
 # This workflow does NOT pull the payload. Doing so would need remote credentials and tens of
 # gigabytes per run, and it would turn a three-minute check into something nobody waits for. The
 # consequence is stated plainly rather than hidden: CI checks the code, the schemas and every
@@ -87,11 +94,6 @@ jobs:
           pip install -r requirements/cv.txt
           pip install pytest==8.3.4
       - name: the suite, with corpus-dependent modules skipping
-        # This job is RED at time of writing and that is deliberate. Four tests fail for one
-        # diagnosed cause - OpenCV 5's MSER returns no regions on the hard-binary input
-        # `primitives.text.propose` synthesises when given no photograph, so too few candidates
-        # survive for the line-grouping to accept any. Suppressing them to get a green badge
-        # would make this job worthless; it reports the truth until the cause is fixed.
         run: python -m pytest tests -q
       - name: what was skipped, and why
         if: always()
