@@ -1,0 +1,116 @@
+# Phase 15.9 - CI.
+#
+# What a GitHub runner has and this project mostly does not: no GPU, no DVC payload, no 1.3 GB
+# checkpoints. `data/` is `.dvc` pointers in git and content in a remote, so a fresh clone gets
+# the pointers and nothing else. That shape was measured rather than assumed - on a detached
+# worktree with exactly it, 40 tests across 16 modules failed for want of the corpus - and
+# `tests/conftest.py` now skips those with a reason instead. What is left runs here honestly.
+#
+# This workflow does NOT pull the payload. Doing so would need remote credentials and tens of
+# gigabytes per run, and it would turn a three-minute check into something nobody waits for. The
+# consequence is stated plainly rather than hidden: CI checks the code, the schemas and every
+# test that does not need the corpus. It does not reproduce the headline metrics - 15.12 is the
+# row that does that, on a machine with the data.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  lint:
+    name: lint (ruff, black, isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: install the linters only
+        # Not the full stack: ruff, black and isort need none of torch, CUDA or OpenCV, and
+        # installing 3 GB of wheels to check formatting is how a lint job comes to take 8 minutes.
+        run: pip install ruff==0.8.4 black==24.10.0 isort==5.13.2
+      - run: ruff check src tests scripts
+      - run: black --check src tests scripts
+      - run: isort --check src tests scripts
+
+  schemas:
+    name: schema validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install jsonschema==4.23.0
+      - name: every schema in schemas/ is itself valid JSON Schema
+        # A malformed schema does not fail loudly - it fails by validating nothing, which is the
+        # failure mode worth catching in CI rather than in a report six phases later.
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          from jsonschema import Draft202012Validator
+          bad = 0
+          for path in sorted(pathlib.Path("schemas").glob("*.json")):
+              try:
+                  Draft202012Validator.check_schema(json.loads(path.read_text()))
+                  print(f"ok    {path}")
+              except Exception as exc:
+                  print(f"BAD   {path}: {exc}", file=sys.stderr)
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+  tests:
+    name: tests (no DVC payload)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: install the CPU stack
+        # The CPU torch index, because the default wheel pulls a CUDA runtime this runner has no
+        # use for and the download alone is longer than the whole job.
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install -r requirements/base.txt
+          pip install -r requirements/classical.txt
+          pip install -r requirements/cv.txt
+          pip install pytest==8.3.4
+      - name: the suite, with corpus-dependent modules skipping
+        # This job is RED at time of writing and that is deliberate. Four tests fail for one
+        # diagnosed cause - OpenCV 5's MSER returns no regions on the hard-binary input
+        # `primitives.text.propose` synthesises when given no photograph, so too few candidates
+        # survive for the line-grouping to accept any. Suppressing them to get a green badge
+        # would make this job worthless; it reports the truth until the cause is fixed.
+        run: python -m pytest tests -q
+      - name: what was skipped, and why
+        if: always()
+        run: python -m pytest tests -q -rs | tail -40
+
+  smoke-train:
+    name: tiny-model smoke train
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch
+          pip install -r requirements/base.txt -r requirements/classical.txt
+      - name: train something end to end on the committed fixtures
+        # 0.2.7's five synthetic sketches are committed (~15 KB) precisely so something can be
+        # trained with no dataset present. This proves the training path imports, fits and scores
+        # on CPU - not that any metric is good, which needs the corpus and is 15.12's job.
+        run: python -m src.mlops.smoke --check

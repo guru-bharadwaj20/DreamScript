@@ -209,6 +209,8 @@ def test_the_measured_node_cap_is_below_the_largest_diagrams_in_the_corpus():
     """The corpus contains 200-node sketch2code pages; MERMAID_NODE_CAP (60) must actually cap
     something, not sit above every real diagram."""
     sizes = [len(Diagram.load(p).nodes) for p in CORPUS_FILES if p.parent.name == "sketch2code"]
+    if not sizes:
+        pytest.skip("needs the sketch2code IR from the DVC payload; run `dvc pull`")
     assert max(sizes) > S.MERMAID_NODE_CAP
 
 

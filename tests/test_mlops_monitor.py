@@ -156,5 +156,9 @@ def test_render_says_so_when_confidence_fails_to_separate():
 
 def test_controls_cannot_pass_when_none_were_run():
     """--no-pixels runs no controls, which must read as 'not established', never as success."""
+    from src.pipeline import fallback
+
+    if not fallback.TABLE.is_file():
+        pytest.skip("needs data/features/handcrafted.parquet")
     result = monitor.collect(with_pixels=False)
     assert result["verdict"]["controls_pass"] is False

@@ -1,0 +1,6 @@
+# Phase 15.11 — the inference service. Deliberately its own layer: a training machine has no
+# reason to install a web server, and the container that serves has no reason to install torch's
+# CUDA toolchain to answer /health.
+fastapi==0.115.6
+uvicorn==0.34.0
+python-multipart==0.0.20
