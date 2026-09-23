@@ -299,7 +299,10 @@ def test_label_crop_index_agrees_with_the_manifest():
     agreement = S.crop_index_agreement()
     if not agreement["available"]:
         pytest.skip("no label-crop index")
-    assert agreement["resolved"] == 693
+    # 693 hdbpmn pages plus fa_bresler's 300, which 13.4 added to the manifest. The number that
+    # carries the property is `disagree`: every page the crop index names still resolves to a
+    # manifest row, and none of them resolves to a different one.
+    assert agreement["resolved"] == 993
     assert agreement["disagree"] == 0, agreement["examples"]
 
 
