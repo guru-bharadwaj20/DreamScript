@@ -74,9 +74,9 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
         if done % 25 == 0:
             rate = (time.perf_counter() - started) / done
             print(f"[craftcache] {done} pages, {rate:.2f}s/page", flush=True)
-            out.write_text(json.dumps(cache), encoding="utf-8")
+            out.write_text(json.dumps(cache) + "\n", encoding="utf-8")
 
-    out.write_text(json.dumps(cache), encoding="utf-8")
+    out.write_text(json.dumps(cache) + "\n", encoding="utf-8")
     boxes = sum(len(v["boxes"]) for v in cache.values())
     result = {
         "pages": len(cache),

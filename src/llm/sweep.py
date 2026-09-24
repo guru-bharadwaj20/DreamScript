@@ -114,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - GPU orches
 
     def record() -> None:
         (OUT / "results.json").write_text(
-            json.dumps(results, indent=2),
+            json.dumps(results, indent=2) + "\n",
             encoding="utf-8",
         )
 

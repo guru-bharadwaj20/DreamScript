@@ -606,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
     cells = collect(args.root)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render(cells), encoding="utf-8")
-    args.out_json.write_text(json.dumps({"cells": cells}, indent=2), encoding="utf-8")
+    args.out_json.write_text(json.dumps({"cells": cells}, indent=2) + "\n", encoding="utf-8")
     missing = [cell["provenance"] for cell in cells if not cell["available"]]
     print(f"{len(cells) - len(missing)}/{len(cells)} cells resolved -> {args.out}")
     for provenance in missing:

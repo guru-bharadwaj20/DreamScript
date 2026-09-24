@@ -296,7 +296,7 @@ def build(limit: int | None = None, out: Path = TABLE) -> dict:
         "mean_cer": round(float(frame["cer"].mean()), 4),
         "oracle_cer": round(float(frame.groupby(["page", "element_id"])["cer"].min().mean()), 4),
     }
-    (out.parent / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (out.parent / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary
 
 

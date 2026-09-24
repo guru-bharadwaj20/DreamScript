@@ -244,7 +244,8 @@ def run(arms=ARMS, epochs: int = EPOCHS) -> dict:
                     "files": val_frame["file"].tolist(),
                     "predictions": predictions,
                 }
-            ),
+            )
+            + "\n",
             encoding="utf-8",
         )
         return {
@@ -294,7 +295,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(tuple(args.arm) if args.arm else ARMS, args.epochs)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2)[:4000])
     return 0
 

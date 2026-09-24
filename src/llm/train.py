@@ -340,7 +340,7 @@ def train(
         peak_allocated_gb=round(torch.cuda.max_memory_allocated() / 1e9, 3) if cuda else None,
         peak_reserved_gb=round(torch.cuda.max_memory_reserved() / 1e9, 3) if cuda else None,
     )
-    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (run_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary
 
 

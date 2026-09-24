@@ -96,7 +96,9 @@ def run(cfg) -> dict[str, Any]:  # pragma: no cover - GPU
     assert checks["gradient_checkpointing_effective"], "gradient checkpointing is not applied"
     examples, val, data_report = build_examples(cfg, tokenizer)
     data_report["runtime_checks"] = checks
-    (active.dir / "data.json").write_text(json.dumps(data_report, indent=2), encoding="utf-8")
+    (active.dir / "data.json").write_text(
+        json.dumps(data_report, indent=2) + "\n", encoding="utf-8"
+    )
     active.log.info("data: %s", json.dumps(data_report["train"]))
     summary = train.train(
         model,
@@ -123,7 +125,7 @@ def run(cfg) -> dict[str, Any]:  # pragma: no cover - GPU
     # the returned dict - and every consumer reads the *file* back (12.2's pipeline resumes an arm
     # from it). Losing `adapter` that way is not cosmetic: it silently turned 12.2.7's LoRA arm
     # back into the base model and crashed 12.2.8's export on Path(None).
-    (active.dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (active.dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     active.log_metrics(summary)
     active.finish()
     print(json.dumps(summary, indent=2), flush=True)

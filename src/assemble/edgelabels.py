@@ -210,7 +210,7 @@ def store(page, labels: dict[str, str]) -> Path:
     path = CACHE / f"{getattr(page, 'source', 'loose')}__{page.id or page.name}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps({"checkpoint": checkpoint_fingerprint("fa_bresler"), "labels": labels}),
+        json.dumps({"checkpoint": checkpoint_fingerprint("fa_bresler"), "labels": labels}) + "\n",
         encoding="utf-8",
     )
     return path

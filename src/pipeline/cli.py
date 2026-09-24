@@ -59,7 +59,7 @@ def write_result(result: Result, out: Path) -> None:
     stem = Path(result.source).stem
     out.mkdir(parents=True, exist_ok=True)
     (out / f"{stem}.json").write_text(
-        json.dumps(result.to_dict(), indent=2, default=str), encoding="utf-8"
+        json.dumps(result.to_dict(), indent=2, default=str) + "\n", encoding="utf-8"
     )
     if result.code:
         suffix = SUFFIX.get(result.language, ".txt")
@@ -201,7 +201,7 @@ def run(argv: Sequence[str] | None = None) -> int:
 
     summary = summarise(results, LATENCY_BUDGET_S)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (args.out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     (args.out / "report.md").write_text(report_markdown(summary, results), encoding="utf-8")
 
     print(

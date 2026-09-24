@@ -434,7 +434,8 @@ def evaluate(
                 "files": frame["file"].tolist(),
                 "predictions": predicted,
             }
-        ),
+        )
+        + "\n",
         encoding="utf-8",
     )
     return {

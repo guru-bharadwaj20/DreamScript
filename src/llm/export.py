@@ -315,7 +315,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - heavy
     if not args.skip_merge:
         report["merge"] = merge(args.base, args.adapter, merged_dir)
     report["gguf"] = to_gguf(merged_dir, args.out)
-    (args.out / "export.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (args.out / "export.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     return 0
 

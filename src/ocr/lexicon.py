@@ -331,7 +331,8 @@ def run(model_name: str = "finetune", beam: int = BEAM, limit: int | None = None
                     "files": val_frame["file"].tolist(),
                     "predictions": predictions,
                 }
-            ),
+            )
+            + "\n",
             encoding="utf-8",
         )
 
@@ -361,7 +362,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(args.model, args.beam, args.limit)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
     return 0
 

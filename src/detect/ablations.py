@@ -166,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(args.epochs, args.root)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print("\n".join(write_table(result)))
     print(json.dumps({k: v for k, v in result.items() if k != "rows"}, indent=2))
     return 0

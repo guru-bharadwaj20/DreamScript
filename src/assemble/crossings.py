@@ -603,7 +603,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(args.limit, with_width=not args.no_width)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "sweep"}, indent=2))
     return 0
 

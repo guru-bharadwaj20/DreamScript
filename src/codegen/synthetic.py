@@ -823,7 +823,7 @@ def build(
     report["diversity"] = diversity(chosen)
     report["seconds"] = round(time.time() - started, 1)
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 

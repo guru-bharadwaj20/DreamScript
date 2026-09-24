@@ -254,7 +254,7 @@ def export(out: Path = OUT, sources=SOURCES, limit: int | None = None) -> dict:
         ]
     )
     (out / "data.yaml").write_text(yaml, encoding="utf-8")
-    (out / "index.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
+    (out / "index.json").write_text(json.dumps(index, indent=1) + "\n", encoding="utf-8")
 
     by_source: dict[str, dict[str, int]] = {}
     for record in index:
@@ -348,7 +348,7 @@ def train(
         "pose_map50": round(float(metrics.pose.map50), 4),
         "weights": str(RUNS / name / "weights" / "best.pt"),
     }
-    (RUNS / f"train_{name}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    (RUNS / f"train_{name}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
     return result
 

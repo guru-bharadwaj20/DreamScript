@@ -651,7 +651,7 @@ def main(argv: list[str] | None = None) -> int:
     default = REPORT if args.split == "val" else REPORT.with_name("s5_graph_ged_test.json")
     out = args.out or default
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "pages"}, indent=2))
     return 0
 

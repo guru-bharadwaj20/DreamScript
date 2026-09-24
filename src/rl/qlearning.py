@@ -608,7 +608,7 @@ def run(
     }
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        OUT.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         result["path"] = str(OUT.relative_to(ROOT))
     return result
 

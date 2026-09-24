@@ -445,7 +445,9 @@ def run(
     result["references"] = {name: references(g, raw) for name, (raw, g) in sets.items()}
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "diagnostics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        (RUNS / "diagnostics.json").write_text(
+            json.dumps(result, indent=2) + "\n", encoding="utf-8"
+        )
         with JOBS.open("wb") as handle:
             pickle.dump(jobs, handle)
         result["figures"] = [

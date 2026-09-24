@@ -1444,14 +1444,14 @@ def main(argv: list[str] | None = None) -> int:
                 parts.update(blob)
         out = merge(parts, members)
         RUNS.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(out, indent=2), encoding="utf-8")
+        OUT.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
         out["figure"] = str(plot(out).relative_to(ROOT))
     else:
         ap.error("choose --stage or --quick")
         return 2
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
     for key in ("curves", "per_seed", "references"):
         out.pop(key, None)
     print(json.dumps(out, indent=2)[:6000])

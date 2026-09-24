@@ -533,7 +533,7 @@ def build(limit: int | None = None, out: Path = OUT) -> dict:
         "by_split": frame["split"].value_counts().to_dict(),
         "by_kind": frame["kind"].value_counts().to_dict(),
     }
-    (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary
 
 

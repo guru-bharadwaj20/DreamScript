@@ -172,7 +172,7 @@ class StageCache:
         # A stage whose output will not serialise is simply not cached; it is not an error.
         with contextlib.suppress(OSError, TypeError, ValueError):
             path.write_text(
-                json.dumps({"key": key, "code": code_key(), "value": value}, default=str),
+                json.dumps({"key": key, "code": code_key(), "value": value}, default=str) + "\n",
                 encoding="utf-8",
             )
         return value

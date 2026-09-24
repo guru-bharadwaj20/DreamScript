@@ -352,7 +352,7 @@ def run(
         per_seed = {job[0]: _seed_job(*job) for job in jobs}
     if write:  # the per-diagram rows are the expensive part; keep them before aggregating
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "ablation_rows.json").write_text(json.dumps(per_seed), encoding="utf-8")
+        (RUNS / "ablation_rows.json").write_text(json.dumps(per_seed) + "\n", encoding="utf-8")
 
     result: dict[str, Any] = {
         "episodes_tabular": episodes,
@@ -381,7 +381,7 @@ def run(
         result[scope] = block
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "ablation.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        (RUNS / "ablation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         result["figure"] = str(plot(result).relative_to(ROOT))
     return result
 

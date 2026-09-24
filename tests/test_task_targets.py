@@ -265,3 +265,58 @@ def test_every_binary_extension_in_the_tree_is_declared():
     declared = {line.split()[0].lstrip("*") for line in text.splitlines() if " binary" in line}
     for extension in (".png", ".pt", ".npy", ".parquet", ".joblib", ".pdf"):
         assert extension in declared, extension
+
+
+# --- every tracked text file ends with a newline, and stays that way (audit 54) ---------------
+
+#: Extensions whose bytes are their content. Kept in step with `.gitattributes`.
+BINARY_SUFFIXES = {
+    ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff", ".pdf", ".pt", ".pth",
+    ".onnx", ".npy", ".npz", ".parquet", ".joblib", ".pkl", ".7z", ".zip", ".gz",
+    ".ico", ".ttf", ".woff", ".woff2",
+}  # fmt: skip
+
+
+def _tracked_text_files():
+    import subprocess
+
+    listed = subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=False
+    ).stdout.split()
+    for name in listed:
+        path = ROOT / name
+        if path.suffix.lower() not in BINARY_SUFFIXES and path.is_file():
+            yield path
+
+
+def test_every_tracked_text_file_ends_with_a_newline():
+    """36 did not - `master_results.json`, `reproducibility.json`, `drift.json`,
+    `model_registry.json` and 32 more. A file with no final newline makes `cat` run two files
+    together, makes the last line invisible to line-oriented tools, and shows as a spurious
+    change in every diff that touches it."""
+    missing = [
+        path.relative_to(ROOT).as_posix()
+        for path in _tracked_text_files()
+        if (data := path.read_bytes()) and not data.endswith(b"\n")
+    ]
+    assert not missing, missing
+
+
+#: The two characters a source file contains when it appends a newline: backslash, n.
+NEWLINE_LITERAL = '+ "' + chr(92) + 'n"'
+
+
+def test_no_json_writer_omits_the_final_newline():
+    """Fixing the 36 files without fixing the 103 writers is a fix that lasts until the next
+    run. Every `write_text(json.dumps(...))` in src/ and scripts/ appends one."""
+    import re
+
+    offenders = []
+    for base in ("src", "scripts"):
+        for path in sorted((ROOT / base).rglob("*.py")):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for match in re.finditer(r"write_text\(\s*json\.dumps\(", text):
+                tail = text[match.start() : match.start() + 400]
+                if NEWLINE_LITERAL not in tail.split("encoding=")[0]:
+                    offenders.append(f"{path.relative_to(ROOT).as_posix()}")
+    assert not offenders, sorted(set(offenders))

@@ -127,7 +127,9 @@ def generate_split(
     generate.write_jsonl(rows, out_dir / f"{tag}_{split}.jsonl")
     report["new_tokens"] = sum(r["new_tokens"] for r in rows)
     report["hit_limit"] = sum(r["hit_limit"] for r in rows)
-    (out_dir / f"{tag}_{split}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (out_dir / f"{tag}_{split}.json").write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
     print(json.dumps({k: v for k, v in report.items() if k != "sweep"}, indent=2), flush=True)
     return report
 

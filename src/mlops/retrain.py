@@ -319,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_JSON.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+    REPORT_JSON.write_text(json.dumps(result, indent=2, default=str) + "\n", encoding="utf-8")
     REPORT_MD.write_text(render(result), encoding="utf-8")
     json.dump(result["verdict"], sys.stdout, indent=2)
     sys.stdout.write("\n")

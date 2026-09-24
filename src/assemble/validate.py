@@ -562,7 +562,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(args.source, args.limit)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     summary = {k: v for k, v in result["ground_truth"].items() if k != "per_source"}
     print(json.dumps({"assembled": result["assembled"], **summary}, indent=2))
     return 0

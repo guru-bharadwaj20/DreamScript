@@ -125,8 +125,8 @@ def build(limit: int | None = None) -> dict:
         pages += 1
         if pages % 50 == 0:
             print(f"[vertical] {pages} pages, {added} new boxes", flush=True)
-            OUT.write_text(json.dumps(cache), encoding="utf-8")
-    OUT.write_text(json.dumps(cache), encoding="utf-8")
+            OUT.write_text(json.dumps(cache) + "\n", encoding="utf-8")
+    OUT.write_text(json.dumps(cache) + "\n", encoding="utf-8")
     return {
         "pages": pages,
         "new_boxes": added,

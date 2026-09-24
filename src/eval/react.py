@@ -159,7 +159,7 @@ def ensure_toolchain() -> bool:
         return False
     TOOL_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"name": "dreamscript-react-check", "private": True, "dependencies": PACKAGES}
-    (TOOL_DIR / "package.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (TOOL_DIR / "package.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     env = dict(
         os.environ, PATH=str(Path(node_binary() or npm).parent) + os.pathsep + os.environ["PATH"]
     )

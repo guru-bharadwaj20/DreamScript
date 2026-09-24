@@ -95,7 +95,8 @@ def run(checkpoint: str = "finetune") -> dict:
                 "files": frame["file"].tolist(),
                 "predictions": predicted,
             }
-        ),
+        )
+        + "\n",
         encoding="utf-8",
     )
     return {"model": name, "checkpoint": checkpoint, **result}

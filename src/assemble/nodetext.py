@@ -168,7 +168,9 @@ def build_cache(pages: list[Page], boxes_for, batch: int = 32) -> int:
         if read_regions(page) is not None:
             continue
         found = read_page(page, boxes_for(page), batch=batch)
-        (CACHE / f"{page.name}.json").write_text(json.dumps({"regions": found}), encoding="utf-8")
+        (CACHE / f"{page.name}.json").write_text(
+            json.dumps({"regions": found}) + "\n", encoding="utf-8"
+        )
         done += 1
         if done % 25 == 0:
             print(f"[nodetext] read {done} pages", flush=True)

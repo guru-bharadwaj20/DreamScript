@@ -355,7 +355,7 @@ def build() -> dict:
         "code_bytes_p50_max": [sorted(map(len, codes))[len(codes) // 2], max(map(len, codes))],
         "conversion": dict(stats.most_common(20)),
     }
-    (OUT / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 

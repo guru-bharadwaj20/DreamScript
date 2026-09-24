@@ -347,7 +347,7 @@ def run(
     result["bonus"] = BONUS
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "shaping.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        (RUNS / "shaping.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         result["figure"] = str(plot(result, result["references"]).relative_to(ROOT))
     return result
 

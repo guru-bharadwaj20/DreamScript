@@ -156,7 +156,7 @@ def cached(held: list[Page], *, rebuild: bool = False) -> dict[str, dict]:
     if missing:
         store.update(read_pages(missing))
         CACHE.parent.mkdir(parents=True, exist_ok=True)
-        CACHE.write_text(json.dumps(store, indent=1, ensure_ascii=False), encoding="utf-8")
+        CACHE.write_text(json.dumps(store, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     return store
 
 
@@ -226,7 +226,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(args.split, args.limit, args.rebuild)
     out = RUNS / f"labels_{args.split}.json"
-    out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
     return 0
 

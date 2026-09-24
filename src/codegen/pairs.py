@@ -204,7 +204,9 @@ def merge() -> dict:
         },
         "sha256": {p.name: _sha256(p) for p in sorted(PAIRS_DIR.glob("*.jsonl"))},
     }
-    (PAIRS_DIR / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (PAIRS_DIR / "manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+    )
     return manifest
 
 

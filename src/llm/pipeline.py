@@ -132,7 +132,7 @@ def write_status(ctx: Ctx) -> None:
     ctx.state["gpu_used_mb"] = gpu_used_mb()
     path = ctx.base / "pipeline_status.json"
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(ctx.state, indent=2), encoding="utf-8")
+    tmp.write_text(json.dumps(ctx.state, indent=2) + "\n", encoding="utf-8")
     os.replace(tmp, path)
 
 
@@ -153,7 +153,7 @@ def run_job(ctx: Ctx, kind: str, spec: dict, name: str) -> dict:
     if result_path.exists():
         return json.loads(result_path.read_text(encoding="utf-8"))
     spec = dict(spec, result=str(result_path))
-    spec_path.write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    spec_path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
     env = dict(os.environ, HF_HUB_OFFLINE="1", PYTHONIOENCODING="utf-8")
     log(ctx, f"job {name} ({kind}) start")
     began = time.perf_counter()
@@ -404,7 +404,7 @@ def job_main(kind: str, spec_path: str) -> int:
     spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
     result = JOBS[kind](spec)
     Path(spec["result"]).write_text(
-        json.dumps(result, indent=2),
+        json.dumps(result, indent=2) + "\n",
         encoding="utf-8",
     )
     return 0
@@ -652,7 +652,7 @@ def stage_benchmark(ctx: Ctx) -> dict:
         }
         d = ctx.stage_dir("benchmark")
         (d / f"{tag}.summary.json").write_text(
-            json.dumps(summary, indent=2),
+            json.dumps(summary, indent=2) + "\n",
             encoding="utf-8",
         )
 
@@ -1446,7 +1446,7 @@ def stage_compare(ctx: Ctx) -> dict:
         }
         scored_by[arm] = scored
         (ctx.stage_dir("compare") / f"{name}.scored.json").write_text(
-            json.dumps(scored, indent=1),
+            json.dumps(scored, indent=1) + "\n",
             encoding="utf-8",
         )
     train_ir = {p["ir_text"] for p in pairs.load("train")}
@@ -1652,7 +1652,7 @@ def stage_quality(ctx: Ctx) -> dict:
         reference_rows(ctx, "test"),
         "test",
     )
-    (ctx.stage_dir("quality") / "lora.scored.json").write_text(json.dumps(scored, indent=1))
+    (ctx.stage_dir("quality") / "lora.scored.json").write_text(json.dumps(scored, indent=1) + "\n")
     worst = [s for s in scored if not s["functional"]][:8]
     done = {
         "lora": summary,
@@ -2795,7 +2795,7 @@ def run_pipeline(
                 if stage.commit is not None:
                     stage.commit(ctx, done)
                 done_path.write_text(
-                    json.dumps(done, indent=2, default=str),
+                    json.dumps(done, indent=2, default=str) + "\n",
                     encoding="utf-8",
                 )
                 failed_path.unlink(missing_ok=True)
@@ -2807,7 +2807,7 @@ def run_pipeline(
             except Exception:  # noqa: BLE001 - one stage failing must not stop independent stages
                 error = traceback.format_exc()
                 failed_path.write_text(
-                    json.dumps({"error": error}),
+                    json.dumps({"error": error}) + "\n",
                     encoding="utf-8",
                 )
                 ctx.state["stages"][stage.name] = "failed: " + error.strip().splitlines()[-1][:200]

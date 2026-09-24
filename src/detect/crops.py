@@ -154,7 +154,7 @@ def build(out: Path = OUT, sources=("hdbpmn", "fa_bresler", "flowchartseg"), lim
         "dropped": dict(dropped),
     }
     out.mkdir(parents=True, exist_ok=True)
-    (out / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
+    (out / "meta.json").write_text(json.dumps(meta, indent=1) + "\n", encoding="utf-8")
     return meta
 
 

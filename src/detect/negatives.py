@@ -373,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
         result["retrained"] = retrain(args.imgsz, args.epochs, AUGMENTED, args.data)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
     return 0
 

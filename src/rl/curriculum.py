@@ -464,7 +464,7 @@ def run(
         RUNS.mkdir(parents=True, exist_ok=True)
         suffix = "" if learner == "tabular" else f"_{learner}"
         (RUNS / f"curriculum{suffix}.json").write_text(
-            json.dumps(result, indent=2), encoding="utf-8"
+            json.dumps(result, indent=2) + "\n", encoding="utf-8"
         )
         figure = FIGURE.with_name(f"p11_curriculum{suffix}.png")
         result["figure"] = str(plot(result, figure).relative_to(ROOT))

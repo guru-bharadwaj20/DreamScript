@@ -141,7 +141,10 @@ def write(built: dict, matrix: Path = MATRIX, index: Path = INDEX, meta: Path = 
     plan = [
         (matrix, save_matrix),
         (index, lambda p: built["index"].to_parquet(p, index=False)),
-        (meta, lambda p: p.write_text(json.dumps(built["meta"], indent=2), encoding="utf-8")),
+        (
+            meta,
+            lambda p: p.write_text(json.dumps(built["meta"], indent=2) + "\n", encoding="utf-8"),
+        ),
     ]
     staged = []
     try:

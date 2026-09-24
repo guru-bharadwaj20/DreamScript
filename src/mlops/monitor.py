@@ -397,7 +397,7 @@ def main(argv: list[str] | None = None) -> int:
     result = collect(with_pixels=not args.no_pixels)
     drawn = figure(result)
     REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_JSON.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
+    REPORT_JSON.write_text(json.dumps(result, indent=2, default=str) + "\n", encoding="utf-8")
     REPORT_MD.write_text(render(result, drawn), encoding="utf-8")
     json.dump(result["verdict"], sys.stdout, indent=2)
     sys.stdout.write("\n")

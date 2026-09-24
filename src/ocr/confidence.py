@@ -299,7 +299,8 @@ def run(model_name: str = "finetune", budget: float = REVIEW_BUDGET) -> dict:
                 "score": best,
                 "threshold": result["capture"][best]["threshold"],
             }
-        ),
+        )
+        + "\n",
         encoding="utf-8",
     )
     return result
@@ -353,7 +354,7 @@ def annotate(
         entries = {e["ref"]: e for e in ids if e["ref"] in known}
         diagram["low_conf_text"] = [entries[k] for k in sorted(entries)]
         if write:
-            path.write_text(json.dumps(diagram, indent=2), encoding="utf-8")
+            path.write_text(json.dumps(diagram, indent=2) + "\n", encoding="utf-8")
         touched += 1
     return {
         "threshold": round(float(threshold), 4),
@@ -378,7 +379,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.annotate:
         result["ir"] = annotate()
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "calibration"}, indent=2))
     return 0
 

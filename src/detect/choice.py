@@ -499,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"--- {arm} ---", file=sys.stderr)
         results.append(run_arm(arm, args.epochs, args.imgsz, args.data))
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")
+        args.out.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {write_report(results)}", file=sys.stderr)
     print(json.dumps(results, indent=2))
     return 0

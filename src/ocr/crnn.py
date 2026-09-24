@@ -466,7 +466,9 @@ def run(arms=ARMS, epochs_iam: int = EPOCHS_IAM, epochs_diagram: int = EPOCHS_DI
 
     chars = shared_alphabet()
     table = {c: i + 1 for i, c in enumerate(chars)}
-    (CHECKPOINTS / "alphabet.json").write_text(json.dumps({"chars": chars}), encoding="utf-8")
+    (CHECKPOINTS / "alphabet.json").write_text(
+        json.dumps({"chars": chars}) + "\n", encoding="utf-8"
+    )
 
     train_files, train_texts, _ = diagram_split("train")
     # Trained on the boxes a human drew; evaluated on those *and* on 9.3.1's detected boxes, so
@@ -489,7 +491,8 @@ def run(arms=ARMS, epochs_iam: int = EPOCHS_IAM, epochs_diagram: int = EPOCHS_DI
                     "files": val_frame["file"].tolist(),
                     "predictions": predictions,
                 }
-            ),
+            )
+            + "\n",
             encoding="utf-8",
         )
         return score(truths, predictions)
@@ -586,7 +589,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(tuple(args.arm) if args.arm else ARMS, args.epochs_iam, args.epochs_diagram)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "loss_curve"}, indent=2))
     return 0
 

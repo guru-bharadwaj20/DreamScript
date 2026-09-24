@@ -131,7 +131,7 @@ def fit(split: str = "val", model_path: Path = MODEL) -> dict[str, Any]:
         "fitted_on": {"split": split, "pages": len(labels)},
     }
     model_path.parent.mkdir(parents=True, exist_ok=True)
-    model_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    model_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
 
 

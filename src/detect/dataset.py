@@ -307,7 +307,7 @@ def export(
         ]
     )
     (out / "data.yaml").write_text(yaml, encoding="utf-8")
-    (out / "index.json").write_text(json.dumps(index, indent=1), encoding="utf-8")
+    (out / "index.json").write_text(json.dumps(index, indent=1) + "\n", encoding="utf-8")
 
     by_source = {}
     for record in index:

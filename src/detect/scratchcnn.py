@@ -344,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
     result = train(Spec(), args.epochs, args.batch, root=args.root, save=WEIGHTS)
     result["by_source"] = by_source(WEIGHTS, args.root)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "confusion"}, indent=2))
     return 0
 

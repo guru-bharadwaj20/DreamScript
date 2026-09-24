@@ -394,7 +394,7 @@ def export_tiles(
         "overlap": overlap,
         "sources": list(sources),
     }
-    stats_file.write_text(json.dumps(stats, indent=1), encoding="utf-8")
+    stats_file.write_text(json.dumps(stats, indent=1) + "\n", encoding="utf-8")
     return stats
 
 
@@ -521,7 +521,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     result = run(args.weights, args.data, args.split, args.epochs, not args.no_retrain)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))
     return 0
 

@@ -601,7 +601,7 @@ def main(argv: list[str] | None = None) -> int:
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(
         json.dumps(
             {k: v for k, v in result.items() if k not in ("node_rules", "edge_rules")}, indent=2

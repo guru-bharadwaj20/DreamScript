@@ -286,7 +286,7 @@ def build(limit: int | None = None, write: bool = False) -> dict:
     }
     if write:
         OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(json.dumps(result), encoding="utf-8")
+        OUT.write_text(json.dumps(result) + "\n", encoding="utf-8")
         result["summary"]["path"] = str(OUT.relative_to(ROOT))
     return result
 

@@ -602,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(cap=args.cap)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    OUT.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "escaping"}, indent=2)[:4000])
     return 0
 

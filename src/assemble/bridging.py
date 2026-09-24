@@ -520,7 +520,7 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run(n_jobs=args.jobs)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items() if k != "ablation"}, indent=2))
     return 0
 

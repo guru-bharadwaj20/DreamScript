@@ -384,7 +384,9 @@ def run(
     result["references"] = {name: references(g, raw) for name, (raw, g) in sets.items()}
     if write:
         RUNS.mkdir(parents=True, exist_ok=True)
-        (RUNS / "exploration.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        (RUNS / "exploration.json").write_text(
+            json.dumps(result, indent=2) + "\n", encoding="utf-8"
+        )
         result["figure"] = str(plot(result, result["references"]).relative_to(ROOT))
     return result
 

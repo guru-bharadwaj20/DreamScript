@@ -221,7 +221,7 @@ def _cache(weights: Path = WEIGHTS, rebuild: bool = False) -> dict:
             return payload
     payload = predict(pages(), weights)
     RUNS.mkdir(parents=True, exist_ok=True)
-    CACHE.write_text(json.dumps(payload), encoding="utf-8")
+    CACHE.write_text(json.dumps(payload) + "\n", encoding="utf-8")
     return payload
 
 

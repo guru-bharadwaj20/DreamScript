@@ -121,7 +121,7 @@ class Run:
         else:
             self.metrics.update(metrics)
         (self.dir / "metrics.json").write_text(
-            json.dumps(self.metrics, indent=2, default=str), encoding="utf-8"
+            json.dumps(self.metrics, indent=2, default=str) + "\n", encoding="utf-8"
         )
         if self.recorder is not None:
             # 15.1's store, from the convention every stage already uses. `src.mlops` was 3,250
@@ -177,7 +177,7 @@ class Run:
     def finish(self, status: str = "ok") -> None:
         self.metrics["status"] = status
         (self.dir / "metrics.json").write_text(
-            json.dumps(self.metrics, indent=2, default=str), encoding="utf-8"
+            json.dumps(self.metrics, indent=2, default=str) + "\n", encoding="utf-8"
         )
         self._close_tracking(status)
         self.log.info("run finished (%s): %s", status, self.dir)
@@ -241,7 +241,7 @@ def start_run(
         logger.addHandler(file_handler)
         logger.addHandler(JsonLinesHandler(run_dir / "run.jsonl"))
 
-    (run_dir / "env.json").write_text(json.dumps(_environment(), indent=2), encoding="utf-8")
+    (run_dir / "env.json").write_text(json.dumps(_environment(), indent=2) + "\n", encoding="utf-8")
     if cfg is not None:
         save_config(cfg, run_dir / "config.yaml")
 
