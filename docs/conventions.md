@@ -36,6 +36,11 @@ the experiment tracker without being typed twice.
 
 ## 2. Run directories
 
+`experiments/` holds two things, and it is worth saying which is which because this section
+used to describe only the first while the tree contained only the second.
+
+**Timestamped runs**, written by `src.utils.logging.start_run`:
+
 ```
 experiments/<YYYYmmdd-HHMMSS>_<run_name>/
     config.yaml   the fully resolved config the run used
@@ -47,6 +52,26 @@ experiments/<YYYYmmdd-HHMMSS>_<run_name>/
 
 Immutable. A rerun makes a new directory; nothing is overwritten. Never edit a run directory
 by hand — if a number is wrong, rerun and note it in the report.
+
+`start_run` has exactly two callers: `src.utils.cli.main` (the config-driven stage contract) and
+`src.llm.run` (Phase 12.2). **That is the honest scope of this convention**, and it is smaller
+than this document used to imply. A run that refuses before it starts is discarded rather than
+recorded — see `Run.discard` — which is why the tree holds none of these directories at rest.
+
+**Per-phase artefact directories**, written by the modules themselves:
+
+```
+experiments/assemble/    detections.json, direction.json  — caches the S5 stages read
+experiments/detect/      train.json, report.json, arrows/, final/
+experiments/llm/         runs/, benchmark/, compare/, commits/
+experiments/ocr/         crnn.json, craft/, crnn/
+experiments/pipeline/    router.json, handcrafted.joblib  — fitted models the pipeline loads
+```
+
+These are **not** runs and are not immutable: they are the derived artefacts a later stage
+loads by name, which is why they are named rather than timestamped. Anything here is
+reproducible from the module that wrote it; nothing here is a record of a particular execution.
+A module that wants to record an execution uses `start_run`.
 
 ## 3. Git
 

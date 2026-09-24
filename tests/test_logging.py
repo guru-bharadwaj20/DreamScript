@@ -127,3 +127,30 @@ def test_the_cli_discards_rather_than_finishing_a_refused_stage():
     source = inspect.getsource(cli.main)
     assert "active.discard()" in source
     assert 'active.finish("not-implemented")' not in source
+
+
+# --- the convention says what the tree holds (audit 18) ---------------------------------------
+
+
+def test_conventions_names_both_kinds_of_experiments_directory():
+    """`docs/conventions.md` described `experiments/<timestamp>_<run_name>/` and nothing else,
+    while the tree holds five per-phase artefact directories and none of those. `start_run` has
+    two callers; the document implied it had three hundred."""
+    from src.utils.config import ROOT
+
+    text = (ROOT / "docs" / "conventions.md").read_text(encoding="utf-8")
+    assert "experiments/<YYYYmmdd-HHMMSS>_<run_name>/" in text
+    for name in ("assemble", "detect", "llm", "ocr", "pipeline"):
+        assert f"experiments/{name}/" in text, f"{name}/ is in the tree and not in the document"
+
+
+def test_start_run_still_has_the_two_callers_the_document_claims():
+    import re
+
+    from src.utils.config import ROOT
+
+    callers = set()
+    for path in sorted((ROOT / "src").rglob("*.py")):
+        if re.search(r"\bstart_run\s*\(", path.read_text(encoding="utf-8", errors="ignore")):
+            callers.add(path.relative_to(ROOT).as_posix())
+    assert callers == {"src/utils/cli.py", "src/utils/logging.py", "src/llm/run.py"}, callers
