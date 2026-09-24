@@ -21,7 +21,18 @@ include = ["src*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+
+# `addopts = "-q"` used to be here, and it is not a style preference that was removed.
+# pytest's `-q` stacks: a second one is `-qq`, which suppresses the totals line entirely. Every
+# invocation in this repo that also passes `-q` - both CI test steps, and any hand-run
+# `pytest -q` - therefore produced output that ends at the `short test summary info` block with
+# **no pass count, no fail count, no skip count and no duration**. CI's own logs read as if the
+# suite had produced FAILED lines and nothing else, and the totals for this audit had to be
+# recovered by counting progress characters.
+#
+# Quiet output is still one flag away; a totals line that silently disappears when a caller
+# repeats the project's own default is not worth the saved keystroke.
+addopts = "-rs"
 
 [tool.black]
 line-length = 100

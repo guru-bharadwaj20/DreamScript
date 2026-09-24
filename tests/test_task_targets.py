@@ -173,3 +173,31 @@ def test_phony_declares_every_target_and_no_others():
 def test_verify_classical_has_the_rule_its_declaration_promised():
     assert "verify-classical" in _makefile_targets()
     assert "--only classical" in MAKEFILE.read_text(encoding="utf-8")
+
+
+# --- pytest's totals line survives the project's own defaults (audit 41a) ---------------------
+
+
+def test_addopts_does_not_stack_a_second_quiet_flag():
+    """`addopts = "-q"` plus a command-line `-q` is `-qq`, which suppresses the totals line
+    entirely: no pass count, no fail count, no skip count, no duration. Both CI test steps pass
+    `-q`, so CI's own logs ended at the `short test summary info` block."""
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    addopts = config["tool"]["pytest"]["ini_options"].get("addopts", "")
+    assert "-q" not in addopts.split(), addopts
+    assert "--quiet" not in addopts.split(), addopts
+
+
+def test_no_ci_step_passes_a_flag_that_would_stack_with_addopts():
+    import re
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    addopts = set(config["tool"]["pytest"]["ini_options"].get("addopts", "").split())
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    for line in re.findall(r"^.*python -m pytest.*$", workflow, re.M):
+        passed = [token for token in line.split() if token.startswith("-")]
+        clash = addopts.intersection(passed)
+        assert not clash, f"{line.strip()!r} repeats {sorted(clash)} from addopts"
