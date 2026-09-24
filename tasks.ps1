@@ -71,6 +71,13 @@ $Tasks = [ordered]@{
                              Help = "Phase 15.4 - run the DVC DAG with the venv on PATH" }
     "dag"               = @{ Cmd = @("-m", "dvc", "dag");                     Help = "Phase 15.4 - print the pipeline graph" }
 
+    # `dvc push` is the half of DVC this repo had never run: 1,507 objects sat in .dvc/cache
+    # and nowhere else. The survey afterwards is what says whether the push finished.
+    "push"              = @{ Steps = @(@("-m", "dvc", "push"), @("-m", "src.ingest", "store", "--check"));
+                             Help = "put every cached DVC output in the store" }
+    "store"             = @{ Cmd = @("-m", "src.ingest", "store", "--check");
+                             Help = "Phase 1.1.9 - which tracked outputs are cache-only" }
+
     # pipeline stages. These ran `-m src.<pkg> --config configs/<pkg>.yaml`, which every stage
     # entry point answered with StageNotImplemented and exit 2 - the same fourteen do-nothing
     # targets the Makefile had. Same commands as the Makefile now, one for one.

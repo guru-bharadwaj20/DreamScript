@@ -26,7 +26,7 @@ OVERRIDES ?=
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
 .PHONY: app clean clean-experiments dag data detect determinism dummy-run env eval features \
-        finetune format help hooks lint ocr parse preprocess repro rl serve stages test test-fast typecheck \
+        finetune format help hooks lint ocr parse preprocess push repro rl serve stages store test test-fast typecheck \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
@@ -176,3 +176,10 @@ repro:  ## Phase 15.4 — run the DVC DAG with the project venv on PATH
 
 dag:  ## Phase 15.4 — print the pipeline graph
 	$(PY) -m dvc dag
+
+push:  ## put every cached DVC output in the store (the only copy that outlives .dvc/cache)
+	$(PY) -m dvc push
+	$(PY) -m src.ingest store --check
+
+store:  ## Phase 1.1.9 — which tracked outputs are in the store and which are cache-only
+	$(PY) -m src.ingest store --check

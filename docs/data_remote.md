@@ -18,7 +18,7 @@ in this repository imply the opposite.
 ['remote "processed"']  url = C:/Users/Temp/dreamscript-dvc-store/processed
 ```
 
-1.2 GB, on that filesystem, reachable from no other host. A fresh clone - CI above all - gets
+3.4 GB, on that filesystem, reachable from no other host. A fresh clone - CI above all - gets
 the `.dvc` pointers in git and cannot fetch a single byte behind them.
 
 ## Why that is not an accident, and is still a problem
@@ -44,6 +44,34 @@ objects as *"missing from remote and local"*, and `data/raw/didi` is one of them
 `configs/llm.yaml` no longer lists didi as a training source and why
 `tests/test_assemble_serialise.py` names it in `ABSENT_SOURCES`.
 
+## The cache is not the store
+
+Even on the one machine, the two are different places and only one of them is durable:
+
+| | |
+| :--- | :--- |
+| `.dvc/cache` | a working directory. `dvc gc` prunes it, and it is inside the clone. |
+| the store | the copy that survives deleting the clone. |
+
+`dvc status -c` prints `new:` for an object that is in the first and not the second, which reads
+like "recently added" rather than "the only copy is the one you can delete by accident". It
+printed that for **1,507 objects**: the whole Phase 12.1 target corpus (1,478 files), the arrow
+pose checkpoint, the TrOCR fine-tune and every feature table. All of them were one `dvc gc` away
+from the state the four sources above are in permanently.
+
+They are pushed now, which is what took the store from 1.2 GB to the 3.4 GB quoted above. What
+notices if it happens again:
+
+```bash
+make store     # python -m src.ingest store --check - non-zero if anything is cache-only
+make push      # dvc push, then the same survey to say whether it finished
+```
+
+`python -m src.ingest store` reads the pointers, `dvc.lock` and the content-addressed layout
+directly, so it answers in a second, while a `dvc repro` holds the DVC lock, and on a machine
+with no DVC installed - where it says so and exits 0 rather than reporting the whole corpus
+missing.
+
 ## What to do about it
 
 Three options, in order of cost:
@@ -51,7 +79,7 @@ Three options, in order of cost:
 1. **Leave it and say so.** What this document does. The skip messages now name this file instead
    of telling a reader to run a command that cannot work.
 2. **Add a real remote** (`dvc remote add -d s3 …`, or any of the twenty backends DVC supports)
-   and `dvc push`. 1.2 GB. This is the only option that makes a fresh clone reproducible, and it
+   and `dvc push`. 3.4 GB. This is the only option that makes a fresh clone reproducible, and it
    is the one the plan assumes.
 3. **Commit the small artefacts and stop tracking the rest.** `data/processed/ir/` is 2,796 JSON
    files and a few tens of MB; the checkpoints are not.

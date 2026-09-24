@@ -15,7 +15,9 @@ Four of the eight raw sources are in the second state - `cghd_extracted`, `chaos
 registered sources are present locally", which is true and does not distinguish the two.
 
 This reads the `.dvc` pointers directly rather than shelling out to `dvc`, so it answers while a
-`dvc repro` holds the lock, and on a machine with no DVC installed at all.
+`dvc repro` holds the lock, and on a machine with no DVC installed at all. `src.ingest.store`
+reads the same layout for every tracked output and owns the two location helpers, so there is
+one definition of "where would the store keep this" rather than a copy here and a copy there.
 """
 
 from __future__ import annotations
@@ -25,40 +27,18 @@ import json
 import sys
 from pathlib import Path
 
+from src.ingest.store import CACHE, config_store, in_store
 from src.utils.config import ROOT
 
 RAW = ROOT / "data" / "raw"
-CACHE = ROOT / ".dvc" / "cache" / "files" / "md5"
 DOC = ROOT / "docs" / "data_losses.md"
-
-#: The DVC store this project is configured against. A directory on one machine - see
-#: docs/data_remote.md - which is why "on the remote" and "on this disk" are the same question.
-STORE = Path("C:/Users/Temp/dreamscript-dvc-store")
-
-
-def _config_store() -> Path:
-    """The store path from `.dvc/config`, so this does not hard-code one machine's layout."""
-    config = ROOT / ".dvc" / "config"
-    if not config.is_file():
-        return STORE
-    for line in config.read_text(encoding="utf-8").splitlines():
-        if line.strip().startswith("url =") and "remote" not in line:
-            return Path(line.split("=", 1)[1].strip())
-    return STORE
-
-
-def _in_store(md5: str, store: Path) -> bool:
-    key = Path(md5[:2]) / md5[2:]
-    candidates = [store / "files" / "md5" / key]
-    candidates += [store / sub / "files" / "md5" / key for sub in ("raw", "interim", "processed")]
-    return any(path.exists() for path in candidates)
 
 
 def survey() -> dict[str, dict]:
     """source -> where its payload can be found, if anywhere."""
     import yaml
 
-    store = _config_store()
+    store = config_store()
     out: dict[str, dict] = {}
     for pointer in sorted(RAW.glob("*.dvc")):
         spec = yaml.safe_load(pointer.read_text(encoding="utf-8"))["outs"][0]
@@ -69,7 +49,7 @@ def survey() -> dict[str, dict]:
             "files": spec.get("nfiles"),
             "worktree": (RAW / pointer.stem).exists(),
             "cache": (CACHE / key).exists(),
-            "store": _in_store(md5, store) if md5 else False,
+            "store": bool(md5) and in_store(md5, store, str(spec.get("remote", ""))) is not None,
         }
     return out
 
