@@ -32,7 +32,10 @@ from typing import Any
 
 from src.pipeline.contracts import Result
 
-#: What each generated language is written as. The emitter's own assignment (12.1.6).
+#: What each generated language is written as. Keyed on the *language*, which is the one thing
+#: the three tables that used to decide this agreed on - `codegen.targets.LANGUAGES` and
+#: `pipeline.generate.LANGUAGES` were both keyed on diagram type and disagreed about its
+#: spelling. There is one of those now (`targets`), and this is the only other table left.
 SUFFIX = {"python": ".py", "sql": ".sql", "react": ".jsx", "spice": ".cir"}
 
 #: Page extensions the detector will accept.

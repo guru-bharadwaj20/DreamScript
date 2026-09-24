@@ -24,18 +24,25 @@ from typing import Any
 
 from src.pipeline.contracts import Outcome
 
-#: Which language each diagram type is emitted in - 12.1.6's own assignment.
-LANGUAGES = {
-    "flowchart": "python",
-    "state_machine": "python",
-    "er_diagram": "sql",
-    "wireframe": "react",
-    "circuit": "spice",
-}
-
 
 def language_for(kind: str) -> str:
-    return LANGUAGES.get(kind, "python")
+    """The language this diagram type is emitted in - 12.1.6's assignment, asked for rather than
+    restated.
+
+    **There were two of these tables and they disagreed in both directions.** This module carried
+    its own, keyed `er_diagram` with no aliases, behind a `.get(kind, "python")` default;
+    `codegen.targets` keys its emitters on `"er"` with aliases for `bpmn`, `erd`, `er_diagram`,
+    `state-machine` and `ui`, and raises `KeyError` on anything else because "a diagram type
+    nobody wrote a generator for is a gap to report, not a silent mis-emission into Python".
+
+    So `emit` took the language from one table and the emitter from the other: `"er"` selected
+    `emit_er_sql` and was labelled `python`, and `"bpmn"` selected the flowchart emitter and was
+    labelled `python` by accident rather than by the table. Raising together is the point - the
+    gap `targets` refuses to paper over is not one this module should paper over on its behalf.
+    """
+    from src.codegen.targets import language_for as _language_for
+
+    return _language_for(kind)
 
 
 def emit(

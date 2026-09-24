@@ -133,10 +133,40 @@ def test_a_disabled_cache_never_answers(tmp_path):
 
 
 def test_every_generated_language_has_a_file_extension():
-    from src.pipeline.generate import LANGUAGES
+    """Read off `codegen.targets`, which is now the only table that assigns one. `generate` used
+    to keep a second, keyed on a different spelling of the same diagram types."""
+    from src.codegen.targets import LANGUAGES
 
     for language in set(LANGUAGES.values()):
         assert language in cli.SUFFIX, f"{language} would be written as .txt"
+
+
+def test_the_language_and_the_emitter_come_from_the_same_table():
+    """`emit` took the language from `generate.LANGUAGES` and the emitter from
+    `targets._EMITTERS`, and the two were keyed differently: `"er"` selected `emit_er_sql` and
+    was labelled `python`."""
+    from src.codegen import targets
+    from src.pipeline.generate import language_for
+
+    for spelling, expected in [
+        ("er", "sql"),
+        ("er_diagram", "sql"),
+        ("erd", "sql"),
+        ("bpmn", "python"),
+        ("ui", "react"),
+        ("circuit", "spice"),
+    ]:
+        assert language_for(spelling) == expected
+        assert callable(targets.for_type(spelling))
+
+
+def test_an_unknown_diagram_type_is_a_reported_gap_not_a_python_file():
+    """`language_for` defaulted to "python" for a type with no emitter, undoing the thing
+    `targets.for_type` raises in order to prevent."""
+    from src.pipeline.generate import language_for
+
+    with pytest.raises(KeyError):
+        language_for("sankey")
 
 
 def test_a_directory_with_no_images_is_an_error_with_a_reason(tmp_path):

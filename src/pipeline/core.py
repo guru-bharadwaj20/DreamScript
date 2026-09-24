@@ -221,9 +221,15 @@ class DreamScriptPipeline:
     def _generate(self, diagram: dict, order: list[str], kind: str) -> Outcome[tuple[str, str]]:
         from src.pipeline.generate import emit, language_for
 
-        language = language_for(kind)
         if not self.generate_code:
             return Outcome.failed("code generation disabled for this run")
+        try:
+            language = language_for(kind)
+        except KeyError:
+            # The same answer `emit` gives for the same gap, one line earlier. `language_for`
+            # used to default to "python" for a type with no emitter, which turned a missing
+            # generator into a confident Python file.
+            return Outcome.failed(f"no target generator for {kind!r}")
         return emit(diagram, order, kind, language)
 
     def _verify(self, code: str, kind: str) -> Outcome[dict]:
