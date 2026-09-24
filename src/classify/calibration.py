@@ -76,6 +76,7 @@ from sklearn.preprocessing import label_binarize
 from src.classify.cv import MODELS, REAL_MODELS, SEEDS, out_of_fold, splitter
 from src.classify.data import Dataset, load
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p5_calibration.png"
 
@@ -196,7 +197,7 @@ def figure(results: list[dict], path: Path = FIGURE) -> Path:
         ax.legend(fontsize=7, loc="upper left", frameon=False)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

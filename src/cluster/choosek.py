@@ -110,6 +110,7 @@ import numpy as np
 
 from src.cluster.kmeans import fit, majority_baseline
 from src.parse.vocab import matrix, purity
+from src.utils.figures import save as _figsave
 
 SEED = 42
 
@@ -225,7 +226,7 @@ def figure(rows: list[dict], path: Path = FIGURE) -> Path:
     fig.suptitle("8.2 - three rigorous criteria, three different K", y=1.02)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    _figsave(fig, path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return path
 

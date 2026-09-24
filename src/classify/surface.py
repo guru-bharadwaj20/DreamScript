@@ -94,6 +94,7 @@ from pathlib import Path
 import numpy as np
 
 from src.classify.activations import TABLES
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p6_kernel_surfaces.png"
@@ -238,7 +239,7 @@ def figure(
     )
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

@@ -155,6 +155,8 @@ from pathlib import Path
 
 import numpy as np
 
+from src.utils.figures import save as _figsave
+
 SEED = 42
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -450,7 +452,7 @@ def figure(X, assignment, rows, path: Path = FIGURE) -> Path:
     fig.suptitle(f"8.6 - {len(X)} scribes in {len(rows)} style clusters", y=1.02)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    _figsave(fig, path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return path
 

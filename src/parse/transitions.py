@@ -123,6 +123,7 @@ import numpy as np
 
 from src.parse.roles import STATE_INDEX, STATES
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p7_hmm_transitions.png"
 
@@ -236,7 +237,7 @@ def figure(model: dict, path: Path = FIGURE, title: str = "") -> Path:
     fig.colorbar(image, ax=ax, label="P(to | from), log scale")
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=140)
+    _figsave(fig, path, dpi=140)
     plt.close(fig)
     return path
 

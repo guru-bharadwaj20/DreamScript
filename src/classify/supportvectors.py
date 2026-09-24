@@ -109,6 +109,7 @@ from pathlib import Path
 import numpy as np
 
 from src.classify.activations import TABLES
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p6_support_vectors.png"
@@ -274,7 +275,7 @@ def gallery(fitted, data, path: Path = FIGURE, per_class: int = 4) -> Path | Non
     )
     fig.tight_layout(rect=(0.06, 0, 1, 0.97))
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=140)
+    _figsave(fig, path, dpi=140)
     plt.close(fig)
     return path
 

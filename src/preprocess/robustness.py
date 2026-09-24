@@ -69,6 +69,7 @@ import cv2
 import numpy as np
 
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p3_robustness.png"
 REPORT = ROOT / "reports" / "robustness.md"
@@ -240,7 +241,7 @@ def figure(result: dict) -> Path:
     fig.suptitle(f"Phase 3.3.2 — preprocessing under degradation, n = {result['items']}")
     fig.tight_layout()
     FIGURE.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURE, dpi=130)
+    _figsave(fig, FIGURE, dpi=130)
     plt.close(fig)
     return FIGURE
 

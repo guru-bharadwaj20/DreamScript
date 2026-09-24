@@ -138,6 +138,7 @@ import numpy as np
 from src.cluster.hierarchy import scaled
 from src.features.descriptors import NAMES
 from src.parse.vocab import matrix
+from src.utils.figures import save as _figsave
 
 SEED = 42
 
@@ -347,7 +348,7 @@ def gallery(keys, assignment, X, path: Path = FIGURE) -> Path:
     fig.suptitle("8.5 - the strongest DBSCAN outliers", y=1.0)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150, bbox_inches="tight")
+    _figsave(fig, path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return path
 

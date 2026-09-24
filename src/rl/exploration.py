@@ -47,6 +47,7 @@ from typing import Any
 
 from src.rl import actions as A
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 RULES: tuple[str, ...] = ("egreedy", "softmax", "ucb")
 
@@ -341,7 +342,7 @@ def plot(result: dict[str, Any], refs: dict[str, Any] | None = None, path=FIGURE
     axes[2].legend(frameon=False, fontsize=8)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130)
+    _figsave(fig, path, dpi=130)
     plt.close(fig)
     return path
 

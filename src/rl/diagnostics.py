@@ -50,6 +50,7 @@ from src.rl import actions as A
 from src.rl.abstraction import FACTOR_SIZES
 from src.rl.state import ROLE_VOCAB
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p11_convergence.png"
 HEATMAP = ROOT / "reports" / "figures" / "p11_qvalues.png"
@@ -354,7 +355,7 @@ def plot_convergence(jobs, refs: dict[str, Any] | None = None, path=FIGURE):
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=120)
+    _figsave(fig, path, dpi=120)
     plt.close(fig)
     return path
 
@@ -416,7 +417,7 @@ def plot_qvalues(job, path=HEATMAP):
     fig.suptitle(f"11.2.8 - Q-table, seed {job['spec']['cfg']['seed']}")
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=120)
+    _figsave(fig, path, dpi=120)
     plt.close(fig)
     return path
 

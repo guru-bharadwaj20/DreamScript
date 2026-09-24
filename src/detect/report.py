@@ -74,6 +74,7 @@ from src.detect.classes import CLASSES
 from src.detect.dataset import OUT as DATA
 from src.detect.train import WEIGHTS
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 REPORT = ROOT / "reports" / "detection.md"
 FIGURE = ROOT / "reports" / "figures" / "p9_detection.png"
@@ -175,7 +176,7 @@ def figure(predictions, reference, per_class, path: Path = FIGURE) -> Path:
     fig.suptitle("Phase 9.1.4 - detection metrics on the validation split", fontsize=11)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

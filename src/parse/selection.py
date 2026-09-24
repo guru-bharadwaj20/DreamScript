@@ -97,6 +97,7 @@ from pathlib import Path
 import numpy as np
 
 from src.parse.vocab import SEED, fit, matrix, purity
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p7_gmm_selection.png"
@@ -172,7 +173,7 @@ def figure(rows: list[dict], path: Path = FIGURE) -> Path:
         ax.grid(alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

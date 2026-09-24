@@ -118,6 +118,7 @@ from src.rl.qlearning import RUNS, completed_order, play
 from src.rl.reward import DEFAULT, RewardConfig, step_reward, terminal_reward
 from src.rl.state import DiagramGraph, StateEncoder
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 OUT = RUNS / "dqn.json"
 CHECKPOINTS = RUNS / "dqn"
@@ -1389,7 +1390,7 @@ def plot(result: dict[str, Any], path=FIGURE):
         ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

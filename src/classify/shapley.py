@@ -122,6 +122,7 @@ from pathlib import Path
 import numpy as np
 
 from src.classify.activations import TABLES
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p7_shap_summary.png"
@@ -302,7 +303,7 @@ def figure(data, table: str = "handcrafted", sample: int = 400, path: Path = FIG
     )
     plt.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(path, dpi=140)
+    _figsave(plt, path, dpi=140)
     plt.close("all")
     return path
 

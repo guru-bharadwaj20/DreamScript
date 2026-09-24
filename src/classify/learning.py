@@ -94,6 +94,7 @@ from sklearn.metrics import accuracy_score, f1_score, recall_score
 from src.classify.cv import MODELS, N_SPLITS, REAL_MODELS, SEEDS, splitter
 from src.classify.data import Dataset, load
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p5_learning_curves.png"
 
@@ -249,7 +250,7 @@ def figure(results: list[dict], path: Path = FIGURE) -> Path:
 
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

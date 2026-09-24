@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from src.utils.config import ROOT  # noqa: E402
+from src.utils.figures import save as _figsave
 
 REPORT = ROOT / "reports" / "class_balance.md"
 FIGURE = ROOT / "reports" / "figures" / "p1_class_balance.png"
@@ -75,7 +76,7 @@ def figure(t: dict) -> object:
         axes[1].text(v, i, f" {v}", va="center", fontsize=9)
 
     fig.tight_layout()
-    fig.savefig(FIGURE, dpi=130)
+    _figsave(fig, FIGURE, dpi=130)
     plt.close(fig)
     return FIGURE
 

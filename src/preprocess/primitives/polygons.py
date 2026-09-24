@@ -47,6 +47,7 @@ import numpy as np
 
 from src.preprocess.primitives.contours import Contour
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p3_vertex_histogram.png"
 
@@ -145,7 +146,7 @@ def figure(counts: dict[float, Counter], total: int) -> object:
     fig.suptitle("Douglas-Peucker tolerance against recovered vertex count", fontsize=11)
     fig.tight_layout()
     FIGURE.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURE, dpi=130)
+    _figsave(fig, FIGURE, dpi=130)
     plt.close(fig)
     return FIGURE
 

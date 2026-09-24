@@ -86,6 +86,7 @@ from src.rl.episode import Episode
 from src.rl.reward import DEFAULT, TraversalState, semantic_score, terminal_reward
 from src.rl.state import DiagramGraph
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 #: Sandbox calls cost ~71 ms each (11.2.9), so execution is measured on a seeded sample.
 SANDBOX_SAMPLE = 150
@@ -479,7 +480,7 @@ def plot(result: dict[str, Any], path=FIGURE):
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

@@ -384,3 +384,67 @@ def test_the_index_names_every_file_in_reports():
     for path in sorted((ROOT / "reports").rglob("*")):
         if path.is_file():
             assert f"`{path.relative_to(ROOT / 'reports').as_posix()}`" in index, path.name
+
+
+# --- a rebuilt figure is not a diff (audit 55) ------------------------------------------------
+
+
+def test_saving_the_same_figure_twice_gives_the_same_bytes(tmp_path):
+    """`reports/figures/` is tracked and a rebuild of an unchanged figure produced different
+    bytes - `p3_rectification.png` moved 1,046,758 -> 1,026,337 for no content change. Every
+    rebuild was a megabyte-scale binary diff, which makes "did this figure change?"
+    unanswerable."""
+    import hashlib
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from src.utils.figures import save
+
+    digests = []
+    for index in range(2):
+        fig, ax = plt.subplots()
+        ax.plot([1, 2, 3], [3, 1, 2])
+        path = save(fig, tmp_path / f"f{index}.png")
+        plt.close(fig)
+        digests.append(hashlib.sha256(path.read_bytes()).hexdigest())
+    assert digests[0] == digests[1]
+
+
+def test_the_saver_strips_the_matplotlib_version_tag(tmp_path):
+    """matplotlib writes its own version into every file it saves, so a figure differs because
+    matplotlib was upgraded - a diff that says nothing about the figure."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from PIL import Image
+
+    from src.utils.figures import save
+
+    fig, ax = plt.subplots()
+    ax.plot([0, 1], [1, 0])
+    plain = tmp_path / "plain.png"
+    fig.savefig(plain, dpi=150)
+    clean = save(fig, tmp_path / "clean.png")
+    plt.close(fig)
+
+    assert "Software" in Image.open(plain).info
+    assert "Software" not in Image.open(clean).info
+
+
+def test_no_module_calls_savefig_directly():
+    """57 call sites, one saver. A new `fig.savefig(path)` reintroduces both the version tag and
+    the unpinned compression level."""
+    import re
+
+    offenders = []
+    for base in ("src", "scripts"):
+        for path in sorted((ROOT / base).rglob("*.py")):
+            if path.name == "figures.py":
+                continue
+            if re.search(r"\.savefig\(", path.read_text(encoding="utf-8", errors="ignore")):
+                offenders.append(path.relative_to(ROOT).as_posix())
+    assert not offenders, offenders

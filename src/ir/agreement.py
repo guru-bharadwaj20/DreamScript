@@ -49,6 +49,7 @@ from src.ir.convert import hdbpmn
 from src.ir.convert.geometry import classify_crop
 from src.ir.model import Diagram
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 REPORT = ROOT / "reports" / "annotator_agreement.md"
 FIGURE = ROOT / "reports" / "figures" / "p2_agreement.png"
@@ -224,7 +225,7 @@ def figure(pairs: dict) -> Path:
                     )
     fig.tight_layout()
     FIGURE.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIGURE, dpi=130)
+    _figsave(fig, FIGURE, dpi=130)
     plt.close(fig)
     return FIGURE
 

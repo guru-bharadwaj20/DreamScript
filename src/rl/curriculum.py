@@ -83,6 +83,7 @@ from typing import Any
 
 from src.rl.state import DiagramGraph, role_index
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p11_curriculum.png"
 
@@ -537,7 +538,7 @@ def plot(result: dict[str, Any], path=FIGURE):
         ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

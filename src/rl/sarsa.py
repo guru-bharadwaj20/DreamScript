@@ -66,6 +66,7 @@ from src.rl.qlearning import (
 )
 from src.rl.state import DiagramGraph
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 OUT = RUNS / "sarsa.json"
 FIGURE = ROOT / "reports" / "figures" / "p11_sarsa.png"
@@ -404,7 +405,7 @@ def plot(result: dict[str, Any], refs: dict[str, Any] | None = None, path=FIGURE
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=120)
+    _figsave(fig, path, dpi=120)
     plt.close(fig)
     return path
 

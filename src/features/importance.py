@@ -88,6 +88,7 @@ from pathlib import Path
 import numpy as np
 
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p4_feature_importance.png"
 
@@ -163,7 +164,7 @@ def figure(rows: list[dict], top: int = 15, path: Path = FIGURE) -> Path:
     ax.margins(x=0.18)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

@@ -94,6 +94,7 @@ from src.detect.crops import OUT as CROPS
 from src.detect.crops import SHAPE_CLASSES, load_split
 from src.detect.scratchcnn import WEIGHTS, load
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURES = ROOT / "reports" / "figures"
 FILTERS = FIGURES / "p9_filters.png"
@@ -192,7 +193,7 @@ def figure_filters(model, path: Path = FILTERS) -> Path:
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 
@@ -225,7 +226,7 @@ def figure_maps(model, root: Path = CROPS, path: Path = MAPS) -> Path:
     fig.suptitle("Phase 9.2.4 - first-layer activations on a real crop", fontsize=10)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 
@@ -271,7 +272,7 @@ def figure_gradcam(model, root: Path = CROPS, path: Path = GRADCAM) -> tuple[Pat
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path, mass
 

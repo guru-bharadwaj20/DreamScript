@@ -48,6 +48,7 @@ from pathlib import Path
 from typing import Any
 
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 REPORT_JSON = ROOT / "reports" / "robustness_pipeline.json"
 REPORT_MD = ROOT / "reports" / "robustness_pipeline.md"
@@ -275,7 +276,7 @@ def figure(curves: dict, path: Path = FIGURE) -> Path | None:
     fig.suptitle("Phase 14.5 - pipeline robustness (detector, arrows, routing)", fontsize=10)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

@@ -80,6 +80,7 @@ from pathlib import Path
 
 from src.classify.activations import LOGREG, TABLES, TOPOLOGY
 from src.classify.torchnet import SCHEDULES
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p6_schedules.png"
@@ -189,7 +190,7 @@ def figure(rows: list[dict], traces: dict, path: Path = FIGURE) -> Path:
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

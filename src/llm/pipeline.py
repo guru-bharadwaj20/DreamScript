@@ -48,6 +48,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from src.utils.figures import save as _figsave
+
 ROOT = Path(__file__).resolve().parents[2]
 PY = sys.executable
 COMMIT_ROW = ROOT / "experiments" / "llm" / "commit_row.py"
@@ -591,7 +593,7 @@ def figure(path: Path, draw: Callable) -> Path | None:
 
         path.parent.mkdir(parents=True, exist_ok=True)
         fig = draw(plt)
-        fig.savefig(path, dpi=120, bbox_inches="tight")
+        _figsave(fig, path, dpi=120, bbox_inches="tight")
         plt.close(fig)
         return path
     except Exception:  # noqa: BLE001 - a figure never fails a stage

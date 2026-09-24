@@ -107,6 +107,7 @@ import numpy as np
 
 from src.parse.roles import STATE_INDEX, STATES
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p7_baumwelch.png"
 
@@ -230,7 +231,7 @@ def figure(results: list[dict], path: Path = FIGURE) -> Path:
     ax.grid(alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=140)
+    _figsave(fig, path, dpi=140)
     plt.close(fig)
     return path
 

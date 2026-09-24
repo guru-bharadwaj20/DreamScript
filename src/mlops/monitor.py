@@ -52,6 +52,7 @@ import numpy as np
 import pandas as pd
 
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 REPORT_MD = ROOT / "reports" / "prediction_monitoring.md"
 REPORT_JSON = ROOT / "reports" / "prediction_monitoring.json"
@@ -278,7 +279,7 @@ def figure(result: dict, path: Path = FIGURE) -> Path | None:
     fig.suptitle("Phase 15.6 - prediction monitoring (routing rung, out-of-fold)", fontsize=10)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

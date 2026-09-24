@@ -117,6 +117,7 @@ from pathlib import Path
 import numpy as np
 
 from src.features.descriptors import NAMES
+from src.utils.figures import save as _figsave
 
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p7_scribe_covariance.png"
@@ -323,7 +324,7 @@ def figure(X, scribe, path: Path = FIGURE) -> Path:
 
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

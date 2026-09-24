@@ -63,6 +63,7 @@ from typing import Any
 from src.rl.reward import structure_score
 from src.rl.state import DiagramGraph, TraversalState
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 #: Potentials are in [0, 1] scaled by this, which puts a full-emission potential on the scale of
 #: `RewardConfig.semantic_bonus` (4.0) so the shaping is not lost against the terminal reward.
@@ -320,7 +321,7 @@ def plot(result: dict[str, Any], refs: dict[str, Any] | None = None, path=FIGURE
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=130)
+    _figsave(fig, path, dpi=130)
     plt.close(fig)
     return path
 

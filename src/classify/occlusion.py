@@ -93,6 +93,8 @@ from pathlib import Path
 
 import numpy as np
 
+from src.utils.figures import save as _figsave
+
 ROOT = Path(__file__).resolve().parents[2]
 FIGURE = ROOT / "reports" / "figures" / "p7_occlusion.png"
 
@@ -408,7 +410,7 @@ def figure(rows: dict, path: Path = FIGURE) -> Path:
     ax.legend(frameon=False, fontsize=8)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

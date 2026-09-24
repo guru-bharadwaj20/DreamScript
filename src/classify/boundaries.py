@@ -86,6 +86,7 @@ from src.classify.data import Dataset, load
 from src.classify.knn import BEST_PARAMS
 from src.features.scaling import feature_scaler
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 FIGURE = ROOT / "reports" / "figures" / "p5_knn_boundaries.png"
 
@@ -253,7 +254,7 @@ def figure(panels: list[dict], y: np.ndarray, full_scores: dict, path: Path = FI
 
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 

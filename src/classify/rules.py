@@ -92,6 +92,7 @@ from src.classify.data import Dataset, load
 from src.classify.tree import BEST_PARAMS, best_estimator
 from src.features.impute import SUFFIX as INDICATOR_SUFFIX
 from src.utils.config import ROOT
+from src.utils.figures import save as _figsave
 
 REPORT = ROOT / "reports" / "tree_rules.md"
 FIGURE = ROOT / "reports" / "figures" / "p5_tree.png"
@@ -327,7 +328,7 @@ def figure(dataset: Dataset, depth: int = RENDER_DEPTH, path: Path = FIGURE) -> 
     )
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=150)
+    _figsave(fig, path, dpi=150)
     plt.close(fig)
     return path
 
