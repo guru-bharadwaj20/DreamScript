@@ -5,56 +5,56 @@ stages:
     deps:
     - path: data/processed/manifest.parquet
       hash: md5
-      md5: 5beb2644e4e08387b9cfda8cfd712d8b
-      size: 46756
+      md5: 2915d6805bc3e794f89d1c78d7d5f34a
+      size: 51840
     - path: src/features/build.py
       hash: md5
-      md5: 6f6e459968ca7fd3ea735107c82d6a5b
-      size: 11326
+      md5: e9bb86c51bbd610bec36207e0296f1e1
+      size: 11790
     - path: src/features/extractor.py
       hash: md5
-      md5: e64527f09a71276ea2258ec6be5c5302
-      size: 9482
+      md5: 53ba29d913b4753e3f81dd7305d94605
+      size: 9226
     outs:
     - path: data/features/handcrafted.parquet
       hash: md5
-      md5: 1f9d0ab24dcede4dd7e50a4210199a3b
-      size: 219802
+      md5: 6bc0b901c16a44d4aa0e4253a0efd09b
+      size: 400917
   embeddings:
     cmd: python -m src.embed.cache --build
     deps:
     - path: data/features/handcrafted.parquet
       hash: md5
-      md5: 1f9d0ab24dcede4dd7e50a4210199a3b
-      size: 219802
+      md5: 6bc0b901c16a44d4aa0e4253a0efd09b
+      size: 400917
     - path: src/embed/backbone.py
       hash: md5
       md5: 59f6d81a23a5a48c4ecdf435065b7532
       size: 24859
     - path: src/embed/cache.py
       hash: md5
-      md5: a866bd29d5fe9c6083cae5aa93d73a9a
-      size: 10892
+      md5: 0e39d0b8f53febf776b52a079cef5e6c
+      size: 11081
     outs:
     - path: data/features/embeddings.npy
       hash: md5
-      md5: 471ccdf721371920884561f9f332e90a
-      size: 2939008
+      md5: 9236e4cb130e34941b376628c201fd4d
+      size: 6254720
     - path: data/features/embeddings_index.parquet
       hash: md5
-      md5: 5eee5c3811ddde30bf619dcb02845961
-      size: 24091
+      md5: 53ba4e850372795e9ae8f03e3c4c7921
+      size: 43579
     - path: data/features/embeddings_meta.json
       hash: md5
-      md5: d73aa5c1b1ee3830ea199c872c0d6137
-      size: 203
+      md5: 395f7efdd309ab9262971cd49b82938e
+      size: 206
   reduce:
     cmd: python -m src.embed.reduce
     deps:
     - path: data/features/embeddings.npy
       hash: md5
-      md5: 471ccdf721371920884561f9f332e90a
-      size: 2939008
+      md5: 9236e4cb130e34941b376628c201fd4d
+      size: 6254720
     - path: src/embed/reduce.py
       hash: md5
       md5: b76d0ad3a6b3a4b965ddce1c792823e0
@@ -62,32 +62,32 @@ stages:
     outs:
     - path: data/features/embeddings_pca128.npy
       hash: md5
-      md5: 4adb9e7fdbddcc9eb95c4cc7a5d4b789
-      size: 734848
+      md5: befa4b873c5ca2d5de0d6d941a450306
+      size: 1563776
   stagewise:
     cmd: python -m src.eval.stagewise
     deps:
     - path: data/features/embeddings_pca128.npy
       hash: md5
-      md5: 4adb9e7fdbddcc9eb95c4cc7a5d4b789
-      size: 734848
+      md5: befa4b873c5ca2d5de0d6d941a450306
+      size: 1563776
     - path: data/features/handcrafted.parquet
       hash: md5
-      md5: 1f9d0ab24dcede4dd7e50a4210199a3b
-      size: 219802
+      md5: 6bc0b901c16a44d4aa0e4253a0efd09b
+      size: 400917
     - path: src/eval/stagewise.py
       hash: md5
-      md5: 327fe77123c2f172e30447587ef82d27
-      size: 15127
+      md5: 4c780cb9ae04d04cf400fb856b49f7c8
+      size: 15383
     outs:
     - path: reports/stagewise.json
       hash: md5
-      md5: 53f70538910f5d31be7d454057b1e6b0
-      size: 5192
+      md5: e77f44758703548c2ac0777b656cd5ec
+      size: 5226
     - path: reports/stagewise.md
       hash: md5
-      md5: 62f24eae3446e138fa6816235eea01c0
-      size: 3763
+      md5: 280b4d8475a2ab9d790f1743e6db6cab
+      size: 3776
   humanbaseline:
     cmd: python -m src.eval.humanbaseline
     deps:
@@ -97,8 +97,8 @@ stages:
       size: 135402
     - path: src/eval/humanbaseline.py
       hash: md5
-      md5: 363ef52decea11e657617a8c00031797
-      size: 12534
+      md5: cc82b28a0db278af20a48562c0d58f12
+      size: 12574
     outs:
     - path: reports/human_baseline.json
       hash: md5
@@ -139,23 +139,23 @@ stages:
     outs:
     - path: reports/ablation_matrix.json
       hash: md5
-      md5: 50ec35703ed47d2bff29c641d72adde2
-      size: 3681
+      md5: cfa5ce7921b4d4beeda56dc20ea34d3c
+      size: 3707
     - path: reports/ablation_matrix.md
       hash: md5
-      md5: 3e79622f1bd8e0ea0afbfe9d4455a377
-      size: 3793
+      md5: e1a0b952a66fec179ba5aec266b6e84a
+      size: 3810
   compute:
     cmd: python -m src.eval.compute
     deps:
     - path: src/eval/compute.py
       hash: md5
-      md5: 33f7acd0421e2593ee9819dc7287d90b
-      size: 12139
+      md5: 8837c7b28774190237554f456b3d6822
+      size: 12410
     outs:
     - path: reports/compute.json
       hash: md5
-      md5: ae547f2620d2334bd457b28f098ecb97
+      md5: 66f6be4fb2e4b12c5464e91ee37a3951
       size: 6362
     - path: reports/compute.md
       hash: md5
@@ -166,11 +166,11 @@ stages:
     deps:
     - path: reports/ablation_matrix.json
       hash: md5
-      md5: 50ec35703ed47d2bff29c641d72adde2
-      size: 3681
+      md5: cfa5ce7921b4d4beeda56dc20ea34d3c
+      size: 3707
     - path: reports/compute.json
       hash: md5
-      md5: ae547f2620d2334bd457b28f098ecb97
+      md5: 66f6be4fb2e4b12c5464e91ee37a3951
       size: 6362
     - path: reports/human_baseline.json
       hash: md5
@@ -178,20 +178,20 @@ stages:
       size: 6098
     - path: reports/stagewise.json
       hash: md5
-      md5: 53f70538910f5d31be7d454057b1e6b0
-      size: 5192
+      md5: e77f44758703548c2ac0777b656cd5ec
+      size: 5226
     - path: src/eval/master.py
       hash: md5
-      md5: 5d44ea02dfbd6dd2f12e40da102fd17c
-      size: 18770
+      md5: 99b211c4669104e9abf8c5d1b07d21c0
+      size: 21073
     outs:
     - path: reports/master_results.json
       hash: md5
-      md5: b5bf364583ec9a0f7136fc68b4d69152
-      size: 19577
+      md5: 252b1eca127da06c5324f816399659b7
+      size: 19579
     - path: reports/master_results.md
       hash: md5
-      md5: d979c0d130da650158c3eb85e8a3ddb8
+      md5: 2dd26ad14ff76126235c552901f64b5a
       size: 8759
   detector:
     cmd: python -m src.detect.train

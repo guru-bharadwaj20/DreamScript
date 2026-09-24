@@ -202,7 +202,7 @@
       "phase": "14 - evaluation",
       "run": "ablation matrix re-fits",
       "source": "reports/ablation_matrix.json",
-      "seconds": 3.5,
+      "seconds": 3.8,
       "gpu_hours": 0.001,
       "recorded": true
     }

@@ -59,6 +59,7 @@
       "on_deployed_path": true,
       "evidence": [
         "core.py:src.pipeline.generate",
+        "core.py:llama",
         "generate.py:llama"
       ],
       "with_component": 0.7037,
@@ -90,5 +91,5 @@
   ],
   "components": 5,
   "on_deployed_path": 1,
-  "seconds": 3.5
+  "seconds": 3.8
 }

@@ -22,11 +22,11 @@
       },
       "logreg": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9828,
-        "accuracy_std": 0.0007,
-        "macro_f1": 0.9819,
-        "macro_f1_std": 0.0007,
-        "worst_repeat_accuracy": 0.982,
+        "accuracy": 0.9799,
+        "accuracy_std": 0.0006,
+        "macro_f1": 0.9769,
+        "macro_f1_std": 0.001,
+        "worst_repeat_accuracy": 0.9794,
         "seeds": [
           42,
           43,
@@ -35,11 +35,11 @@
       },
       "knn": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9813,
-        "accuracy_std": 0.0007,
-        "macro_f1": 0.9799,
-        "macro_f1_std": 0.0005,
-        "worst_repeat_accuracy": 0.9807,
+        "accuracy": 0.9786,
+        "accuracy_std": 0.0023,
+        "macro_f1": 0.9767,
+        "macro_f1_std": 0.0025,
+        "worst_repeat_accuracy": 0.9754,
         "seeds": [
           42,
           43,
@@ -48,11 +48,11 @@
       },
       "tree": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9693,
-        "accuracy_std": 0.0015,
-        "macro_f1": 0.9665,
-        "macro_f1_std": 0.0013,
-        "worst_repeat_accuracy": 0.9673,
+        "accuracy": 0.9623,
+        "accuracy_std": 0.0021,
+        "macro_f1": 0.9621,
+        "macro_f1_std": 0.0017,
+        "worst_repeat_accuracy": 0.9604,
         "seeds": [
           42,
           43,
@@ -102,7 +102,7 @@
       "rows_with_a_known_scribe": 1004,
       "minority_share": 0.0982
     },
-    "fit_seconds": 39.7
+    "fit_seconds": 34.3
   },
   "detect": {
     "input": "raw page (no upstream)",
