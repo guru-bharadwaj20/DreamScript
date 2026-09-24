@@ -98,7 +98,7 @@ def out_of_fold_confidence(frame: pd.DataFrame) -> pd.DataFrame:
 
     splitter = StratifiedGroupKFold(n_splits=fb.N_SPLITS, shuffle=True, random_state=0)
     for train_index, test_index in splitter.split(X, y, groups):
-        model = fb._model().fit(X[train_index], y[train_index])
+        model = fb.classifier().fit(X[train_index], y[train_index])
         proba = model.predict_proba(X[test_index])
         confidence[test_index] = proba.max(axis=1)
         predicted[test_index] = model.classes_[proba.argmax(axis=1)]
@@ -173,7 +173,7 @@ def controls(frame: pd.DataFrame, baseline_share: float, limit: int = 120) -> di
         return {"skipped": "no fa_bresler pages to hold out"}
 
     X_train, columns = fb.features(train)
-    model = fb._model().fit(X_train, train["diagram_type"].to_numpy())
+    model = fb.classifier().fit(X_train, train["diagram_type"].to_numpy())
 
     quiet = spike(baseline_share, _confidence_for(model, columns, held))
     quiet["must_spike"] = False
@@ -387,7 +387,7 @@ def main(argv: list[str] | None = None) -> int:
         scored = out_of_fold_confidence(frame)
         baseline = distribution(scored["confidence"].to_numpy())["low_confidence_share"]
         X, columns = fb.features(frame)
-        model = fb._model().fit(X, frame["diagram_type"].to_numpy())
+        model = fb.classifier().fit(X, frame["diagram_type"].to_numpy())
         batch = pd.read_parquet(args.against)
         result = spike(baseline, _confidence_for(model, columns, batch))
         json.dump(result, sys.stdout, indent=2)

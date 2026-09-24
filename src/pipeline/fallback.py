@@ -3,6 +3,24 @@
     python -m src.pipeline.fallback              # reports/p13_fallback_chain.md + .json
     python -m src.pipeline.fallback --check      # non-zero if the classifier rung fails its control
 
+## What reads this, and what does not
+
+**Not the served pipeline.** `core._classify` routes on `pipeline.routing`, a naive-Bayes prior
+over the detector's own class histogram, because that is evidence the pipeline has already paid
+for by the time it needs the answer; this module's rung needs 38 handcrafted features, which
+means re-running the primitive extractor on a page the detector has already looked at. Saying so
+here rather than leaving it to be discovered: 494 lines that no inference path imports looks like
+dead code, and the difference between dead and *deliberately offline* is which one is written
+down.
+
+What does read it:
+
+    src.pipeline.chain      the chain this rung sits at the top of - `classifier`, `load`,
+                            `IDENTITY`
+    src.mlops.drift         15.5's detector, through `DOMAIN` and `degraded_features`
+    src.mlops.monitor       15.6, the same
+    python -m ... --check   the control itself, which is a gate and not a library
+
 13.4 names three chains. Two were never in doubt:
 
     model fails -> emitter          `src/pipeline/generate.py`, which marks an emitter answer
@@ -109,10 +127,18 @@ def features(frame: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
     return frame[columns].to_numpy(dtype=float), columns
 
 
-def _model() -> HistGradientBoostingClassifier:
-    # Histogram gradient boosting because the table is 20.9% missing by design - a page with no
-    # detected text has no text statistics - and this is the one sklearn classifier that takes
-    # NaN as a value rather than requiring it be invented by an imputer.
+def classifier() -> HistGradientBoostingClassifier:
+    """The rung's model, fresh and unfitted.
+
+    Histogram gradient boosting because the table is 20.9% missing by design - a page with no
+    detected text has no text statistics - and this is the one sklearn classifier that takes NaN
+    as a value rather than requiring it be invented by an imputer.
+
+    Public because `src.pipeline.chain` and `src.mlops.monitor` both fit the same model on the
+    same columns and both reached in for `_model`. A leading underscore that two other modules
+    ignore is not a private name, it is an undocumented interface. What they need - this, `load`
+    and `IDENTITY` - is the rung's contract, so it is named as one.
+    """
     return HistGradientBoostingClassifier(max_iter=200, random_state=0)
 
 
@@ -128,7 +154,7 @@ def out_of_fold(frame: pd.DataFrame, target: str) -> dict[str, Any]:
         splitter = StratifiedGroupKFold(n_splits=N_SPLITS, shuffle=True, random_state=seed)
         fold_pred = np.empty(len(frame), dtype=object)
         for train_idx, test_idx in splitter.split(X, y, groups):
-            model = _model().fit(X[train_idx], y[train_idx])
+            model = classifier().fit(X[train_idx], y[train_idx])
             fold_pred[test_idx] = model.predict(X[test_idx])
         accuracies.append(accuracy_score(y, fold_pred))
         f1s.append(f1_score(y, fold_pred, average="macro"))
@@ -167,7 +193,7 @@ def cross_domain(frame: pd.DataFrame) -> dict[str, Any]:
     test = frame[frame["source"] == "hdbpmn"]
     X_train, _ = features(train)
     X_test, _ = features(test)
-    model = _model().fit(X_train, train["diagram_type"].to_numpy())
+    model = classifier().fit(X_train, train["diagram_type"].to_numpy())
     predicted = model.predict(X_test)
     truth = test["diagram_type"].to_numpy()
     counts = pd.Series(predicted).value_counts().to_dict()
@@ -283,7 +309,7 @@ def degraded_rendering(frame: pd.DataFrame, limit: int = 120) -> dict[str, Any]:
     # stay too, so "rendered" is still represented and only *these* pages are new.
     train = pd.concat([frame[frame["source"] != "fa_bresler"], fa.tail(len(fa) - len(held))])
     X_train, columns = features(train)
-    model = _model().fit(X_train, train["diagram_type"].to_numpy())
+    model = classifier().fit(X_train, train["diagram_type"].to_numpy())
 
     extracted = degraded_features(frame, limit=limit)
     rows: dict[str, Any] = {}

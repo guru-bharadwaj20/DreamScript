@@ -208,3 +208,39 @@ def test_features_are_finite_or_nan_never_infinite():
     df = frame([page("a/1", "hdbpmn", "flowchart", 1.0), page("a/2", "hdbpmn", "flowchart", 2.0)])
     X, _ = fallback.features(df)
     assert not np.isinf(X).any()
+
+
+# --- the rung's contract is named rather than reached into (audit 22) -------------------------
+
+
+def test_the_rung_model_is_a_public_name():
+    """`src.pipeline.chain` and `src.mlops.monitor` both fitted `fallback._model`. A leading
+    underscore that two other modules ignore is an undocumented interface, not a private name."""
+    assert callable(fallback.classifier)
+    assert not hasattr(fallback, "_model")
+
+
+def test_nothing_reaches_into_fallback_for_a_private_name():
+    import re
+
+    from src.utils.config import ROOT
+
+    offenders = []
+    for path in sorted((ROOT / "src").rglob("*.py")):
+        if path.name == "fallback.py":
+            continue
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if re.search(r"fallback\s+import[^\n]*\b_\w", text) or re.search(r"\bfb\._\w", text):
+            offenders.append(path.relative_to(ROOT).as_posix())
+    assert not offenders, offenders
+
+
+def test_both_modules_say_the_served_pipeline_does_not_call_them():
+    """494 + 429 lines that no inference path imports looks like dead code. The difference
+    between dead and deliberately offline is whether it is written down."""
+    from src.utils.config import ROOT
+
+    for name in ("fallback", "chain"):
+        text = (ROOT / "src" / "pipeline" / f"{name}.py").read_text(encoding="utf-8")
+        head = text.split('"""')[1]
+        assert "routing" in head, f"{name} does not say what the pipeline classifies with instead"

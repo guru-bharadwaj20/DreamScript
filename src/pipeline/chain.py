@@ -7,6 +7,14 @@
 on the rebuilt corpus is reading diagram type and not the renderer. This module builds the chain
 that rung sits at the top of.
 
+**The served pipeline does not call this, and that is a decision rather than an omission.**
+`core._classify` uses `pipeline.routing`: a naive-Bayes prior over the detector's class
+histogram, which costs nothing because the boxes are already in hand. Every rung here needs a
+second pass over the page - handcrafted features, a CLIP embedding, a CNN forward - which is
+three more model loads for a decision the histogram makes at 0.98. This module answers the
+research question (do independent rungs recover pages the first one loses), and 15.5's drift
+detector reuses its feature layout; the answer is reported, not served.
+
 ## Why three rungs and not one model three times
 
 A fallback chain is only worth its complexity if the rungs fail *independently*. Three rungs
@@ -50,7 +58,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 from src.embed.cache import aligned
-from src.pipeline.fallback import IDENTITY, _model, load
+from src.pipeline.fallback import IDENTITY, classifier, load
 from src.utils.config import ROOT
 
 PCA128 = ROOT / "data" / "features" / "embeddings_pca128.npy"
@@ -195,7 +203,7 @@ def rung_probabilities(frame: pd.DataFrame, cnn_epochs: int = 30) -> dict[str, A
     train = masks["train"]
 
     handcrafted = _features(frame)
-    first = _model().fit(handcrafted[train], y[train])
+    first = classifier().fit(handcrafted[train], y[train])
 
     embeddings, found = aligned(frame["id"].tolist(), drop_missing=False)
     if not found.all():  # pragma: no cover - aligned raises first
