@@ -1,18 +1,20 @@
-"""Entry point: python -m src.detect --config configs/detect.yaml [key=value ...]"""
+"""Entry point: python -m src.detect [command] [args ...]
+
+    python -m src.detect                     # the commands in this package
+    python -m src.detect <command> [args]    # run one of them
+    python -m src.detect --print-config      # the Phase 0.2.3 config contract, unchanged
+
+This used to be a `run()` that raised `StageNotImplemented`, so the command printed a resolved
+config and exited 2 while the package's own modules - each with a working `main()` - were
+reachable only by knowing their names. `src.utils.stage` routes to them; the config contract is
+untouched and still reached by any first argument beginning with `-`.
+"""
 
 from __future__ import annotations
 
 import sys
 
-from omegaconf import DictConfig
-
-from src.utils.cli import StageNotImplemented, main
-from src.utils.logging import Run
-
-
-def run(cfg: DictConfig, active: Run) -> int:
-    raise StageNotImplemented("stage not implemented yet; see contributing.md for the owning phase")
-
+from src.utils.stage import dispatch
 
 if __name__ == "__main__":
-    sys.exit(main("src.detect", run))
+    sys.exit(dispatch("src.detect"))
