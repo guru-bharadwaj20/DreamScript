@@ -41,7 +41,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.cache import StageCache, digest_obj, image_key
+from src.pipeline.cache import StageCache, digest_obj, env_key, image_key
 from src.pipeline.contracts import UNKNOWN, Outcome, Result, StageReport, Timer
 
 #: Below this routing probability the pipeline asks rather than guesses (13.5).
@@ -71,6 +71,12 @@ class DreamScriptPipeline:
                 "confidence_floor": confidence_floor,
                 "generate": generate,
                 "read_text": read_text,
+                # The three constructor arguments were the whole key, and they are not the whole
+                # configuration: `assemble.s5` takes three switches from the environment and
+                # three more environment variables name the checkpoints that produce the text
+                # and the edges. Flipping one of those and re-running returned the previous
+                # answer from a warm cache. See `cache.ENV_KEYS`.
+                "env": env_key(),
             }
         )
 

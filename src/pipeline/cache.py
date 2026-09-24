@@ -21,6 +21,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -76,6 +77,39 @@ def code_key() -> str:
                 # An unreadable file is a reason to invalidate, not to crash.
                 digest.update(str(file).encode("utf-8"))
     return digest.hexdigest()[:16]
+
+
+#: Environment variables that change what a stage returns. Not configuration the pipeline holds -
+#: configuration the *process* holds, which is exactly why it was missing from the key.
+#:
+#: `assemble.s5` reads three switches from the environment rather than from arguments, for a
+#: reason it documents: `run` fans pages out to joblib workers, which are separate processes, and
+#: a module constant set in the parent is re-imported at its default in every child. Three more
+#: name a *checkpoint*: `S3_CHECKPOINT` and `HDBPMN_RECOGNISER` pick the text recogniser,
+#: `ARROW_WEIGHTS` picks the pose model whose keypoints become the edges.
+#:
+#: Every one of them decides an answer and none of them was in the key, so flipping one and
+#: re-running returned the previous configuration's result from a warm cache - the failure this
+#: module's docstring promises does not happen.
+ENV_KEYS = (
+    "DREAMSCRIPT_ARROW_EDGES",
+    "DREAMSCRIPT_EDGE_TEXT",
+    "DREAMSCRIPT_PAGE_TEXT",
+    "ARROW_WEIGHTS",
+    "HDBPMN_RECOGNISER",
+    "S3_CHECKPOINT",
+)
+
+
+def env_key(names: tuple[str, ...] = ENV_KEYS) -> str:
+    """A digest of the environment that decides a stage's output.
+
+    Unset and set-to-the-default are deliberately *different* keys. The alternative is to bake
+    each variable's default in here, which is a fourth place for the defaults to drift from the
+    modules that own them; an extra miss the first time a variable is set explicitly is cheaper
+    than a wrong hit.
+    """
+    return digest_obj({name: os.environ.get(name) for name in names})
 
 
 def image_key(path: str | Path) -> str:
