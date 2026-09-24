@@ -552,3 +552,34 @@ def test_the_two_training_entry_points_go_through_it():
     for module in ("src/detect/train.py", "src/detect/arrows.py"):
         source = (ROOT / module).read_text(encoding="utf-8")
         assert "YOLO(pretrained_weights(weights))" in source, module
+
+
+# --- no credential is a literal in the tree (audit 60) ----------------------------------------
+
+
+def test_no_hardcoded_password_or_token_anywhere():
+    """`scripts/labelstudio_verify.py` carried a username, a password and an API token as
+    literals. The values were worthless - a throwaway instance this script boots and destroys -
+    and that is not the point: a credential in git is in git forever regardless of what it
+    guarded, and a reader has no way to tell a disposable one from a real one pasted in by
+    mistake."""
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", "--select", "S105,S106,S107",
+         "--output-format=concise", "src", "tests", "scripts"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )  # fmt: skip
+    assert result.returncode == 0, result.stdout
+
+
+def test_the_verify_scripts_credentials_are_generated_per_run():
+    """A machine that sets nothing still works, and no two runs share a password."""
+    source = (ROOT / "scripts" / "labelstudio_verify.py").read_text(encoding="utf-8")
+    assert "secrets.token_urlsafe" in source
+    assert "secrets.token_hex" in source
+    assert 'os.environ.get("LABEL_STUDIO_PASSWORD")' in source

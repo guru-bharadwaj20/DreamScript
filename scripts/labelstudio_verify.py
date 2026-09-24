@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 import shutil
 import socket
 import subprocess
@@ -46,9 +47,20 @@ CONFIG = ROOT / "labeling" / "label_studio" / "config.xml"
 TASKS = ROOT / "labeling" / "tasks" / "hdbpmn.json"
 IMAGE_DIR = ROOT / "data" / "raw" / "hdbpmn" / "data" / "images" / "ex00"
 
-USERNAME = "verify@dreamscript.local"
-PASSWORD = "verify-dreamscript-2026"
-TOKEN = "dreamscript-verify-token-0000000000000000"
+# Credentials for the throwaway Label Studio instance this script boots, verifies and destroys.
+#
+# They were literals here, which is wrong for two reasons that are both true even though the
+# values themselves are worthless: a credential in git is in git *forever* regardless of what it
+# guarded, and a reader has no way to tell a disposable one from a real one that was pasted in by
+# mistake. Reading them from the environment makes the answer to "is this a secret?" visible
+# rather than something you have to know.
+#
+# Defaults are generated per run, so a machine that sets nothing still works and no two runs of
+# this script share a password. Override any of the three to point at an instance you already
+# have.
+USERNAME = os.environ.get("LABEL_STUDIO_USERNAME", "verify@dreamscript.local")
+PASSWORD = os.environ.get("LABEL_STUDIO_PASSWORD") or f"verify-{secrets.token_urlsafe(18)}"
+TOKEN = os.environ.get("LABEL_STUDIO_TOKEN") or secrets.token_hex(20)
 
 #: Migrations on a cold database took 200s here; three times that is the timeout.
 BOOT_TIMEOUT = 600.0
