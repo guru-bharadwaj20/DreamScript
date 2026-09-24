@@ -85,3 +85,39 @@ def test_the_hdbpmn_gap_is_named_not_counted():
     gap = unconverted().get("hdbpmn", [])
     assert gap, "the eleven unconverted pages are no longer detected"
     assert all(name.startswith("ex") for name in gap), gap
+
+
+# --- lost is not the same as not pulled (audit 63) --------------------------------------------
+
+
+def test_the_lost_payloads_are_named_and_the_document_is_current():
+    """`dvc status -c` prints the same "missing from remote and local" line for a source you
+    have not pulled and one whose content exists nowhere. Four of the eight raw sources are in
+    the second state - cghd_extracted, chaos, didi, iam_line - and nothing said so."""
+    from src.ingest.losses import lost, main
+
+    assert set(lost()) == {"cghd_extracted", "chaos", "didi", "iam_line"}
+    assert main(["--check"]) == 0, "docs/data_losses.md is stale"
+
+
+def test_every_source_is_in_exactly_one_state():
+    """A pointer with no md5 at all would read as lost and would actually be a broken pointer."""
+    from src.ingest.losses import survey
+
+    state = survey()
+    assert len(state) == 8
+    for name, row in state.items():
+        assert row["md5"], f"{name} has a .dvc pointer with no hash"
+        assert row["files"], f"{name} records no file count"
+
+
+def test_the_survey_needs_no_dvc_process():
+    """It reads the pointers, so it answers while a `dvc repro` holds the lock and on a machine
+    with no DVC installed - which is the situation the document describes."""
+    import inspect
+
+    from src.ingest import losses
+
+    source = inspect.getsource(losses)
+    assert "subprocess" not in source
+    assert "import dvc" not in source

@@ -37,6 +37,8 @@ reading it that way:
 | `dvc.yaml` | twelve stages with declared outputs | four of them are frozen and their content is on one disk |
 | `README` / onboarding | clone, install, pull | the third step cannot succeed |
 
+The four sources whose content this has already cost are listed in [data_losses.md](data_losses.md), with what each one was used for.
+
 The practical consequence is measured elsewhere in this audit: `dvc status -c` reports four cache
 objects as *"missing from remote and local"*, and `data/raw/didi` is one of them - which is why
 `configs/llm.yaml` no longer lists didi as a training source and why
