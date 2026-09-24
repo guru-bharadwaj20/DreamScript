@@ -90,6 +90,7 @@ import numpy as np
 from src.detect.choice import RUNS, predict_ultralytics, truths
 from src.detect.classes import CLASSES
 from src.detect.dataset import OUT as DATA
+from src.detect.pretrained import weights as pretrained_weights
 from src.utils.config import ROOT
 
 SEED = 42
@@ -211,7 +212,9 @@ def train(
 ):
     from ultralytics import YOLO
 
-    model = YOLO(weights)
+    # `pretrained.weights` so a bare `yolov8n.pt` lands in `models/pretrained/` rather than in
+    # whatever directory this was run from - which for every command in this repo is the repo root.
+    model = YOLO(pretrained_weights(weights))
     started = time.perf_counter()
     model.train(
         data=str(root / "data.yaml"),

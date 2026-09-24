@@ -59,6 +59,7 @@ from typing import Any
 
 import numpy as np
 
+from src.detect.pretrained import weights as pretrained_weights
 from src.utils.config import ROOT
 
 OUT = ROOT / "data" / "processed" / "arrows"
@@ -320,7 +321,8 @@ def train(
     if not (root / "data.yaml").is_file():
         raise FileNotFoundError(f"no dataset at {root}; run --export first")
 
-    model = YOLO(weights)
+    # See `src.detect.pretrained`: a bare weight name downloads into the working directory.
+    model = YOLO(pretrained_weights(weights))
     started = time.perf_counter()
     model.train(
         data=str(root / "data.yaml"),

@@ -13,6 +13,7 @@ module or the package command on the other end is real - without running any of 
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import pytest
 
@@ -516,3 +517,38 @@ def test_everything_the_dockerfile_copies_survives_the_ignore_file():
     for source in copied:
         head = source.rstrip("/").split("/")[0]
         assert head not in patterns, f"COPY {source} is excluded by .dockerignore"
+
+
+# --- downloaded checkpoints have a home (audit 58) --------------------------------------------
+
+
+def test_no_loose_checkpoint_at_the_repository_root():
+    """Four ultralytics base weights, ~90 MB, sat in the repo root. They are gitignored by
+    `*.pt`, so `git status` never mentioned them - which is why they were still in the Docker
+    build context until a `.dockerignore` existed."""
+    loose = sorted(p.name for p in ROOT.glob("*.pt")) + sorted(p.name for p in ROOT.glob("*.pth"))
+    assert not loose, loose
+
+
+def test_pretrained_weights_resolves_a_bare_name_into_models_pretrained():
+    from src.detect.pretrained import DIR, weights
+
+    resolved = Path(weights("yolov8n.pt"))
+    assert resolved.parent == DIR
+    assert resolved.name == "yolov8n.pt"
+
+
+def test_pretrained_weights_leaves_a_real_path_alone():
+    """A trained checkpoint under `experiments/` is already a path; a caller should be able to
+    pass either without knowing which it has."""
+    from src.detect.pretrained import weights
+
+    trained = ROOT / "experiments" / "detect" / "final" / "weights" / "best.pt"
+    assert Path(weights(trained)) == trained
+    assert Path(weights(str(trained))) == trained
+
+
+def test_the_two_training_entry_points_go_through_it():
+    for module in ("src/detect/train.py", "src/detect/arrows.py"):
+        source = (ROOT / module).read_text(encoding="utf-8")
+        assert "YOLO(pretrained_weights(weights))" in source, module

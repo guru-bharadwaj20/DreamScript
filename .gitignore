@@ -71,3 +71,8 @@ runs/
 # installed. The one number in it that mattered is `reports/arrow_m.json`; the epoch table is
 # `experiments/detect/arrows/pose_m/results.csv`.
 *.log
+
+# Downloaded base checkpoints. `models/README.md` says what belongs there and why it is not the
+# repository root, which is where ultralytics puts them when a training command is run from here.
+models/
+!models/README.md
