@@ -137,3 +137,30 @@ def test_routing_and_the_detector_share_one_class_vocabulary():
     from src.pipeline.routing import CLASSES as ROUTER
 
     assert ROUTER is DETECTOR
+
+
+# --- the router says which types it cannot learn (audit 29) -----------------------------------
+
+
+def test_uncovered_sources_are_exactly_the_ones_the_detect_index_lacks():
+    """`SOURCE_TYPE` maps sketch2code -> wireframe and cghd -> circuit, and
+    `data/processed/detect/index.json` contains no page from either, so `fit` never reaches those
+    entries and the router can never learn or return those two types."""
+    import json
+
+    from src.pipeline.routing import SOURCE_TYPE, UNCOVERED_SOURCES
+    from src.utils.config import ROOT
+
+    index_path = ROOT / "data" / "processed" / "detect" / "index.json"
+    if not index_path.is_file():
+        import pytest
+
+        pytest.skip("needs the DVC payload (data/processed/detect/index.json)")
+    present = {row["source"] for row in json.loads(index_path.read_text(encoding="utf-8"))}
+    assert set(UNCOVERED_SOURCES) == set(SOURCE_TYPE) - present
+
+
+def test_uncovered_sources_are_a_subset_of_the_map_they_annotate():
+    from src.pipeline.routing import SOURCE_TYPE, UNCOVERED_SOURCES
+
+    assert set(UNCOVERED_SOURCES) < set(SOURCE_TYPE)

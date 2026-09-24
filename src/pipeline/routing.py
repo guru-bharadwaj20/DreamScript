@@ -53,7 +53,8 @@ from src.utils.splits import normalise
 # Kept as a comment rather than deleted: the histogram's column order is this module's contract
 # with every router.json it ever wrote, and the next reader deserves to be told where it lives.
 
-#: Which diagram type each corpus source is drawn from. The manifest's own assignment.
+#: Which diagram type each corpus source is drawn from. The manifest's own assignment, complete
+#: rather than filtered - a source is here whether or not the detector has ever seen it.
 SOURCE_TYPE = {
     "hdbpmn": "flowchart",
     "flowchartseg": "flowchart",
@@ -61,6 +62,14 @@ SOURCE_TYPE = {
     "sketch2code": "wireframe",
     "cghd": "circuit",
 }
+
+#: The two entries above that the detector has no held-out coverage for, named rather than left
+#: to be discovered by noticing that `fit` never reaches them. 9.1.2's export is hdbpmn,
+#: flowchartseg and fa_bresler; `data/processed/detect/index.json` contains no sketch2code page
+#: and no cghd page at all, so `wireframe` and `circuit` are types this router can never learn
+#: and never returns. The module docstring says the router covers two of five types; this is
+#: which three it does not, in a form `fit` can check and a report can print.
+UNCOVERED_SOURCES: tuple[str, ...] = ("sketch2code", "cghd")
 
 MODEL = ROOT / "experiments" / "pipeline" / "router.json"
 
@@ -111,6 +120,12 @@ def fit(split: str = "val", model_path: Path = MODEL) -> dict[str, Any]:
     payload = {
         "classes": list(CLASSES),
         "types": names,
+        # What this model cannot answer, stored beside what it can. A router.json that lists
+        # only the two types it learned reads as though the other three were never asked for.
+        "uncovered_sources": list(UNCOVERED_SOURCES),
+        "uncovered_types": sorted(
+            {SOURCE_TYPE[source] for source in UNCOVERED_SOURCES} - set(names)
+        ),
         "log_prior": log_prior,
         "log_rate": log_rate,
         "fitted_on": {"split": split, "pages": len(labels)},
