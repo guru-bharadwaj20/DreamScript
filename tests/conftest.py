@@ -139,9 +139,21 @@ def sample_image(sample_image_path: Path) -> np.ndarray:
 
 
 def _single(name: str):
+    """One named fixture image, with the same guarantee `sample_image` gives.
+
+    `cv2.imread` returns **None** for a file it cannot read - a missing fixture, a truncated
+    write, a path that is a directory - rather than raising. `sample_image` asserts on that and
+    these five did not, so a fixture that had not been regenerated surfaced as
+    `AttributeError: 'NoneType' object has no attribute 'shape'` somewhere inside whichever test
+    happened to touch it first, naming neither the file nor the reason.
+    """
+
     @pytest.fixture
     def _fixture(fixtures_dir: Path) -> np.ndarray:
-        return cv2.imread(str(fixtures_dir / f"{name}.png"), cv2.IMREAD_GRAYSCALE)
+        path = fixtures_dir / f"{name}.png"
+        img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+        assert img is not None, f"could not read {path} - run scripts/make_fixtures.py"
+        return img
 
     return _fixture
 

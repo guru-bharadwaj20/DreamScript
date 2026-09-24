@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 TESTS = Path(__file__).parent
 
 
@@ -71,3 +73,20 @@ def test_the_gpu_marker_is_registered():
     """An unregistered marker is a typo away from silently marking nothing."""
     text = (TESTS / "conftest.py").read_text(encoding="utf-8")
     assert 'addinivalue_line("markers", "gpu:' in text
+
+
+@pytest.mark.parametrize(
+    "name", ["flowchart", "wireframe", "state_machine", "er_diagram", "circuit"]
+)
+def test_every_named_fixture_image_asserts_it_was_read(name, request):
+    """`cv2.imread` returns None rather than raising, and these five returned it unchecked."""
+    image = request.getfixturevalue(f"{name}_image")
+    assert image is not None
+    assert image.ndim == 2
+
+
+def test_the_single_factory_carries_the_assert_sample_image_has():
+    source = (TESTS / "conftest.py").read_text(encoding="utf-8")
+    block = source.split("def _single(", 1)[1].split("\nflowchart_image", 1)[0]
+    assert "assert img is not None" in block
+    assert "make_fixtures.py" in block, "the message should say how to fix it"
