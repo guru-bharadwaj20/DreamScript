@@ -35,6 +35,10 @@ repos:
       - id: ruff
         args: [--fix]
 
+  # Kept, and `notebooks/` is not. That directory held one `.gitkeep` and nothing else, and an
+  # empty placeholder for work that never arrived is a claim the repo cannot support. The hook is
+  # not scoped to it - it matches any `.ipynb` anywhere - so it still enforces the rule
+  # `docs/conventions.md` section 4 states, for a notebook committed wherever one is committed.
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:
