@@ -76,47 +76,65 @@ format:  ## apply black + isort + ruff --fix
 	$(PY) -m ruff check --fix src tests scripts
 
 ## -- pipeline ----------------------------------------------------------------
+#
+# Every target below ran `python -m src.<package> --config ...`, and every one of those raised
+# `StageNotImplemented` and exited 2. Fourteen targets that did nothing, while the work they name
+# sat in the packages under names nobody could guess. They name it now, and
+# `python -m src.<package>` with no argument still lists what else is in there.
+#
+# `make serve` was the worst of them: it pointed at the stub while the Dockerfile and the CI
+# image job both ran `uvicorn src.serve.api:app`, which is the actual server.
 
-data:  ## Phase 1 — build the corpus manifest and splits
-	$(PY) -m src.ingest --config configs/ingest.yaml $(OVERRIDES)
+data:  ## Phase 1 - build the corpus manifest and splits
+	$(PY) -m src.ingest manifest $(OVERRIDES)
+	$(PY) -m src.ingest splits $(OVERRIDES)
 
-preprocess:  ## Phase 3 — photos to clean strokes and primitives
-	$(PY) -m src.preprocess --config configs/preprocess.yaml $(OVERRIDES)
+preprocess:  ## Phase 3 - photos to clean strokes, text/shape layers and primitives
+	$(PY) -m src.preprocess layers $(OVERRIDES)
 
-features:  ## Phase 4 — build the handcrafted feature table
-	$(PY) -m src.features --config configs/features.yaml $(OVERRIDES)
+features:  ## Phase 4 - build the handcrafted feature table
+	$(PY) -m src.features build $(OVERRIDES)
 
-train-clf:  ## Phase 5 — Decision Tree / KNN / Logistic Regression
-	$(PY) -m src.classify --config configs/classify.yaml $(OVERRIDES)
+train-clf:  ## Phase 5 - Decision Tree / KNN / Logistic Regression
+	$(PY) -m src.classify s1 $(OVERRIDES)
 
-train-nn:  ## Phase 6 — MLP and SVM on image embeddings
-	$(PY) -m src.classify --config configs/classify.yaml model=mlp $(OVERRIDES)
+train-nn:  ## Phase 6 - MLP and SVM on image embeddings
+	$(PY) -m src.classify mlp $(OVERRIDES)
+	$(PY) -m src.classify svm $(OVERRIDES)
 
-train-ens:  ## Phase 7 — Random Forest / boosting ensembles
-	$(PY) -m src.classify --config configs/classify.yaml model=rf $(OVERRIDES)
+train-ens:  ## Phase 7 - Random Forest / boosting ensembles
+	$(PY) -m src.classify forest $(OVERRIDES)
+	$(PY) -m src.classify boosting $(OVERRIDES)
 
-detect:  ## Phase 9.1 — component detector
-	$(PY) -m src.detect --config configs/detect.yaml $(OVERRIDES)
+detect:  ## Phase 9.1 - component detector
+	$(PY) -m src.detect train $(OVERRIDES)
 
-ocr:  ## Phase 9.3 — handwriting recognition
-	$(PY) -m src.ocr --config configs/ocr.yaml $(OVERRIDES)
+ocr:  ## Phase 9.3 - handwriting recognition
+	$(PY) -m src.ocr s3 $(OVERRIDES)
 
-parse:  ## Phases 7.3/10 — HMM roles and graph assembly into the IR
-	$(PY) -m src.parse --config configs/parse.yaml $(OVERRIDES)
+parse:  ## Phases 7.3/10 - HMM roles and graph assembly into the IR
+	$(PY) -m src.parse s4 $(OVERRIDES)
 
-rl:  ## Phase 11 — traversal policy
-	$(PY) -m src.rl --config configs/rl.yaml $(OVERRIDES)
+rl:  ## Phase 11 - traversal policy
+	$(PY) -m src.rl dqn $(OVERRIDES)
 
-finetune:  ## Phase 12 — QLoRA code synthesis
-	$(PY) -m src.synth --config configs/synth.yaml $(OVERRIDES)
+finetune:  ## Phase 12.2 - one QLoRA training run from configs/llm.yaml
+	$(PY) -m src.llm.run --config configs/llm.yaml $(OVERRIDES)
 
-eval:  ## Phase 14 — metrics, ablations and error analysis
-	$(PY) -m src.eval --config configs/eval.yaml $(OVERRIDES)
+eval:  ## Phase 14 - the master table and every artefact it reads
+	$(PY) -m src.eval stagewise
+	$(PY) -m src.eval ablate
+	$(PY) -m src.eval compute
+	$(PY) -m src.eval humanbaseline
+	$(PY) -m src.eval master
 
 app: serve  ## alias for `make serve`
 
-serve:  ## Phase 16 — run the web demo
-	$(PY) -m src.serve --config configs/serve.yaml $(OVERRIDES)
+serve:  ## Phase 15.11 - run the inference service (what the Dockerfile and CI run)
+	$(PY) -m uvicorn src.serve.api:app --host 127.0.0.1 --port 8000
+
+stages:  ## list every command each pipeline package can run
+	@for pkg in ingest preprocess features classify detect ocr parse rl synth eval serve; do $(PY) -m src.$$pkg; echo; done
 
 ## -- housekeeping ------------------------------------------------------------
 
