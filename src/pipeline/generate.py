@@ -48,11 +48,28 @@ def language_for(kind: str) -> str:
 def emit(
     diagram: dict, order: list[str], kind: str, language: str, *, model_url: str | None = None
 ) -> Outcome[tuple[str, str]]:
-    """Code for this diagram: the served model if there is one, else 12.1.6's emitter."""
+    """Code for this diagram: the served model if there is one, else 12.1.6's emitter.
+
+    **`degraded` means a rung below the first choice answered, and it was true on every run.**
+    The emitter's result came back through `Outcome.fallback` unconditionally, so
+    `summarise()["degraded"]` and the API's `degraded` field were 100% always - including on a
+    deployment with no model configured, where the emitter is not a fallback but the only rung
+    there is. A flag that is always set carries no information, and this one is the flag the
+    module argues at length is what lets a caller trust the answer.
+
+    So the three cases are distinguished, and the reason says which happened:
+
+        no model configured   not degraded. The emitter answered because it is the chain.
+        model asked, answered not degraded. The first rung answered.
+        model asked, failed   degraded, carrying the model's own failure reason - this is what
+                              the flag was for.
+    """
+    fell_back = ""
     if model_url:
         served = _from_model(diagram, order, kind, model_url)
         if served.ok:
             return served
+        fell_back = served.reason or "the served model did not answer"
 
     try:
         from src.codegen.targets import for_type
@@ -63,9 +80,15 @@ def emit(
     except Exception as error:  # noqa: BLE001 - a malformed IR is a soft failure here
         return Outcome.failed(f"emitter failed: {type(error).__name__}: {error}")
 
-    return Outcome.fallback(
-        (code, language),
-        "no model served; 12.1.6's emitter answered",
+    if fell_back:
+        return Outcome.fallback(
+            (code, language),
+            f"{fell_back}; 12.1.6's emitter answered instead",
+            confidence=1.0,
+        )
+    return Outcome(
+        value=(code, language),
+        reason="no model configured; 12.1.6's emitter is the whole chain",
         confidence=1.0,
     )
 

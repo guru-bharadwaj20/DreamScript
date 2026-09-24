@@ -288,10 +288,19 @@ def test_a_warm_cache_run_is_faster_than_a_cold_one(golden, tmp_path):
 @pytest.mark.gpu
 @pytest.mark.slow
 def test_the_emitter_answers_when_no_model_is_served(golden_results):
-    """13.4: with nothing served, every program came from 12.1.6's emitter and says so."""
+    """13.4: with nothing served, every program came from 12.1.6's emitter and says so.
+
+    It says so in the *reason*, not in `degraded`. This used to assert `degraded` on every stage,
+    which passed because `emit` returned `Outcome.fallback` unconditionally - so the flag was
+    true on 100% of runs and asserting it proved nothing. With no model configured the emitter is
+    the whole chain and nothing fell back; the run that has a model and loses it is the degraded
+    one, and that case has its own test.
+    """
     produced = [r for r in golden_results if r.ok]
     generate = [next(s for s in r.stages if s.name == "generate") for r in produced]
-    assert all(s.degraded for s in generate), "a generate stage claimed a model it did not use"
+    assert generate, "no page reached the generate stage"
+    assert not any(s.degraded for s in generate), "a degradation with nothing to degrade from"
+    assert all("no model configured" in (s.reason or "") for s in generate)
 
 
 def test_a_cache_entry_written_by_different_code_is_a_miss(tmp_path, monkeypatch):
@@ -378,3 +387,49 @@ def test_a_served_model_that_fails_falls_back_to_the_emitter(monkeypatch):
     diagram = {"nodes": [{"id": "n0", "shape": "rectangle", "text": "go", "bbox": [0, 0, 9, 9]}]}
     outcome = generate.emit(diagram, ["n0"], "flowchart", "python", model_url="http://served")
     assert outcome.ok and outcome.value[1] == "python"
+
+
+# --- degraded means something (audit 21) ------------------------------------------------------
+
+
+def test_the_emitter_answering_with_no_model_configured_is_not_a_degradation():
+    """`Outcome.fallback` was unconditional, so `degraded` was true on 100% of runs - including
+    on a deployment with no model, where the emitter is not a fallback but the whole chain. A
+    flag that is always set carries no information."""
+    from src.pipeline.generate import emit
+
+    diagram = {"nodes": [{"id": "n0", "shape": "rectangle", "text": "go", "bbox": [0, 0, 9, 9]}]}
+    outcome = emit(diagram, ["n0"], "flowchart", "python")
+    assert outcome.ok
+    assert not outcome.degraded
+    assert "no model configured" in outcome.reason
+
+
+def test_a_model_that_was_asked_and_failed_is_a_degradation_that_says_why(monkeypatch):
+    from src.pipeline import generate
+
+    monkeypatch.setattr(
+        generate,
+        "_from_model",
+        lambda *a, **k: generate.Outcome.failed("served model unreachable: URLError"),
+    )
+    diagram = {"nodes": [{"id": "n0", "shape": "rectangle", "text": "go", "bbox": [0, 0, 9, 9]}]}
+    outcome = generate.emit(diagram, ["n0"], "flowchart", "python", model_url="http://served")
+    assert outcome.ok
+    assert outcome.degraded
+    assert "URLError" in outcome.reason
+    assert "emitter answered instead" in outcome.reason
+
+
+def test_a_whole_run_with_no_model_reports_degraded_false(tmp_path, fixtures_dir):
+    """The field the API publishes, end to end."""
+    from src.pipeline.core import DreamScriptPipeline
+    from src.serve.api import result_payload
+
+    pipeline = DreamScriptPipeline(cache=StageCache(tmp_path))
+    result = pipeline.run(fixtures_dir / "flowchart.png")
+    payload = result_payload(result, 0.0)
+    generate_stage = [s for s in payload["stages"] if s["stage"] == "generate"]
+    if generate_stage:
+        assert generate_stage[0]["degraded"] is False
+        assert payload["degraded"] is False
