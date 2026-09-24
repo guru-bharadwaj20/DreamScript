@@ -144,7 +144,8 @@ def result_payload(result: Any, seconds: float) -> dict[str, Any]:
 
 
 def build_app():
-    """The FastAPI application. A function so importing this module costs nothing."""
+    """The FastAPI application. A function so importing this module costs nothing - see
+    `__getattr__`, which is what makes that true of the module attribute as well."""
     app = FastAPI(
         title="DreamScript inference",
         version="15.11",
@@ -209,19 +210,37 @@ def build_app():
     return app
 
 
-def _lazy_app():
-    """`uvicorn src.serve.api:app` needs a module attribute, not a factory."""
-    return build_app()
+_APP: Any = None
 
 
-app = _lazy_app()
+def __getattr__(name: str) -> Any:
+    """`app`, built on first access rather than at import. PEP 562.
+
+    `uvicorn src.serve.api:app` needs a module *attribute*, not a factory, and this module used
+    to provide one by calling `build_app()` at import - directly under a docstring saying "A
+    function so importing this module costs nothing". Importing it registered four routes and
+    constructed a FastAPI application, which is what `--check`, the OpenAPI dump and every test
+    that imports this module paid for.
+
+    A module-level `__getattr__` runs on the first *unresolved* attribute lookup, so
+    `import src.serve.api` is free and `src.serve.api:app` still resolves - uvicorn does
+    `getattr(module, "app")` and cannot tell the difference. The claim is true now.
+    """
+    global _APP
+    if name == "app":
+        if _APP is None:
+            _APP = build_app()
+        return _APP
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def self_test() -> dict[str, Any]:
     """Wire the app and exercise every route that does not need a model."""
     from fastapi.testclient import TestClient
 
-    client = TestClient(app)
+    # `app` inside this module is not resolved by `__getattr__` - a global lookup that fails
+    # goes to the module namespace, and a *successful* one never reaches it. Asked for explicitly.
+    client = TestClient(__getattr__("app"))
     checks: dict[str, Any] = {}
 
     health = client.get("/health")
@@ -272,7 +291,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     if args.openapi:
-        json.dump(app.openapi(), sys.stdout, indent=2)
+        json.dump(__getattr__("app").openapi(), sys.stdout, indent=2)
         sys.stdout.write("\n")
         return 0
 
@@ -284,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
 
     import uvicorn
 
-    uvicorn.run(app, host=args.host, port=args.port)
+    uvicorn.run(__getattr__("app"), host=args.host, port=args.port)
     return 0
 
 

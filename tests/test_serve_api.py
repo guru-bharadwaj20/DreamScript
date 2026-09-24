@@ -195,3 +195,40 @@ def test_a_wav_is_not_accepted_for_starting_like_a_webp():
     """RIFF is a container. Accepting one member because it starts like another is the same
     mistake as trusting the extension, one layer down."""
     assert api.sniff(b"RIFF" + bytes(4) + b"WAVE") == ""
+
+
+# --- importing this module really does cost nothing (audit 67) --------------------------------
+
+
+def test_importing_the_module_does_not_build_the_app():
+    """`build_app`'s docstring said "A function so importing this module costs nothing", and the
+    line under it was `app = _lazy_app()` - which built a FastAPI application and registered
+    four routes at import. `--check`, the OpenAPI dump and every test that imports this module
+    paid for it."""
+    import importlib
+
+    import src.serve.api as module
+
+    reloaded = importlib.reload(module)
+    assert reloaded._APP is None
+    assert reloaded.app is not None
+    assert reloaded._APP is not None
+
+
+def test_the_module_attribute_still_resolves_for_uvicorn():
+    """`uvicorn src.serve.api:app` does `getattr(module, "app")` and cannot tell a PEP 562
+    `__getattr__` from a module-level assignment. The Dockerfile's CMD is that string."""
+    import importlib
+
+    module = importlib.import_module("src.serve.api")
+    assert getattr(module, "app", None) is not None
+
+
+def test_an_unknown_attribute_still_raises_attribute_error():
+    """A module `__getattr__` that returns something for every name breaks `hasattr`, `inspect`
+    and every `try: from x import y` in the standard library."""
+    import importlib
+
+    module = importlib.import_module("src.serve.api")
+    with pytest.raises(AttributeError):
+        getattr(module, "definitely_not_a_thing")  # noqa: B009 - the lookup is the assertion
