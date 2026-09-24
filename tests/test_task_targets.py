@@ -66,3 +66,37 @@ def test_no_target_still_points_at_a_stage_that_raises():
     assert "-m src.serve --config" not in text
     # The real server, the one the Dockerfile and the CI image job run.
     assert "uvicorn src.serve.api:app" in text
+
+
+# --- .dvcignore is not the stock template (audit 23) ------------------------------------------
+
+
+def test_dvcignore_excludes_the_trees_dvc_could_never_track():
+    """It shipped as three comment lines and no patterns, so every `dvc status` walked `.venv/`,
+    `mlruns/`, every `__pycache__` and 1.3 GB of checkpoints."""
+    text = (ROOT / ".dvcignore").read_text(encoding="utf-8")
+    patterns = {
+        line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")
+    }
+    assert patterns, ".dvcignore is still the stock template"
+    assert {".venv/", "__pycache__/", "mlruns/"} <= patterns
+
+
+def test_dvcignore_never_hides_a_file_inside_a_tracked_output():
+    """Ignoring a file inside a directory DVC tracks removes it from that directory's hash, which
+    reports the output as modified and re-pushes it - the opposite of what this file is for.
+    Three stages declare directories under `experiments/` that all contain `weights/last.pt`."""
+    text = (ROOT / ".dvcignore").read_text(encoding="utf-8")
+    patterns = [
+        line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")
+    ]
+    tracked_roots = (
+        "experiments/detect",
+        "experiments/ocr",
+        "experiments/llm",
+        "data/raw",
+        "data/processed",
+        "data/features",
+    )
+    for pattern in patterns:
+        assert not any(pattern.startswith(root) for root in tracked_roots), pattern

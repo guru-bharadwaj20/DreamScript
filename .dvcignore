@@ -1,3 +1,31 @@
-# Add patterns of files dvc should ignore, which could improve
-# the performance. Learn more at
-# https://dvc.org/doc/user-guide/dvcignore
+# What DVC must not walk.
+#
+# This was the stock template - three comment lines and no patterns - which means every `dvc
+# status`, `dvc repro` and `dvc add` walked the whole working tree, including `.venv/`,
+# `mlruns/`, every `__pycache__` and the 1.3 GB of checkpoints under `experiments/`. On this
+# repo that is the difference between a status that answers and one you wait for.
+#
+# The rule for what belongs here: anything DVC could not be tracking, or that is regenerable
+# from something it *is* tracking. Anything DVC tracks must NOT be listed, or it becomes
+# invisible to the stage that declares it as an output.
+
+# Environments and caches - never tracked, always large.
+.venv/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Regenerable from the artefacts DVC does track.
+mlruns/
+data/interim/pipeline_cache/
+
+# Deliberately NOT listed: anything under `experiments/detect/`, `experiments/ocr/` or
+# `experiments/llm/`. Three DVC stages declare whole directories there as outputs
+# (`experiments/detect/final`, `experiments/detect/arrows/pose_m`, `experiments/ocr/trocr_large`),
+# and every one of them contains `weights/last.pt`. Ignoring a file inside a tracked directory
+# removes it from that directory's hash, which reports the output as modified and re-pushes it -
+# the opposite of the saving this file is for.
