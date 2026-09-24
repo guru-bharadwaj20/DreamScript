@@ -160,66 +160,68 @@ def tracer_boxes(boxes: list[dict]) -> list[dict]:
     return [b for b in without_arrowheads(boxes) if float(b.get("score", 0.0)) >= MIN_SCORE]
 
 
+def arrow_detector_available() -> bool:
+    """Whether 10.1.6's pose checkpoint is on this machine.
+
+    `arrows.apply` raises `FileNotFoundError` without it. On the corpus path that is correct -
+    a measurement with the arrow stage silently off is a wrong measurement - but a served page
+    should answer with traced edges rather than a 502, so the stage is gated here and the IR
+    records which one ran.
+    """
+    from src.detect.arrows import BEST
+
+    return Path(BEST).is_file()
+
+
 def assemble_diagram(
     path: str | Path, boxes: list[dict], *, read_text: bool = False, kind: str = ""
 ) -> dict[str, Any]:
-    """10.1's tracer over those boxes, plus the S5 stages, as a plain IR dict.
+    """`s5.assemble` over a live page's detections, as a plain IR dict.
 
-    **The three stages after the tracer are the ones S5 is actually scored with**, and the
-    pipeline was not running any of them: `statelabels` for node text, `_prune_short_loops`, and
-    `_orient` for edge direction. Composed, they are what moved S5's val median from 9.0 to 3.0,
-    and without them this stage emitted nodes named `d000`-`d011` with no text at all - 0 of 295
-    node labels on the 25 golden pages. They are gated on `kind` because both the direction
-    weights and the recogniser are fitted per corpus and 13.3 has already decided the type.
+    **This used to be a hand-rolled subset of `s5.assemble` and it left out the two stages that
+    move the number most.** It ran `statelabels`, `edgelabels`, `_prune_short_loops` and
+    `_orient`, and not `arrows.apply` or `pagetext.apply` - both of which `s5.score_page` has on
+    by default, and which are worth median GED 20.5 -> 16.0 with pass share 0.2284 -> 0.2654
+    (arrow edges) and hdbpmn median 27.0 -> 25.0 (page text). Every published S5 figure therefore
+    described a composition the pipeline did not run. It calls the same function now.
+
+    Two deliberate differences from `score_page`, both stated rather than left to be inferred:
+
+        edge_text   on here, off there. S5 compares edges as endpoint-key sets and cannot see an
+                    edge label at all, so the measurement is indifferent to it - but the emitted
+                    *program* is not: with no triggers every transition is an epsilon transition
+                    and epsilon-closure collapses the whole machine to one state.
+        arrow_edges gated on the checkpoint being present, because a served page must degrade to
+                    traced edges rather than fail. See `arrow_detector_available`.
     """
-    from src.assemble import s5, tracing
+    from src.assemble import s5
 
     page = page_for(path)
     page.source = SOURCE_FOR_TYPE.get(kind, "loose")
-    # Deliberate: `tracing` is annotated for `corpus.Page` but only reads `PageLike`'s three
-    # members. The cast keeps that narrow claim visible instead of widening tracing's signature
-    # for a caller Phase 10 was not written for.
+    # Deliberate: the S5 stages are annotated for `corpus.Page` but only read `PageLike`'s three
+    # members plus `source`/`id`. The cast keeps that narrow claim visible instead of widening
+    # their signatures for a caller Phase 10 was not written for.
     known = cast(Any, page)
-    # Arrowheads and weak boxes both reach this function now, because routing needs the whole
-    # histogram down to `CONF_FLOOR`; the tracer wants neither.
-    boxes = tracer_boxes(boxes)
-    diagram = tracing.to_diagram(known, boxes, tracing.trace(known, boxes))
-
-    if page.source in s5.TEXT_SOURCES:
-        # The label is inside the shape for a state machine, so the node box is the crop and no
-        # text detector is involved. `nodetext` reads nothing here; see `statelabels`.
-        from src.assemble import statelabels
-
-        labels = statelabels.read_page(known, boxes)
-        for node in diagram.nodes:
-            if labels.get(node.id):
-                node.text = labels[node.id]
-    if page.source in s5.EDGE_TEXT_SOURCES:
-        # The trigger is written *beside* the connector - the one place neither `statelabels`
-        # (inside the shape) nor `nodetext` (owned by a node) looks. **S5 cannot see this
-        # stage**: `irdiff` compares edges as endpoint-key sets and has no `edge_substitute`,
-        # so a machine with every trigger correct scores identically to one with none. It is
-        # wired here rather than there because what it changes is the emitted program - with no
-        # triggers every transition is an epsilon transition and epsilon-closure collapses the
-        # whole machine to one state.
-        from src.assemble import edgelabels
-
-        edgelabels.apply(page, diagram)
-
-    if page.source != "loose":
-        s5._prune_short_loops(known, diagram)
-        s5._orient(known, diagram)
-
-    if read_text:
-        # Off by default: `nodetext` measures this as break-even at best on S5.
-        from src.assemble.nodetext import assign, read_page
-
-        labels = assign(read_page(known, boxes), boxes)
-        for node in diagram.nodes:
-            if labels.get(node.id):
-                node.text = labels[node.id]
+    arrow_edges = arrow_detector_available()
+    diagram = s5.assemble(
+        known,
+        # Arrowheads and weak boxes both reach this function, because routing needs the whole
+        # histogram down to `CONF_FLOOR`; the tracer wants neither.
+        boxes=tracer_boxes(boxes),
+        state_text=True,
+        arrow_edges=arrow_edges,
+        page_text=True,
+        edge_text=True,
+        direct=True,
+        prune_loops=True,
+        text=read_text,
+    )
     # `to_diagram` returns an `ir.model.Diagram`; the pipeline caches and serialises plain
     # dicts, so the boundary converts once here rather than in every consumer.
-    if hasattr(diagram, "to_dict"):
-        return cast(dict[str, Any], diagram.to_dict())
-    return cast(dict[str, Any], diagram)
+    plain = cast(dict[str, Any], diagram.to_dict() if hasattr(diagram, "to_dict") else diagram)
+    meta = plain.setdefault("meta", {})
+    if isinstance(meta, dict):
+        # Which composition answered, on the document itself. Without this an IR assembled with
+        # traced edges and one assembled with arrow edges are indistinguishable after the fact.
+        meta["assembled_with"] = "arrow_edges" if arrow_edges else "traced_edges"
+    return plain

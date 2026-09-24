@@ -240,6 +240,7 @@ def _orient(page: Page, diagram: Diagram) -> None:
 def assemble(
     page: Page,
     *,
+    boxes: list[dict] | None = None,
     mask: Any = None,
     text: bool = False,
     state_text: bool = False,
@@ -261,8 +262,15 @@ def assemble(
     reading a label exactly are cancelled by the ones it creates on nodes whose truth is blank and
     by labels attached to the wrong node. That table is in `nodetext`, and it is the reason the
     36.7% text edit mass is not recoverable by composing the parts that already exist.
+
+    `boxes` exists so a page that is not in the corpus can be assembled by *this* function rather
+    than by a copy of it. `node_boxes` reads `corpus.detections`, a cache over the corpus's own
+    held-out pages, which a photograph somebody just took has no entry in - and the consequence
+    of that one line was that `src.pipeline.vision` hand-rolled a subset of these stages and
+    silently omitted `arrow_edges` and `page_text`, the two largest measured wins here. Passing
+    the detections in keeps one implementation of the composition.
     """
-    boxes = tracing.node_boxes(page)
+    boxes = tracing.node_boxes(page) if boxes is None else boxes
     diagram = tracing.to_diagram(page, boxes, tracing.trace(page, boxes, mask=mask))
 
     if state_text and page.source in TEXT_SOURCES:
