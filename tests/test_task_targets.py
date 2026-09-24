@@ -320,3 +320,40 @@ def test_no_json_writer_omits_the_final_newline():
                 if NEWLINE_LITERAL not in tail.split("encoding=")[0]:
                     offenders.append(f"{path.relative_to(ROOT).as_posix()}")
     assert not offenders, sorted(set(offenders))
+
+
+# --- the s5 sweep's scratch output is not a report (audit 51) ---------------------------------
+
+#: `reports/s5_*.json` that something actually names. The rest were `python -m src.assemble.s5
+#: --out ...` writing one arm of a sweep to a new filename each time - nineteen files of ~146 KB
+#: each, within bytes of their neighbours, ~2.6 MB, referenced by nothing.
+KEPT_S5_REPORTS = {
+    "s5_graph_ged.json",  # the val default `s5.main` writes
+    "s5_graph_ged_test.json",  # and the test one
+    "s5_direction_ablation.json",
+    "s5_direction_fitted.json",
+    "s5_test_large.json",
+    "s5_test_posem.json",
+    "s5_test_ranker.json",
+    "s5_val_ranker.json",
+}
+
+#: The two `s5.main` writes by default, which nothing has to name.
+DEFAULT_S5_REPORTS = {"s5_graph_ged.json", "s5_graph_ged_test.json"}
+
+
+def test_every_s5_report_is_one_something_names():
+    import subprocess
+
+    present = {path.name for path in (ROOT / "reports").glob("s5_*.json")}
+    assert present == KEPT_S5_REPORTS, present ^ KEPT_S5_REPORTS
+
+    for name in present - DEFAULT_S5_REPORTS:
+        hits = subprocess.run(
+            ["git", "grep", "-l", name, "--", "src", "tests", "scripts", "docs", "*.md", "*.yaml"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout
+        assert hits.strip(), f"{name} is kept and referenced by nothing"
