@@ -1,0 +1,11 @@
+{
+  "weights_from": "yolov8m-pose.pt",
+  "name": "pose_m",
+  "epochs": 150,
+  "imgsz": 1280,
+  "batch": 4,
+  "seconds": 12187.0,
+  "box_map50": 0.8446,
+  "pose_map50": 0.9356,
+  "weights": "experiments/detect/arrows/pose_m/weights/best.pt"
+}

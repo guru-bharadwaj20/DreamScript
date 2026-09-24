@@ -64,3 +64,10 @@ labeling/tasks/
 
 # Phase 13 batch CLI output
 runs/
+
+# Raw stdout captures from training runs. `reports/arrow_m.log` was 4.96 MB of ultralytics
+# progress-bar ANSI - the largest tracked file in the repo, referenced by nothing, and it got
+# past `check-added-large-files --maxkb=2048` only because the pre-commit hooks had never been
+# installed. The one number in it that mattered is `reports/arrow_m.json`; the epoch table is
+# `experiments/detect/arrows/pose_m/results.csv`.
+*.log
