@@ -75,3 +75,33 @@ def test_stats_report_the_two_populations():
     assert stats["ink_pixels"] > 0
     assert 0.0 < stats["text_pixel_share"] < 1.0
     assert stats["text_components"] > stats["shape_components"]
+
+
+# --- which threshold a page gets, and who decides (audit 7) -----------------------------------
+
+
+def test_photo_sources_are_matched_anywhere_on_the_path():
+    """`binarize.PHOTO` was measured on hdBPMN and reached only `connector_ink`. `layers.run`
+    globs hdBPMN and took the rasterised-stroke default, which is the corpus PHOTO exists for."""
+    from pathlib import Path
+
+    from src.preprocess.layers import PHOTO_SOURCES, photo_for
+
+    assert PHOTO_SOURCES == ("hdbpmn",)
+    assert photo_for(Path("data/raw/hdbpmn/data/images/ex00/writer0001.png"))
+    assert photo_for("data/processed/ir/hdbpmn/ex00_writer0001.ir.json")
+    assert not photo_for(Path("data/raw/fa_bresler/0001.png"))
+    assert not photo_for(Path("data/raw/sketch2code/0001.png"))
+    # The corpus name is a path *segment*, not a substring: a file that merely mentions it is not
+    # a photograph.
+    assert not photo_for(Path("data/raw/other/hdbpmn-notes.png"))
+
+
+def test_run_routes_its_pages_through_photo_for():
+    """Greppable rather than clever: `run` reads 40 hdBPMN pages and the only thing under test is
+    which threshold it asks for, which is one argument at one call site."""
+    import inspect
+
+    import src.preprocess.layers as ly
+
+    assert "photo=photo_for(image_path)" in inspect.getsource(ly.run)

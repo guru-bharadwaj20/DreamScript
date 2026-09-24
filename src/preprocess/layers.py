@@ -106,6 +106,32 @@ def check_partition(layers: Layers, mask: np.ndarray) -> dict[str, bool]:
     }
 
 
+#: The corpora that are photographs of paper, and therefore the ones `binarize.PHOTO` was chosen
+#: on. hdBPMN only: that is where the 2.5x tracing-F1 measurement was taken (0.0977 -> 0.2467 on
+#: 76 train pages, mean ink fraction 0.0954 -> 0.0314), and naming a corpus here is a claim that
+#: its pages have paper grain for CLAHE to promote into ink. flowchartseg, fa_bresler,
+#: sketch2code and didi are rasterised strokes or clean scans and are not that.
+PHOTO_SOURCES: tuple[str, ...] = ("hdbpmn",)
+
+
+def photo_for(image_path: Path | str) -> bool:
+    """Whether this page wants `binarize.PHOTO`, decided by which corpus it came from.
+
+    **The setting existed and almost nothing asked for it.** `prepare` defaults to `photo=False`
+    and `connector_ink` was the only caller passing `True`, while `run` below globs hdBPMN - the
+    photographic corpus PHOTO was measured on - and took the default. A per-call boolean that the
+    caller has to remember is a setting that gets forgotten; the corpus is on the path, so this
+    reads it there.
+
+    The feature, cluster and embedding call sites are deliberately *not* routed through this.
+    Their tables were built at the default and every number downstream of them was measured on
+    those tables, so flipping the threshold under them is a re-measurement of the project rather
+    than a bug fix. That is a decision, and this is where it is written down.
+    """
+    parts = {part.lower() for part in Path(image_path).parts}
+    return any(source in parts for source in PHOTO_SOURCES)
+
+
 def prepare(image_path: Path, *, photo: bool = False) -> tuple[np.ndarray, np.ndarray]:
     """(grayscale, ink mask) at the working width, through the 3.1 pipeline.
 
@@ -143,7 +169,9 @@ def run(limit: int = 40, *, write: bool = True) -> list[dict]:
         image_path = ROOT / diagram.meta["image"]
         if not image_path.is_file():
             return None
-        gray, mask = prepare(image_path)
+        # `photo_for`, not the default: these are hdBPMN pages, which are photographs, and this
+        # report described them through the threshold chosen for rasterised pen trajectories.
+        gray, mask = prepare(image_path, photo=photo_for(image_path))
         layers = separate(mask, gray)
         row = {"id": path.stem, **layers.stats(), **check_partition(layers, mask)}
         if write:
