@@ -448,3 +448,38 @@ def test_no_module_calls_savefig_directly():
             if re.search(r"\.savefig\(", path.read_text(encoding="utf-8", errors="ignore")):
                 offenders.append(path.relative_to(ROOT).as_posix())
     assert not offenders, offenders
+
+
+# --- a generated report does not change because of the clock (audit 56) -----------------------
+
+
+def test_no_committed_report_is_stamped_with_the_generation_date():
+    """`reports/license_audit.md` read "Generated ... on {today}", so re-running it changed the
+    file whenever the day had rolled over - it moved 2026-09-23 -> 2026-09-24 in one batch for
+    that reason alone. An artefact that differs because of *when* it was generated cannot answer
+    "has anything changed", which is the only question a committed report is for."""
+    import re
+
+    offenders = []
+    for path in sorted((ROOT / "reports").glob("*.md")):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        head = "\n".join(text.splitlines()[:6])
+        if re.search(r"Generated[^\n]*\bon \d{4}-\d{2}-\d{2}", head):
+            offenders.append(path.name)
+    assert not offenders, offenders
+
+
+def test_the_audit_no_longer_calls_date_today():
+    """The dates that belong to the data are already per-source in the table -
+    `registry.checked_on` and `fetched_on` - and those move when a source is re-probed."""
+    import ast
+
+    tree = ast.parse((ROOT / "src" / "ingest" / "audit.py").read_text(encoding="utf-8"))
+    calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+    ]
+    # Parsed rather than grepped: the module explains in a comment what it no longer does, and
+    # the comment names the call.
+    assert not [c for c in calls if c.endswith(("date.today", "datetime.now"))], calls
