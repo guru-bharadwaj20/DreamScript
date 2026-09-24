@@ -1,8 +1,9 @@
 # Phase 15.9 - CI.
 #
 # What a GitHub runner has and this project mostly does not: no GPU, no DVC payload, no 1.3 GB
-# checkpoints. `data/` is `.dvc` pointers in git and content in a remote, so a fresh clone gets
-# the pointers and nothing else. That shape was measured rather than assumed - on a detached
+# checkpoints. `data/` is `.dvc` pointers in git and content in a DVC store that is **a directory
+# on one Windows machine** - see docs/data_remote.md. A fresh clone gets the pointers and cannot
+# fetch a byte behind them, here or anywhere else. That shape was measured rather than assumed - on a detached
 # worktree with exactly it, 40 tests across 16 modules failed for want of the corpus - and
 # `tests/conftest.py` now skips those with a reason instead. What is left runs here honestly.
 #
@@ -17,7 +18,8 @@
 # gigabytes per run, and it would turn a three-minute check into something nobody waits for. The
 # consequence is stated plainly rather than hidden: CI checks the code, the schemas and every
 # test that does not need the corpus. It does not reproduce the headline metrics - 15.12 is the
-# row that does that, on a machine with the data.
+# row that does that, on a machine with the data. Note that "would need remote credentials" is
+# optimistic: there is no remote to have credentials for.
 
 name: CI
 

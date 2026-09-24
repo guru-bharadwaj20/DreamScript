@@ -90,3 +90,28 @@ def test_the_single_factory_carries_the_assert_sample_image_has():
     block = source.split("def _single(", 1)[1].split("\nflowchart_image", 1)[0]
     assert "assert img is not None" in block
     assert "make_fixtures.py" in block, "the message should say how to fix it"
+
+
+# --- nothing claims a remote that does not exist (audit 61) -----------------------------------
+
+
+def test_the_data_remote_is_documented_as_machine_local():
+    """`.dvc/config` defines four remotes and all four are directories on one Windows machine.
+    A fresh clone - CI above all - gets the pointers in git and cannot fetch a byte behind
+    them."""
+    root = TESTS.parent
+    doc = (root / "docs" / "data_remote.md").read_text(encoding="utf-8")
+    assert "There is no shared remote" in doc
+    config = (root / ".dvc" / "config").read_text(encoding="utf-8")
+    for line in config.splitlines():
+        if "url" in line:
+            assert "dreamscript-dvc-store" in line, f"a remote moved: {line.strip()}"
+
+
+def test_nothing_tells_a_reader_to_run_dvc_pull_without_saying_where():
+    """The skip reason said "run `dvc pull`", which cannot work anywhere but one machine."""
+    root = TESTS.parent
+    for path in (TESTS / "conftest.py", root / ".github" / "workflows" / "ci.yml"):
+        text = path.read_text(encoding="utf-8")
+        if "dvc pull" in text or "content in a" in text:
+            assert "data_remote.md" in text or "one Windows machine" in text, path.name

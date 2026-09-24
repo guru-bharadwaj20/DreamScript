@@ -66,7 +66,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
     if not payload_present():
         no_data = pytest.mark.skip(
-            reason="needs the DVC payload (data/processed, data/features); run `dvc pull`"
+            reason="needs the DVC payload (data/processed, data/features). `dvc pull` works "
+            "only on the machine that holds the store - see docs/data_remote.md"
         )
         for item in items:
             if Path(item.fspath).stem in NEEDS_PAYLOAD:
