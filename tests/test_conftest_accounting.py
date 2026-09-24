@@ -50,3 +50,24 @@ def test_windows_only_names_are_split_between_modules_and_tests():
         assert not name.startswith("test_") or (TESTS / f"{name}.py").is_file()
     for name in ct.NEEDS_WINDOWS_TESTS:
         assert not (TESTS / f"{name}.py").is_file(), f"{name} is a module, not a test"
+
+
+def test_gpu_skipping_has_one_mechanism():
+    """conftest's `pytest_collection_modifyitems` hook governs `@pytest.mark.gpu` and nothing
+    else. A standalone `skipif(not torch.cuda.is_available())` skips the same test on the same
+    machines - which is why this went unnoticed - but is invisible to the hook, so a change to
+    how this project decides "has a GPU" reaches every marked test and misses that one."""
+    offenders = []
+    for path in sorted(TESTS.glob("test_*.py")):
+        if path.name == Path(__file__).name:
+            continue  # this file names the pattern in order to forbid it
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if "skipif" in line and "cuda.is_available" in line:
+                offenders.append(f"{path.name}:{number}")
+    assert not offenders, offenders
+
+
+def test_the_gpu_marker_is_registered():
+    """An unregistered marker is a typo away from silently marking nothing."""
+    text = (TESTS / "conftest.py").read_text(encoding="utf-8")
+    assert 'addinivalue_line("markers", "gpu:' in text

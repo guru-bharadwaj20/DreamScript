@@ -230,8 +230,14 @@ def test_members_must_share_the_non_member_fields() -> None:
         D.train_many([DiagramGraph.from_ir(LINE)], [_cpu(batch=8), _cpu(batch=16)])
 
 
-@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA graph capture needs a GPU")
+# `@pytest.mark.gpu`, not the standalone availability check this used to carry. Both skip this
+# test on a CPU runner, which is why the difference went unnoticed - but conftest's
+# `pytest_collection_modifyitems` hook governs the marker and governs nothing else, so a change
+# to how this project decides "has a GPU" reached eight tests in two files and not this one.
+# One mechanism, and it is the one that is documented.
+@pytest.mark.gpu
 def test_captured_update_is_bit_identical_to_the_eager_update() -> None:
+    """CUDA graph capture reproduces the eager update bit for bit."""
     import numpy as np
 
     device = torch.device("cuda")
