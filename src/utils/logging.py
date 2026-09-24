@@ -108,6 +108,11 @@ class Run:
     log: logging.Logger
     cfg: DictConfig | None = None
     metrics: dict[str, Any] = field(default_factory=dict)
+    #: The 15.1 tracking recorder for this run, when tracking is on. `Recorder` degrades to an
+    #: in-memory object with no MLflow installed, so this is never None once `start_run` has set
+    #: it and callers never have to test for it.
+    recorder: Any = None
+    _tracking: Any = None
 
     def log_metrics(self, metrics: dict[str, Any], *, step: int | None = None) -> None:
         """Record metrics to metrics.json and the log. Repeated calls merge."""
@@ -118,6 +123,13 @@ class Run:
         (self.dir / "metrics.json").write_text(
             json.dumps(self.metrics, indent=2, default=str), encoding="utf-8"
         )
+        if self.recorder is not None:
+            # 15.1's store, from the convention every stage already uses. `src.mlops` was 3,250
+            # lines with one caller anywhere in the repo, and `tracking.py` - the module the plan
+            # asks for "every run logged with params, metrics, artifacts" - had none at all.
+            for key, value in metrics.items():
+                if isinstance(value, int | float) and not isinstance(value, bool):
+                    self.recorder.log_metric(key, float(value), step=step)
         pretty = ", ".join(f"{k}={v}" for k, v in metrics.items())
         self.log.info("metrics%s: %s", f" @ step {step}" if step is not None else "", pretty)
 
@@ -126,6 +138,16 @@ class Run:
         p = self.dir.joinpath(*parts)
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
+
+    def _close_tracking(self, status: str) -> None:
+        if self._tracking is None:
+            return
+        stack, self._tracking = self._tracking, None
+        if self.recorder is not None:
+            self.recorder.set_tag("status", status)
+            for name in ("metrics.json", "config.yaml", "env.json"):
+                self.recorder.log_artifact(self.dir / name)
+        stack.close()
 
     def discard(self) -> bool:
         """Close the log and remove this run's directory, if the run produced nothing.
@@ -142,6 +164,7 @@ class Run:
         """
         import shutil
 
+        self._close_tracking("discarded")
         for handler in list(self.log.handlers):
             handler.close()
             self.log.removeHandler(handler)
@@ -156,6 +179,7 @@ class Run:
         (self.dir / "metrics.json").write_text(
             json.dumps(self.metrics, indent=2, default=str), encoding="utf-8"
         )
+        self._close_tracking(status)
         self.log.info("run finished (%s): %s", status, self.dir)
         for handler in list(self.log.handlers):
             handler.close()
@@ -169,13 +193,25 @@ def start_run(
     root: str | Path | None = None,
     level: str | None = None,
     to_file: bool = True,
+    track: bool = False,
 ) -> Run:
-    """Create experiments/<timestamp>_<name>/ and a logger writing into it."""
+    """Create experiments/<timestamp>_<name>/ and a logger writing into it.
+
+    `track` opens a 15.1 MLflow run alongside the directory, so everything passed to
+    `log_metrics` reaches the store and the run's own files are attached to it when it finishes.
+    It defaults **off** for a bare `start_run(name=...)` - a library call should not write to a
+    tracking store nobody asked for - and **on** for a config-driven run, where
+    `logging.track: false` turns it off again. `src.mlops` was 3,250 lines with exactly one
+    caller in the repo, and `tracking.py`, the module that exists so that "every run is logged
+    with params, metrics and artifacts", had none; this is the convention every stage already
+    goes through, so it is where the two meet.
+    """
     if cfg is not None:
         name = name or cfg.get("logging", {}).get("run_name") or "run"
         root = root or cfg.get("paths", {}).get("experiments", "experiments")
         level = level or cfg.get("logging", {}).get("level", "INFO")
         to_file = cfg.get("logging", {}).get("to_file", to_file)
+        track = bool(cfg.get("logging", {}).get("track", True))
     name = name or "run"
     root = Path(root or "experiments")
     if not root.is_absolute():
@@ -210,6 +246,26 @@ def start_run(
         save_config(cfg, run_dir / "config.yaml")
 
     run = Run(name=name, dir=run_dir, log=logger, cfg=cfg)
+    if track:
+        # The experiment is the phase prefix of the run name (`p5-knn-k7-s42` -> `p5`), which is
+        # the grouping docs/conventions.md section 1 already defines. A tracking store that
+        # cannot be opened is not a reason a run fails, so this is best-effort by construction:
+        # `track()` yields an in-memory recorder when MLflow is absent.
+        import contextlib as _contextlib
+
+        from src.mlops.tracking import track as _track
+
+        stack = _contextlib.ExitStack()
+        with _contextlib.suppress(Exception):
+            run.recorder = stack.enter_context(
+                _track(
+                    name.split("-")[0] or "run",
+                    name=name,
+                    params=_environment(),
+                    tags={"run_dir": str(run_dir)},
+                )
+            )
+            run._tracking = stack  # noqa: SLF001 - its own attribute
     logger.info("run started: %s", run_dir)
     if cfg is not None:
         logger.debug("config: %s", json.dumps(to_dict(cfg), default=str))

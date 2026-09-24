@@ -154,3 +154,59 @@ def test_start_run_still_has_the_two_callers_the_document_claims():
         if re.search(r"\bstart_run\s*\(", path.read_text(encoding="utf-8", errors="ignore")):
             callers.add(path.relative_to(ROOT).as_posix())
     assert callers == {"src/utils/cli.py", "src/utils/logging.py", "src/llm/run.py"}, callers
+
+
+# --- 15.1's store, reached from the convention every stage uses (audit 19) --------------------
+
+
+def test_a_bare_start_run_does_not_open_a_tracking_store(tmp_path):
+    """A library call must not write into a store nobody asked for."""
+    from src.utils.logging import start_run
+
+    run = start_run(name="p0-quiet-baseline-s42", root=tmp_path)
+    assert run.recorder is None
+    run.discard()
+
+
+def test_tracking_records_every_metric_the_run_logs(tmp_path):
+    from src.utils.logging import start_run
+
+    run = start_run(name="p0-tracked-baseline-s42", root=tmp_path, track=True)
+    assert run.recorder is not None, "mlops.tracking.track never yields None"
+    run.log_metrics({"macro_f1": 0.9819, "rows": 3054, "ok": True})
+    assert abs(run.recorder.metrics["macro_f1"] - 0.9819) < 1e-9
+    assert run.recorder.metrics["rows"] == 3054
+    # `ok` is a bool, which is an int in Python and is not a metric.
+    assert "ok" not in run.recorder.metrics
+    run.finish("ok")
+
+
+def test_a_config_driven_run_tracks_unless_told_not_to(tmp_path):
+    from omegaconf import OmegaConf
+
+    from src.utils.logging import start_run
+
+    on = OmegaConf.create({"logging": {"run_name": "p0-on-baseline-s42"}, "paths": {}})
+    off = OmegaConf.create(
+        {"logging": {"run_name": "p0-off-baseline-s42", "track": False}, "paths": {}}
+    )
+    first = start_run(on, root=tmp_path)
+    assert first.recorder is not None
+    first.discard()
+
+    second = start_run(off, root=tmp_path)
+    assert second.recorder is None
+    second.discard()
+
+
+def test_mlops_tracking_is_no_longer_a_module_with_no_callers():
+    import re
+
+    from src.utils.config import ROOT
+
+    callers = {
+        path.relative_to(ROOT).as_posix()
+        for path in sorted((ROOT / "src").rglob("*.py"))
+        if re.search(r"mlops\.tracking", path.read_text(encoding="utf-8", errors="ignore"))
+    }
+    assert "src/utils/logging.py" in callers
