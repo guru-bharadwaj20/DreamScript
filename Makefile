@@ -32,12 +32,18 @@ help:  ## list available targets
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 env:  ## create the venv and install every requirements layer
+	# Every layer, not five of six. This installed base, torch, cv, classical and genai and
+	# skipped serve.txt and dev.txt, so a clean `make env` produced an environment where
+	# `make serve` failed on uvicorn, `make lint` failed on ruff, and `make repro`/`make dag`
+	# failed on dvc - while CI installed a different set again. The requirements test asserts
+	# this target, env.yml, the Dockerfile and the CI job agree.
 	uv venv --python 3.11 .venv
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/base.txt
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/torch.txt \
 		--index-url https://download.pytorch.org/whl/cu124
-	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/cv.txt \
-		-r requirements/classical.txt -r requirements/genai.txt
+	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/classical.txt \
+		-r requirements/cv.txt -r requirements/serve.txt -r requirements/genai.txt
+	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/dev.txt
 
 verify:  ## Phase 0.1 — check every installed stack
 	$(PY) scripts/verify_env.py
