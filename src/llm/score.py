@@ -276,7 +276,7 @@ def score_one(row: dict, pair: dict, diagram: dict, expected: dict | None = None
         return out
     module = module_runs(code)
     sig = functional.signature(code, diagram)
-    expected = expected or functional.expected(diagram, pair["target_code"])
+    expected = expected or functional.expected(diagram)
     passed, reason = functional.compare(sig, expected)
     entry_ok = bool(sig.get("ok")) and not any(
         str(status).startswith("error") for _, status in sig.get("paths", [])
