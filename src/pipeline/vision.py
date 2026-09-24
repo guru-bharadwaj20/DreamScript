@@ -17,12 +17,22 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol, cast
 
-from src.assemble.corpus import WEIGHTS
+from src.assemble.corpus import CONF_FLOOR, IMGSZ, WEIGHTS
 from src.detect.classes import CLASSES
 
 #: Boxes below this detector score are not nodes. 10.1.1's floor, kept so the pipeline and the
-#: measured assembly see the same page.
+#: measured assembly see the same page. It is `tracing.MIN_SCORE`, and it applies to the *tracer's*
+#: view only - see `detect_boxes` on why the router is handed everything above `CONF_FLOOR`.
 MIN_SCORE = 0.25
+
+#: The detector's inference settings, imported from `assemble.corpus` rather than restated.
+#: They were restated, and drifted: this file ran the detector at `imgsz=1280`, which is
+#: `src.detect.arrows.IMGSZ` - the *arrow* model's size - while 13.3's prior is fitted on
+#: `corpus.detections`, produced at `corpus.IMGSZ = 896` with `conf=CONF_FLOOR`. A prior fitted on
+#: one frame and applied to another is a train/serve skew, and it is the same class of defect
+#: `keep_arrowheads` below exists to describe. Now there is one definition of the frame.
+DETECT_IMGSZ = IMGSZ
+DETECT_IOU = 0.7
 
 
 class PageLike(Protocol):
@@ -85,7 +95,7 @@ def page_for(path: str | Path) -> LoosePage:
 
 
 def detect_boxes(
-    path: str | Path, min_score: float = MIN_SCORE, *, keep_arrowheads: bool = False
+    path: str | Path, min_score: float = CONF_FLOOR, *, keep_arrowheads: bool = False
 ) -> list[dict]:
     """9.1's detector on one page, in the `{id, bbox, cls, score}` shape the tracer wants.
 
@@ -100,8 +110,16 @@ def detect_boxes(
     emitted for a BPMN diagram.
 
     So the classifier is handed what the fit saw, and assembly is handed what the tracer wants.
+
+    **`min_score` defaults to `CONF_FLOOR`, not to `MIN_SCORE`, for the same reason.**
+    `routing.fit` histograms `corpus.detections(page)`, which is the unfiltered list down to
+    0.05; filtering to 0.25 here handed the fitted prior a different distribution from the one it
+    was fitted on. The 0.25 floor is the *tracer's*, and `tracer_boxes` applies it there - exactly
+    where `tracing.node_boxes` applies it on the corpus path.
     """
-    prediction = _detector().predict(str(path), verbose=False, imgsz=1280)[0]
+    prediction = _detector().predict(
+        str(path), verbose=False, imgsz=DETECT_IMGSZ, conf=CONF_FLOOR, iou=DETECT_IOU
+    )[0]
     out: list[dict] = []
     for index, row in enumerate(prediction.boxes):
         score = float(row.conf.item())
@@ -132,6 +150,16 @@ def without_arrowheads(boxes: list[dict]) -> list[dict]:
     return [b for b in boxes if str(b.get("cls")) != "arrowhead"]
 
 
+def tracer_boxes(boxes: list[dict]) -> list[dict]:
+    """`tracing.node_boxes`' rule, applied to a live page's detections.
+
+    Arrowheads are not nodes, and neither is anything below `MIN_SCORE` - the corpus path drops
+    both in `node_boxes`, and this is the same two lines against a list that came from the
+    detector directly rather than from the cache.
+    """
+    return [b for b in without_arrowheads(boxes) if float(b.get("score", 0.0)) >= MIN_SCORE]
+
+
 def assemble_diagram(
     path: str | Path, boxes: list[dict], *, read_text: bool = False, kind: str = ""
 ) -> dict[str, Any]:
@@ -152,8 +180,9 @@ def assemble_diagram(
     # members. The cast keeps that narrow claim visible instead of widening tracing's signature
     # for a caller Phase 10 was not written for.
     known = cast(Any, page)
-    # Arrowheads reach this function now, because routing needs them; the tracer never did.
-    boxes = without_arrowheads(boxes)
+    # Arrowheads and weak boxes both reach this function now, because routing needs the whole
+    # histogram down to `CONF_FLOOR`; the tracer wants neither.
+    boxes = tracer_boxes(boxes)
     diagram = tracing.to_diagram(known, boxes, tracing.trace(known, boxes))
 
     if page.source in s5.TEXT_SOURCES:
