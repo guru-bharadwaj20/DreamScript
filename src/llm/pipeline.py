@@ -598,31 +598,6 @@ def figure(path: Path, draw: Callable) -> Path | None:
         return None
 
 
-def code_files(ctx: Ctx) -> list[Path]:
-    names = [
-        "src/llm/__init__.py",
-        "src/llm/pipeline.py",
-        "src/llm/benchmark.py",
-        "src/llm/generate.py",
-        "src/llm/score.py",
-        "src/llm/functional.py",
-        "src/llm/fewshot.py",
-        "src/llm/run.py",
-        "src/llm/sweep.py",
-        "src/llm/train.py",
-        "src/llm/export.py",
-        "src/llm/pairs.py",
-        "src/llm/quant.py",
-        "configs/llm.yaml",
-        "tests/test_llm_functional.py",
-        "tests/test_llm_score.py",
-        "tests/test_llm_train.py",
-        "tests/test_llm_quant.py",
-        "tests/test_llm_pipeline.py",
-    ]
-    return [ROOT / n for n in names]
-
-
 # ------------------------------------------------------------------------------------ stages
 
 

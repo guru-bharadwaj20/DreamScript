@@ -28,7 +28,7 @@ import json
 import math
 import sys
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -342,14 +342,6 @@ def train(
     )
     (run_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return summary
-
-
-def iter_records(paths: Iterable[Path]) -> Iterable[dict]:
-    for path in paths:
-        with Path(path).open(encoding="utf-8") as handle:
-            for line in handle:
-                if line.strip():
-                    yield json.loads(line)
 
 
 if __name__ == "__main__":  # pragma: no cover

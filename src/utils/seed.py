@@ -103,17 +103,3 @@ def set_seed(seed: int = DEFAULT_SEED, *, deterministic: bool = True, strict: bo
         torch.backends.cudnn.benchmark = True
 
     return seed
-
-
-def seed_worker(worker_id: int) -> None:
-    """DataLoader `worker_init_fn` so each worker is seeded reproducibly."""
-    import torch
-
-    worker_seed = torch.initial_seed() % 2**32
-    random.seed(worker_seed)
-    try:
-        import numpy as np
-
-        np.random.seed(worker_seed)
-    except ImportError:
-        pass

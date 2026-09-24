@@ -11,7 +11,6 @@ can be rebuilt from scratch on another machine.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import asdict, dataclass, field
 from datetime import date
@@ -87,14 +86,6 @@ def get(slug: str) -> Dataset:
 def status() -> list[dict]:
     """Acquisition state of every registered dataset, for the ingest CLI and reports."""
     return [ds.as_dict() for ds in REGISTRY.values()]
-
-
-def file_sha256(path: Path, chunk: int = 1 << 20) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        while block := fh.read(chunk):
-            h.update(block)
-    return h.hexdigest()
 
 
 def write_provenance(ds: Dataset, extra: dict | None = None) -> Path:

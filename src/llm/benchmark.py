@@ -50,12 +50,6 @@ def pinned_template(rev: str = PROVISIONAL_TEMPLATE_REV):
     return module
 
 
-def messages_sha(messages: list[dict]) -> str:
-    import hashlib
-
-    return hashlib.sha256(json.dumps(messages, sort_keys=True).encode("utf-8")).hexdigest()[:16]
-
-
 def saturation_batch(rows: list[dict[str, Any]], tolerance: float = 0.05) -> int:
     """Smallest batch whose ms/sample is within `tolerance` of the best measured."""
     ok = [r for r in rows if r.get("status") == "ok"]

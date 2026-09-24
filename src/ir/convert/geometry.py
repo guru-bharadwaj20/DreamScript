@@ -47,19 +47,6 @@ RECT_EXTENT = 0.83
 ROUND_CIRCULARITY = 0.55
 
 
-def _corner_positions(approx: np.ndarray, x: float, y: float, w: float, h: float) -> float:
-    """Mean distance of the polygon's vertices from the bounding-box corners, normalised.
-
-    A rectangle's vertices sit *at* the bbox corners; a diamond's sit at the edge midpoints,
-    which is the furthest a convex quadrilateral's vertices can be from them. One number
-    separates the two without needing angles.
-    """
-    corners = np.array([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], dtype=np.float64)
-    pts = approx.reshape(-1, 2).astype(np.float64)
-    diag = float(np.hypot(w, h)) or 1.0
-    return float(np.mean([np.min(np.linalg.norm(corners - p, axis=1)) for p in pts]) / diag)
-
-
 def classify_contour(contour: np.ndarray) -> tuple[str, float]:
     """Return (shape, confidence) for one contour, using the frozen shape vocabulary."""
     peri = cv2.arcLength(contour, True)

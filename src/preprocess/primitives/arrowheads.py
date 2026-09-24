@@ -155,26 +155,6 @@ class Arrowhead:
         }
 
 
-def _trace(skeleton: np.ndarray, start: tuple[int, int], first: tuple[int, int], limit: int):
-    """Walk one branch away from a junction until it ends, forks, or hits `limit` steps."""
-    height, width = skeleton.shape
-    path = [start, first]
-    visited = {start, first}
-    current = first
-    while len(path) <= limit:
-        options = []
-        for dy, dx in _NEIGHBOURS:
-            y, x = current[0] + dy, current[1] + dx
-            if 0 <= y < height and 0 <= x < width and skeleton[y, x] and (y, x) not in visited:
-                options.append((y, x))
-        if len(options) != 1:
-            break  # an end point (0) or a fork (2+): the branch stops here either way
-        current = options[0]
-        visited.add(current)
-        path.append(current)
-    return path
-
-
 def _angle(a: tuple[int, int], b: tuple[int, int]) -> float:
     """Direction from a to b in degrees, 0 = right, measured in image coordinates."""
     return float(np.degrees(np.arctan2(b[0] - a[0], b[1] - a[1])))

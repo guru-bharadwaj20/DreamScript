@@ -88,13 +88,6 @@ EXTERNAL_PREFIXES = (
 PAD = 0.12
 
 
-def ink_mask(image: np.ndarray) -> np.ndarray:
-    blur = cv2.GaussianBlur(image, (3, 3), 0)
-    return cv2.adaptiveThreshold(
-        blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 31, 12
-    )
-
-
 def strip_rules(mask: np.ndarray, page_w: int) -> np.ndarray:
     """Remove ruled paper, drawn outlines and connector shafts, keeping the writing."""
     long = max(40, page_w // 30)
