@@ -35,10 +35,22 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    # Required, not decorative: the `app` service below depends on this one with
+    # `condition: service_healthy`, and compose refuses to start a dependency chain whose target
+    # declares no healthcheck. `docker compose config` does not catch that - it parses, it does
+    # not resolve conditions - so the app profile would have failed the first time anyone
+    # un-profiled it. /health is 15.11's liveness probe and deliberately does not load the model.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
     restart: unless-stopped
 
   # Phase 16's client. Declared so the composition is legible and profiled off so `up` does not
-  # fail: app/backend and app/frontend hold only .gitkeep today. When 16.1 lands, drop the profile.
+  # fail: `app/` holds only a README today, and that README lists exactly what 16.1 and 16.2 put
+  # there. When 16.1 lands, drop the profile.
   app:
     profiles: ["app"]
     build:
