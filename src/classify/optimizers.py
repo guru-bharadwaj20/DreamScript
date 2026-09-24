@@ -146,7 +146,7 @@ def epochs_to_reach(curve: list[float], target: float) -> int | None:
     return None
 
 
-def curves(data, rows: list[dict], folds: int = 5, n_jobs: int | None = None) -> dict:
+def curves(data, rows: list[dict], folds: int = 5) -> dict:
     """One loss curve and one validation curve per optimizer, from a single fixed fold.
 
     Deliberately one fold, not the mean of five. Curves from different folds stop at different
@@ -154,6 +154,10 @@ def curves(data, rows: list[dict], folds: int = 5, n_jobs: int | None = None) ->
     length either truncates every curve to the shortest or pads them with a value the run never
     had. A single held-out fold is an honest picture of one training run, which is what the plan
     asks the figure to show.
+
+    `n_jobs` was a parameter and reached nothing - this fits one fold in this process, and the
+    only caller never passed it. A knob that looks like it controls parallelism and does not is
+    worse than no knob.
     """
     from sklearn.model_selection import StratifiedKFold
 

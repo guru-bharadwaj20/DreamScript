@@ -154,6 +154,11 @@ def support_vector_count(data, C: float, loss: str = "squared_hinge") -> dict:  
     model up to the intercept regularization and the multiclass scheme. That difference is
     recorded rather than hidden: this number is a diagnostic for reading C, and 6.3.5 recomputes
     it from the estimator it actually analyses.
+
+    `loss` is that difference made explicit. It is a `LinearSVC` setting with no `SVC` equivalent,
+    so this function cannot honour it - and it was taken and silently dropped, which left the
+    caller unable to tell whether the count described its own `loss` or another. It is echoed
+    into the result instead, so a row in the report says which setting the proxy stands in for.
     """
     from sklearn.pipeline import Pipeline
     from sklearn.svm import SVC
@@ -168,6 +173,9 @@ def support_vector_count(data, C: float, loss: str = "squared_hinge") -> dict:  
     return {
         "support_vectors": total,
         "share_of_training_rows": round(total / len(data.y), 4),
+        # The LinearSVC setting this SVC count stands in for. See the docstring: SVC has no
+        # `loss`, so the honest thing is to say which one the proxy was asked about.
+        "proxy_for_loss": loss,
         "by_class": {
             str(name): int(count)
             for name, count in zip(model.classes_, model.n_support_, strict=True)

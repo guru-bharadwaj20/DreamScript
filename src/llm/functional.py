@@ -567,13 +567,19 @@ def signature(code: str, diagram: dict, timeout_s: float = 20.0) -> dict[str, An
     return {"ok": False, "error": f"sandbox:{result['kind']}", "detail": result.get("detail")}
 
 
-def expected(diagram: dict, reference_code: str) -> dict[str, Any]:
+def expected(diagram: dict) -> dict[str, Any]:
     """The signature a correct program must reproduce.
 
-    Flowchart: the reference program's behaviour (the diagram's gateway semantics - which
-    branch of a fork runs, what a join waits for - are not recoverable from the IR alone, and
-    12.1.6's emitter is the committed decision about them). State machine: the **drawn automaton
-    itself**, because 12.1.6's emitter was measured to disagree with it (`reference_study`).
+    Flowchart: the reference program's behaviour (the diagram's gateway semantics - which branch
+    of a fork runs, what a join waits for - are not recoverable from the IR alone, and 12.1.6's
+    emitter is the committed decision about them). State machine: the **drawn automaton itself**,
+    because 12.1.6's emitter was measured to disagree with it (`reference_study`).
+
+    This took a `reference_code` argument and never read it, while its own first line described
+    the flowchart expectation as "the reference program's behaviour" - which reads as though the
+    text were the input. It is not: for a flowchart the expectation is the *diagram*, and
+    `compare` runs the candidate against the reference program the caller already holds. Taking
+    an argument in order to ignore it made that the opposite of clear.
     """
     if diagram.get("diagram_type") == "state_machine":
         spec = spec_for(diagram)
@@ -717,7 +723,7 @@ def mutation_study(pairs: list[dict], diagrams: list[dict]) -> dict[str, Any]:
 
     for pair, diagram in zip(pairs, diagrams, strict=False):
         kind_of = str(diagram.get("diagram_type"))
-        ref = expected(diagram, pair["target_code"])
+        ref = expected(diagram)
 
         if is_trivial(ref):
             trivial[kind_of] += 1

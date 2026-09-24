@@ -97,3 +97,57 @@ def test_the_deleted_ones_are_gone(name: str):
         for path in sorted((ROOT / "src").rglob("*.py"))
     )
     assert f"def {name}(" not in text
+
+
+# --- unused arguments cannot appear in a new file (audit 45) ----------------------------------
+
+
+def test_arg_is_selected_so_a_new_unused_argument_fails():
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert "ARG" in config["tool"]["ruff"]["lint"]["select"]
+
+
+def test_the_per_file_ignores_are_an_inventory_not_a_blanket():
+    """31 files carry the 50 unused arguments that already existed, listed individually. A
+    blanket `src/*` ignore would have the same effect today and no effect at all on the next
+    file, which is the whole difference."""
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    ignores = config["tool"]["ruff"]["lint"]["per-file-ignores"]
+    listed = [pattern for pattern, codes in ignores.items() if "ARG" in codes]
+    assert "src/*" not in listed and "src/**" not in listed
+    assert len([p for p in listed if p.startswith("src/")]) >= 25
+    for pattern in listed:
+        if pattern.startswith("src/"):
+            assert (ROOT / pattern).is_file(), f"{pattern} is listed and does not exist"
+
+
+@pytest.mark.parametrize(
+    ("module", "function", "argument"),
+    [
+        ("src/llm/functional.py", "expected", "reference_code"),
+        ("src/classify/fastpath.py", "run", "n_jobs"),
+        ("src/classify/optimizers.py", "curves", "n_jobs"),
+        ("src/ocr/ownership.py", "container_cost", "page_w"),
+        ("src/parse/repair.py", "roles_and_confidence", "diagram"),
+    ],
+)
+def test_the_misleading_arguments_are_gone(module: str, function: str, argument: str):
+    """Not merely unused - misleading: a function called `expected(diagram, reference_code)`
+    whose docstring calls the flowchart expectation "the reference program's behaviour" and
+    never reads the code; an `n_jobs` that reaches no estimator; a `page_w` on a rule measured
+    entirely in the container's own box."""
+    tree = ast.parse((ROOT / module).read_text(encoding="utf-8"))
+    node = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name == function)
+    names = {a.arg for a in node.args.args} | {a.arg for a in node.args.kwonlyargs}
+    assert argument not in names
+
+
+def test_the_one_that_was_kept_is_reported_instead_of_dropped():
+    """`svm.support_vector_count`'s `loss` is a LinearSVC setting with no SVC equivalent, so the
+    function cannot honour it - it echoes it into the result rather than swallowing it."""
+    source = (ROOT / "src" / "classify" / "svm.py").read_text(encoding="utf-8")
+    assert '"proxy_for_loss": loss' in source

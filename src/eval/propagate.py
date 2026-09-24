@@ -125,7 +125,7 @@ def score_page(page, sandbox_timeout: float = 20.0) -> dict[str, Any]:
     if reference_code is None:
         row["skipped"] = "the emitter cannot answer the true IR of this page"
         return row
-    expectation = functional.expected(gold_dict, reference_code)
+    expectation = functional.expected(gold_dict)
     row["trivial_test"] = bool(functional.is_trivial(expectation))
 
     for name, diagram in variants.items():

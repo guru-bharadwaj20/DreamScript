@@ -147,10 +147,13 @@ def _nearest(node_id: str, candidates, nodes: dict, limit: float) -> str | None:
     return best
 
 
-def roles_and_confidence(
-    diagram: dict, sequence: dict, model: dict, alphabet: list[str]
-) -> tuple[dict, dict]:
-    """Decoded role and its posterior confidence, per node id."""
+def roles_and_confidence(sequence: dict, model: dict, alphabet: list[str]) -> tuple[dict, dict]:
+    """Decoded role and its posterior confidence, per node id.
+
+    It took a `diagram` and never read one: everything it needs is in `sequence`, which is what
+    the observation builder already derived from the diagram. Taking the diagram too suggested
+    the two could disagree.
+    """
     from src.parse.posteriors import forward_backward
     from src.parse.viterbi import decode, logs
 
@@ -273,7 +276,7 @@ def evaluate(
         if sequence is None:
             missed += len(removed)
             continue
-        roles, confidence = roles_and_confidence(broken, sequence, model, alphabet)
+        roles, confidence = roles_and_confidence(sequence, model, alphabet)
         result = repair(broken, roles, confidence, threshold)
         added = {(r["src"], r["dst"]) for r in result["repairs"] if r["rule"] != "stray_terminal"}
         gone = {(e.get("src"), e.get("dst")) for e in removed}

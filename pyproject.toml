@@ -73,11 +73,58 @@ target-version = "py311"
 exclude = [".venv", "experiments", "data", "notebooks"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "ARG"]
 ignore = [
     "E501",   # line length is enforced by black
     "B008",   # FastAPI Depends() in defaults is idiomatic
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]   # asserts are the point of a test
+# ARG is off for tests: a pytest fixture requested for its side effect (monkeypatch, a
+# tmp_path that only has to exist) is an unused argument by construction, and so is every
+# `lambda *a, **k:` handed to monkeypatch.setattr. Enforcing it here would mean noqa on
+# most of the suite.
+"tests/*" = ["S101", "ARG"]   # asserts are the point of a test
+
+# ARG (unused function/method/lambda argument) is selected above so new code cannot add one
+# silently. These 31 files carry the 50 that already existed, and they are listed
+# individually rather than waved through with a blanket ignore: the list is the inventory, it
+# shrinks in a diff, and a file that is not on it cannot grow one.
+#
+# Most are interface arguments - a callback signature, a protocol conformance, one member of a
+# family of functions that must be callable the same way - which is why they are not simply
+# deleted. The six that were *misleading* rather than merely unused were fixed instead, in the
+# commit that added this block: `reference_code` on `functional.expected`, `n_jobs` on
+# `fastpath.run` and `optimizers.curves`, `loss` on `svm.support_vector_count`, `page_w` on
+# `ownership.container_cost` and `diagram` on `repair.roles_and_confidence`.
+"src/assemble/graphrepair.py" = ["ARG"]
+"src/classify/bagging.py" = ["ARG"]
+"src/classify/shapley.py" = ["ARG"]
+"src/cluster/validity.py" = ["ARG"]
+"src/codegen/quality.py" = ["ARG"]
+"src/codegen/sketch2code.py" = ["ARG"]
+"src/detect/tiling.py" = ["ARG"]
+"src/eval/similarity.py" = ["ARG"]
+"src/eval/structural.py" = ["ARG"]
+"src/features/extractor.py" = ["ARG"]
+"src/features/impute.py" = ["ARG"]
+"src/ir/convert/sketch2code.py" = ["ARG"]
+"src/ir/qa.py" = ["ARG"]
+"src/llm/pipeline.py" = ["ARG"]
+"src/ocr/ownlearn.py" = ["ARG"]
+"src/ocr/trocr.py" = ["ARG"]
+"src/parse/observations.py" = ["ARG"]
+"src/parse/softshapes.py" = ["ARG"]
+"src/preprocess/robustness.py" = ["ARG"]
+"src/rl/ablation.py" = ["ARG"]
+"src/rl/abstraction.py" = ["ARG"]
+"src/rl/actions.py" = ["ARG"]
+"src/rl/curriculum.py" = ["ARG"]
+"src/rl/dqn.py" = ["ARG"]
+"src/rl/emit.py" = ["ARG"]
+"src/rl/env.py" = ["ARG"]
+"src/rl/episode.py" = ["ARG"]
+"src/rl/reward.py" = ["ARG"]
+"src/rl/shaping.py" = ["ARG"]
+"src/rl/state.py" = ["ARG"]
+"src/utils/stage.py" = ["ARG"]

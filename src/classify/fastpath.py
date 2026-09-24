@@ -206,7 +206,10 @@ def summarise(rows: list[dict], name: str) -> dict:
     }
 
 
-def run(corpus: str = "real", pages: int = PAGES, n_jobs: int | None = None) -> dict:
+def run(corpus: str = "real", pages: int = PAGES) -> dict:
+    """`n_jobs` was a parameter here and reached no estimator - every fit below is sklearn's
+    default, single-process. Removed rather than threaded: a knob that looks like it controls
+    parallelism and does not is worse than no knob."""
     from sklearn.decomposition import PCA
     from sklearn.pipeline import Pipeline
     from sklearn.svm import SVC

@@ -195,7 +195,7 @@ def overlap_fraction(box, region) -> float:
     return (dx * dy) / max(1.0, w * h)
 
 
-def container_cost(box, line, page_w: float, share: float = 0.6) -> float:
+def container_cost(box, line, share: float = 0.6) -> float:
     """A container may only claim a line that lies in its own header strip.
 
     Two rules, and both were forced by a nested Participant/Lane pair. **Containment is by area,
@@ -205,6 +205,13 @@ def container_cost(box, line, page_w: float, share: float = 0.6) -> float:
     the strip, because every candidate is inside its strip and so every distance is zero - what
     separates an outer container's title from an inner one's is only that each is written hard
     against its own edge.
+
+    It took a `page_w` and never read it - and that is right, because both rules here are
+    relative to the *container's own* box: the widened strip is a fraction of the box's short
+    side and the leading-edge bound is a fraction of the strip's depth. Nothing about a
+    container's claim on its title is measured in page widths. The argument is gone rather than
+    left to imply otherwise; `cost_row` still takes one, because the edge rule really does use
+    it (`page_w * EDGE_REACH`).
     """
     strip = header_strip(box)
     # Containment is tested against a widened strip, because `src.ocr.vertical` detects rotated
@@ -234,7 +241,7 @@ def cost_row(element: dict, lines: list, page_w: float, reach: bool = True) -> n
     out = np.full(len(lines), BIG)
     for j, line in enumerate(lines):
         if role == "container":
-            value = container_cost(box, line, page_w)
+            value = container_cost(box, line)
         elif role == "edge":
             distance, at = polyline_foot(element["polyline"], line)
             if reach and distance > page_w * EDGE_REACH:

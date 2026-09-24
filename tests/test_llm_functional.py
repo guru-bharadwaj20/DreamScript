@@ -45,7 +45,7 @@ def run_diagram(ctx):
 
 
 def _verdict(code: str) -> tuple[bool, str]:
-    return F.compare(F.signature(code, FLOW), F.expected(FLOW, ""))
+    return F.compare(F.signature(code, FLOW), F.expected(FLOW))
 
 
 def test_a_correct_program_passes_whatever_its_polarity_and_fork_order() -> None:
@@ -109,7 +109,7 @@ class M:
     def is_final(self):
         return self.state == "q2"
 """
-    expected = F.expected(SM, "")
+    expected = F.expected(SM)
     assert F.compare(F.signature(right, SM), expected) == (True, "equal")
     # 12.1.6's collapsed trigger ("a_b") rejects "b a", which the drawing accepts.
     wrong = right.replace('"q1": {"a": "q2", "b": "q2"}', '"q1": {"a_b": "q2"}')
