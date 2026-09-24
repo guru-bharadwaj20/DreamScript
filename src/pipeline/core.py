@@ -37,12 +37,24 @@ expensive stages - the detector and the language model - are the two a deploymen
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from src.pipeline.cache import StageCache, digest_obj, env_key, image_key
 from src.pipeline.contracts import UNKNOWN, Outcome, Result, StageReport, Timer
+
+#: Where a served adapter answers, when one is running. 13.4's chain is `model -> emitter` and
+#: the model rung had **no caller in the repo**: `generate.emit` took a `model_url` nobody passed
+#: and `_from_model` was forty lines nothing could reach, so the chain was a chain of one and
+#: every measurement of it measured the emitter.
+#:
+#: The environment rather than only a constructor argument, because the whole point is that a
+#: deployment decides this: the container that has llama.cpp beside it sets it, the CI image that
+#: does not leaves it unset and gets the emitter. It is in `cache.ENV_KEYS` for the obvious
+#: reason - it changes what the generate stage returns.
+MODEL_URL_ENV = "DREAMSCRIPT_MODEL_URL"
 
 #: Below this routing probability the pipeline asks rather than guesses (13.5).
 CONFIDENCE_FLOOR = 0.60
@@ -61,16 +73,20 @@ class DreamScriptPipeline:
         confidence_floor: float = CONFIDENCE_FLOOR,
         generate: bool = True,
         read_text: bool = False,
+        model_url: str | None = None,
     ) -> None:
         self.cache = cache if cache is not None else StageCache()
         self.confidence_floor = confidence_floor
         self.generate_code = generate
         self.read_text = read_text
+        self.model_url = (model_url or os.environ.get(MODEL_URL_ENV, "")).strip() or None
         self.config_key = digest_obj(
             {
                 "confidence_floor": confidence_floor,
                 "generate": generate,
                 "read_text": read_text,
+                # Which rung answered is part of the answer, so it is part of the key.
+                "model_url": self.model_url,
                 # The three constructor arguments were the whole key, and they are not the whole
                 # configuration: `assemble.s5` takes three switches from the environment and
                 # three more environment variables name the checkpoints that produce the text
@@ -230,7 +246,7 @@ class DreamScriptPipeline:
             # used to default to "python" for a type with no emitter, which turned a missing
             # generator into a confident Python file.
             return Outcome.failed(f"no target generator for {kind!r}")
-        return emit(diagram, order, kind, language)
+        return emit(diagram, order, kind, language, model_url=self.model_url)
 
     def _verify(self, code: str, kind: str) -> Outcome[dict]:
         """12.3.1's parse gate, routed by *diagram type* - `verify` picks the checker from it."""

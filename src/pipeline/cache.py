@@ -105,6 +105,9 @@ def code_key() -> str:
 #: module's docstring promises does not happen.
 ENV_KEYS = (
     "DREAMSCRIPT_ARROW_EDGES",
+    # 13.4's first rung: set it and `generate` asks a served adapter, leave it and the emitter
+    # answers. Nothing decides more about what comes back.
+    "DREAMSCRIPT_MODEL_URL",
     "DREAMSCRIPT_EDGE_TEXT",
     "DREAMSCRIPT_PAGE_TEXT",
     "ARROW_WEIGHTS",

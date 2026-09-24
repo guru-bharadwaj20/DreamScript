@@ -319,3 +319,62 @@ def test_the_code_key_is_stable_within_a_process():
 
     assert code_key() == code_key()
     assert len(code_key()) == 16
+
+
+# --- 13.4's first rung is reachable (audit 20) ------------------------------------------------
+
+
+def test_the_model_rung_had_no_caller_and_now_has_two():
+    """`generate.emit` took a `model_url` nothing passed and `_from_model` was forty lines
+    nothing could reach, so 13.4's `model -> emitter` chain was a chain of one."""
+    import inspect
+
+    from src.pipeline.core import DreamScriptPipeline
+
+    assert "model_url" in inspect.signature(DreamScriptPipeline.__init__).parameters
+    assert "model_url=self.model_url" in inspect.getsource(DreamScriptPipeline._generate)
+
+
+def test_the_environment_can_point_the_pipeline_at_a_served_adapter(monkeypatch):
+    from src.pipeline.core import MODEL_URL_ENV, DreamScriptPipeline
+
+    monkeypatch.delenv(MODEL_URL_ENV, raising=False)
+    assert DreamScriptPipeline(generate=False).model_url is None
+
+    monkeypatch.setenv(MODEL_URL_ENV, "http://127.0.0.1:8080")
+    assert DreamScriptPipeline(generate=False).model_url == "http://127.0.0.1:8080"
+    # An explicit argument still wins over the environment.
+    assert DreamScriptPipeline(generate=False, model_url="http://other").model_url == "http://other"
+
+
+def test_which_rung_would_answer_is_part_of_the_cache_key(monkeypatch):
+    from src.pipeline.cache import ENV_KEYS
+    from src.pipeline.core import MODEL_URL_ENV, DreamScriptPipeline
+
+    assert MODEL_URL_ENV in ENV_KEYS
+    monkeypatch.delenv(MODEL_URL_ENV, raising=False)
+    without = DreamScriptPipeline(generate=False).config_key
+    assert DreamScriptPipeline(generate=False, model_url="http://x").config_key != without
+
+
+def test_a_served_model_that_answers_is_used_and_is_not_degraded(monkeypatch):
+    """The whole rung, exercised without a server: `_from_model` is what was unreachable."""
+    from src.pipeline import generate
+
+    monkeypatch.setattr(
+        generate, "_from_model", lambda *a, **k: generate.Outcome(value=("print(1)", "python"))
+    )
+    outcome = generate.emit({}, [], "flowchart", "python", model_url="http://served")
+    assert outcome.ok and not outcome.degraded
+    assert outcome.value == ("print(1)", "python")
+
+
+def test_a_served_model_that_fails_falls_back_to_the_emitter(monkeypatch):
+    from src.pipeline import generate
+
+    monkeypatch.setattr(
+        generate, "_from_model", lambda *a, **k: generate.Outcome.failed("unreachable")
+    )
+    diagram = {"nodes": [{"id": "n0", "shape": "rectangle", "text": "go", "bbox": [0, 0, 9, 9]}]}
+    outcome = generate.emit(diagram, ["n0"], "flowchart", "python", model_url="http://served")
+    assert outcome.ok and outcome.value[1] == "python"
