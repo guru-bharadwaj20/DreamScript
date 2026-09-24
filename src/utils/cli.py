@@ -21,7 +21,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from src.utils.config import add_config_args, load_config
 from src.utils.logging import Run, start_run
-from src.utils.seed import set_seed
+from src.utils.seed import ensure_hashseed, set_seed
 
 
 class StageNotImplemented(NotImplementedError):
@@ -46,7 +46,14 @@ def main(
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config, args.overrides)
-    set_seed(cfg.get("seed", 42), deterministic=cfg.get("deterministic", True))
+    seed = int(cfg.get("seed", 42))
+    # Before `set_seed`, and it may not return: `PYTHONHASHSEED` is read once at interpreter
+    # start, so pinning it means re-execing. Every stage entry point goes through this function,
+    # and until now none of them pinned it - `ensure_hashseed` existed and its only two callers
+    # were both inside `scripts/determinism_check.py`, so the one process that checked
+    # determinism was the only process that had it.
+    ensure_hashseed(seed)
+    set_seed(seed, deterministic=cfg.get("deterministic", True))
 
     if args.print_config:
         print(OmegaConf.to_yaml(cfg, resolve=True))
