@@ -1,0 +1,61 @@
+# What `docker build .` must not send to the daemon.
+#
+# There was no .dockerignore, and the build context is `.` - so every build uploaded the whole
+# working tree before the first instruction ran: `.venv/` (a full CUDA torch install), `.git/`,
+# `.dvc/cache/`, `mlruns/`, `data/`, `experiments/` with its 1.3 GB of checkpoints, and ~90 MB of
+# loose ultralytics weights at the repo root. The Dockerfile copies four things - `requirements/`,
+# `src/`, `schemas/` and `pyproject.toml` - so none of the rest was ever used for anything.
+#
+# It is not free: the CI `image` job already has to `rm -rf /usr/share/dotnet` and friends to fit
+# a CUDA image on a runner, and it now builds on every push.
+#
+# Written as a deny-list rather than `*` plus un-ignores, because the Dockerfile's COPY lines are
+# the real allow-list and keeping a second one here is a second thing to forget to update.
+
+# Environments and version control
+.venv/
+venv/
+venv-labelstudio/
+.git/
+.github/
+.gitattributes
+.gitignore
+
+# Caches - regenerated, and large
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Data, models and experiment output. The image mounts `data/` and `experiments/` read-only at
+# run time (see docker-compose.yml); it must not bake them in.
+data/
+experiments/
+mlruns/
+.dvc/cache/
+runs/
+labeling/
+
+# Loose ultralytics checkpoints. They are gitignored by `*.pt` and therefore invisible to
+# `git status`, which is exactly why they sat in the build context unnoticed.
+*.pt
+*.pth
+*.onnx
+
+# Everything a build does not read
+tests/
+docs/
+notebooks/
+reports/
+configs/
+scripts/
+app/
+Makefile
+tasks.ps1
+env.yml
+dvc.yaml
+dvc.lock
+*.md

@@ -483,3 +483,36 @@ def test_the_audit_no_longer_calls_date_today():
     # Parsed rather than grepped: the module explains in a comment what it no longer does, and
     # the comment names the call.
     assert not [c for c in calls if c.endswith(("date.today", "datetime.now"))], calls
+
+
+# --- the build context is the four things the Dockerfile copies (audit 57) --------------------
+
+
+def test_dockerignore_exists_and_excludes_the_large_trees():
+    """There was none, and the build context is `.` - so every `docker build` uploaded the whole
+    working tree before the first instruction ran. Measured here: 75.86 GB of tree against a
+    Dockerfile that copies four paths."""
+    patterns = {
+        line.strip()
+        for line in (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    for expected in (".venv/", ".git/", "data/", "experiments/", "mlruns/", ".dvc/cache/", "*.pt"):
+        assert expected in patterns, expected
+
+
+def test_everything_the_dockerfile_copies_survives_the_ignore_file():
+    """The ignore list is a deny-list and the COPY lines are the real allow-list; this is the
+    one direction that silently breaks a build rather than merely slowing it."""
+    import re
+
+    patterns = [
+        line.strip().rstrip("/")
+        for line in (ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    copied = re.findall(r"^COPY\s+(\S+)", (ROOT / "Dockerfile").read_text(encoding="utf-8"), re.M)
+    assert copied, "the Dockerfile copies nothing?"
+    for source in copied:
+        head = source.rstrip("/").split("/")[0]
+        assert head not in patterns, f"COPY {source} is excluded by .dockerignore"
