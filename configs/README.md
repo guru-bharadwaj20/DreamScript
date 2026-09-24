@@ -18,7 +18,7 @@ reported, and the number it was supposed to change never moves.
 
 | File | Checked by | Against |
 | :--- | :--- | :--- |
-| `preprocess.yaml` | `tests/test_preprocess_binarize.py` | `src.preprocess.binarize`'s `DEFAULT_WINDOW`, `DEFAULT_K`, `PHOTO`, `PHOTO_MIN_AREA_FRAC` and `src.preprocess.denoise`'s component floor |
+| `preprocess.yaml` | `tests/test_config_matches_code.py` | `binarize` (defaults + `PHOTO`), `denoise`, `illumination`, `deskew` and `rules` |
 
 These are settings the code owns — they are the values the reported numbers were measured at, so
 the code is the source of truth and the config is the published record of it. The test fails if

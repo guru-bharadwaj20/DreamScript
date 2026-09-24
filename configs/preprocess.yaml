@@ -1,4 +1,10 @@
 # Phase 3 preprocessing. Run:  python -m src.preprocess --config configs/preprocess.yaml
+#
+# **The code owns these numbers and this file is the published record of them.** They are the
+# values every reported preprocessing figure was measured at, so changing one here does not change
+# what runs - `tests/test_config_matches_code.py` asserts every value below equals the constant it
+# mirrors, and fails if either side moves without the other. That is what makes the record worth
+# reading; before it, a value here could be tuned, committed and quoted while nothing moved.
 defaults:
   - base
 
@@ -25,6 +31,21 @@ preprocess:
     window_size: 25      # sauvola / adaptive only
     k: 0.2               # sauvola only
 
+    # The *other* measured setting, for photographs of paper rather than rasterised strokes.
+    # It was in the code (`binarize.PHOTO`) and not here at all, which made this block read as
+    # "the binarisation" when it is one of two. Chosen on hdBPMN by 10.1.3's tracing F1 rather
+    # than by 3.1.5's evalset F1 - 0.0977 -> 0.2467 on 76 train pages, mean ink fraction
+    # 0.0954 -> 0.0314 - and selected per page by `layers.photo_for`.
+    #
+    # `illumination_mode: flat` is the point of it: correcting the lighting removes the very
+    # thing Sauvola exists to handle, which is why otsu wins above and loses here.
+    photo:
+      method: sauvola
+      window_size: 25
+      k: 0.25
+      illumination_mode: flat
+      min_component_area_frac: 2.0e-4
+
   denoise:
     median_kernel: 3
     min_component_area_frac: 5.0e-5   # measured sweep, see src/preprocess/denoise.py
@@ -35,7 +56,10 @@ preprocess:
 
   ruled_line_suppression:
     enabled: true
-    min_line_length_ratio: 0.5
+    # 0.55, not 0.5. This file said 0.5 and `rules.MIN_SPAN_FRAC` has been 0.55 - a component
+    # must span at least this fraction of the page to be a rule rather than a box edge - and the
+    # 0.5 here was read by nothing, so the disagreement cost nothing and announced nothing.
+    min_line_length_ratio: 0.55
 
   skeletonize: true
   cache_primitives: true
