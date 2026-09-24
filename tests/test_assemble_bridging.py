@@ -122,7 +122,7 @@ def test_two_stubs_that_point_straight_at_each_other_are_reunited():
     src = _stub("e1", "src", "a", (0.0, 0.0), (1.0, 0.0))
     dst = _stub("e1", "dst", "b", (10.0, 0.0), (1.0, 0.0))
     nodes = {"a": node("a", -20, -10), "b": node("b", 10, -10)}
-    pairs = repair([src, dst], nodes, tolerance=50.0, port_tolerance=50.0)
+    pairs = repair([src, dst], nodes, tolerance=50.0)
     assert len(pairs) == 1
     a, b, _ = pairs[0]
     assert {a.edge_id, b.edge_id} == {"e1"}
@@ -131,7 +131,7 @@ def test_two_stubs_that_point_straight_at_each_other_are_reunited():
 def test_a_stub_pair_further_apart_than_tolerance_is_left_unmatched():
     src = _stub("e1", "src", "a", (0.0, 0.0), (1.0, 0.0))
     dst = _stub("e1", "dst", "b", (1000.0, 0.0), (1.0, 0.0))
-    pairs = repair([src, dst], {}, tolerance=5.0, port_tolerance=5.0)
+    pairs = repair([src, dst], {}, tolerance=5.0)
     assert pairs == []
 
 
@@ -140,7 +140,7 @@ def test_direction_continuity_prefers_the_colinear_partner_over_the_closer_one()
     src = _stub("far_edge", "src", "a", (0.0, 0.0), (1.0, 0.0))
     near = _stub("near_edge", "dst", "b", (5.0, 0.0), (0.0, 1.0))
     far = _stub("far_edge", "dst", "c", (9.0, 0.0), (1.0, 0.0))
-    pairs = repair([src, near, far], {}, tolerance=50.0, port_tolerance=50.0)
+    pairs = repair([src, near, far], {}, tolerance=50.0)
     assert len(pairs) == 1
     a, b, _ = pairs[0]
     assert {a.edge_id, b.edge_id} == {"far_edge"}
@@ -153,7 +153,6 @@ def test_removing_the_distance_gate_and_both_scores_reduces_to_the_control():
         [src, dst],
         {},
         tolerance=5.0,
-        port_tolerance=5.0,
         use_direction=False,
         use_port=False,
         use_gate=False,
@@ -168,8 +167,8 @@ def test_score_pair_reports_a_lower_direction_score_for_a_reversed_stub():
     a = _stub("e1", "src", "n", (0.0, 0.0), (1.0, 0.0))
     aligned = _stub("e1", "dst", "m", (10.0, 0.0), (1.0, 0.0))
     reversed_ = _stub("e2", "dst", "m", (10.0, 0.0), (-1.0, 0.0))
-    _, _, parts_aligned = score_pair(a, aligned, {}, tolerance=50.0, port_tolerance=50.0)
-    _, _, parts_reversed = score_pair(a, reversed_, {}, tolerance=50.0, port_tolerance=50.0)
+    _, _, parts_aligned = score_pair(a, aligned, {}, tolerance=50.0)
+    _, _, parts_reversed = score_pair(a, reversed_, {}, tolerance=50.0)
     assert parts_aligned["direction"] > parts_reversed["direction"]
 
 
@@ -207,7 +206,7 @@ def test_a_lightly_damaged_synthetic_page_is_fully_recovered():
     )
     assert skipped == 0
     node_map = {n.id: n for n in diagram.nodes}
-    pairs = repair(stubs, node_map, tolerance=0.2 * diagonal, port_tolerance=0.2 * diagonal)
+    pairs = repair(stubs, node_map, tolerance=0.2 * diagonal)
     counts = score_repair(pairs, truth_by_edge)
     assert counts["recovered"] == counts["broken"]
     assert counts["wrong"] == 0

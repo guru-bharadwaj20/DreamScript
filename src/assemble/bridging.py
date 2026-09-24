@@ -150,9 +150,18 @@ DIRECTION_WINDOW_FRAC = 0.03
 #: by construction rather than by the repairer failing.
 GAP_TOLERANCE = 0.28
 
-#: How close an extrapolated stub must land to the candidate's node box to count as "pointing at
-#: it", as a share of the page diagonal.
-PORT_TOLERANCE = 0.06
+#: The port cue is a *direction* test, not a distance one: `score_pair` asks how well the stub's
+#: own heading agrees with the heading from the stub to the candidate node's centre, and scores
+#: that cosine on [0, 1]. There is no tolerance in it.
+#:
+#: There used to be a `PORT_TOLERANCE = 0.06` here, described as "how close an extrapolated stub
+#: must land to the candidate's node box", and `score_pair` and `repair` both took a
+#: `port_tolerance` argument - `score_pair`'s keyword-required, so every caller and the corpus
+#: sweep had to compute and pass `PORT_TOLERANCE * diagonal`. The body never read it. The sweep
+#: was therefore threading a number through three functions to no effect and reporting the flat
+#: result as a measurement. It is gone rather than implemented: implementing it would change
+#: every recovery figure this module reports, which is a re-measurement and not a bug fix, and
+#: the cue that exists is documented here instead of a cue that did not.
 
 #: Default cue weights: gap closeness, direction continuity, port snapping. Port starts at 0 -
 #: the ablation below is what sets it there, not a guess: its own signal is real (a true pair's
@@ -284,7 +293,6 @@ def score_pair(
     nodes: dict[str, Any],
     *,
     tolerance: float,
-    port_tolerance: float,
     use_direction: bool = True,
     use_port: bool = True,
     weights: dict[str, float] = WEIGHTS,
@@ -329,7 +337,6 @@ def repair(
     nodes: dict[str, Any],
     *,
     tolerance: float = GAP_TOLERANCE,
-    port_tolerance: float = PORT_TOLERANCE,
     use_direction: bool = True,
     use_port: bool = True,
     use_gate: bool = True,
@@ -349,7 +356,6 @@ def repair(
                 b,
                 nodes,
                 tolerance=tolerance,
-                port_tolerance=port_tolerance,
                 use_direction=use_direction,
                 use_port=use_port,
                 weights=weights,
@@ -451,11 +457,10 @@ def _measure_page(
     stubs, truth_by_edge, _ = damage_diagram(diagram, diagonal, gap_frac, by_edge=by_edge)
     nodes = {n.id: n for n in diagram.nodes}
     tol = GAP_TOLERANCE * diagonal
-    port_tol = PORT_TOLERANCE * diagonal
     if mode == "control":
         pairs = nearest_control(stubs)
     elif mode in _MODES:
-        pairs = repair(stubs, nodes, tolerance=tol, port_tolerance=port_tol, **_MODES[mode])
+        pairs = repair(stubs, nodes, tolerance=tol, **_MODES[mode])
     else:
         raise ValueError(mode)
     return score_repair(pairs, truth_by_edge)
