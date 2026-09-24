@@ -105,11 +105,16 @@ jobs:
       # genai and serve are installed because their tests need no corpus, only their declared
       # dependencies - without them 12 tests across test_llm_quant, test_ocr_s3, test_ocr_styled
       # and test_llm_train failed as ModuleNotFoundError while claiming to be code failures.
-      - name: the suite, with corpus-dependent modules skipping
-        run: python -m pytest tests -q
-      - name: what was skipped, and why
-        if: always()
-        run: python -m pytest tests -q -rs | tail -40
+      # One run, not two. This was `pytest tests -q` followed by an `if: always()` step running
+      # `pytest tests -q -rs | tail -40` to print the skips - a second full execution of 6,700
+      # tests for output the first run produces for free with `-rs`, which is now in
+      # `pyproject.toml`'s addopts and applies to every invocation. On a suite this size it was
+      # the single largest thing in the job.
+      #
+      # No `-q`: it stacks with addopts into `-qq`, which suppresses the totals line, so these
+      # logs used to end at `short test summary info` with no pass, fail or skip count at all.
+      - name: the suite, with corpus-dependent modules skipping and skip reasons printed
+        run: python -m pytest tests
 
   smoke-train:
     name: tiny-model smoke train
