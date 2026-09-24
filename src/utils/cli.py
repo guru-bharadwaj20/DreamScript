@@ -66,7 +66,10 @@ def main(
         return code
     except StageNotImplemented as exc:
         active.log.warning("%s: %s", package, exc)
-        active.finish("not-implemented")
+        # Discarded, not finished. A stage that refuses on its first line produced nothing, and
+        # writing a timestamped directory for it on every invocation is how `experiments/` filled
+        # with runs that recorded only that nothing ran.
+        active.discard()
         print(f"config resolved from {cfg._config_path}:", file=sys.stderr)  # noqa: SLF001
         print(OmegaConf.to_yaml(cfg, resolve=True), file=sys.stderr)
         return 2

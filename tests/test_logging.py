@@ -83,3 +83,47 @@ def test_artifact_creates_parent_dirs(tmp_path: Path):
     p.write_bytes(b"x")
     run.finish()
     assert p.is_file() and p.parent.is_dir()
+
+
+# --- a stage that refuses leaves nothing behind (audit 17) ------------------------------------
+
+
+def test_discard_removes_a_run_that_produced_nothing(tmp_path):
+    """`start_run` creates the directory before `run(cfg, active)` is called, which is right for
+    a stage that fails halfway - it keeps its log. It is wrong for eleven entry points that
+    raised on their first line, which wrote a timestamped directory on every invocation."""
+    from src.utils.logging import start_run
+
+    run = start_run(name="refused", root=tmp_path)
+    assert run.dir.is_dir()
+    assert run.discard() is True
+    assert not run.dir.exists()
+
+
+def test_discard_refuses_to_remove_a_run_that_produced_something(tmp_path):
+    from src.utils.logging import start_run
+
+    run = start_run(name="did-work", root=tmp_path)
+    run.artifact("model.json").write_text("{}", encoding="utf-8")
+    assert run.discard() is False
+    assert run.dir.is_dir()
+
+
+def test_startup_files_is_exactly_what_start_run_writes(tmp_path):
+    """If `start_run` gains a file and this set does not, `discard` silently stops discarding."""
+    from src.utils.logging import STARTUP_FILES, start_run
+
+    run = start_run(name="empty", root=tmp_path)
+    written = {path.name for path in run.dir.iterdir()}
+    assert written <= STARTUP_FILES, written - STARTUP_FILES
+    run.discard()
+
+
+def test_the_cli_discards_rather_than_finishing_a_refused_stage():
+    import inspect
+
+    from src.utils import cli
+
+    source = inspect.getsource(cli.main)
+    assert "active.discard()" in source
+    assert 'active.finish("not-implemented")' not in source

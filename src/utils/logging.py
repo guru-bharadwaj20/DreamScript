@@ -94,6 +94,11 @@ def _environment() -> dict[str, Any]:
     return env
 
 
+#: Exactly the files `start_run` writes before a stage has done anything. `Run.discard` refuses
+#: to remove a directory holding anything else, so a run that produced a result is never deleted.
+STARTUP_FILES = frozenset({"config.yaml", "env.json", "run.log", "run.jsonl", "metrics.json"})
+
+
 @dataclass
 class Run:
     """A single stage execution and the directory that belongs to it."""
@@ -121,6 +126,30 @@ class Run:
         p = self.dir.joinpath(*parts)
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
+
+    def discard(self) -> bool:
+        """Close the log and remove this run's directory, if the run produced nothing.
+
+        For the case `utils.cli.main` has: a stage that refuses before it starts. `start_run`
+        creates the directory *before* `run(cfg, active)` is called, because a stage that fails
+        halfway should keep its log - but a stage that raises `StageNotImplemented` on its first
+        line leaves a timestamped directory holding a config and a two-line log, and eleven
+        commands did exactly that on every invocation.
+
+        Refuses to remove a directory that holds anything besides the files `start_run` itself
+        wrote, so a run that did produce something is never deleted by this path. Returns whether
+        it removed anything.
+        """
+        import shutil
+
+        for handler in list(self.log.handlers):
+            handler.close()
+            self.log.removeHandler(handler)
+        written = {path.name for path in self.dir.iterdir()} if self.dir.is_dir() else set()
+        if not written <= STARTUP_FILES:
+            return False
+        shutil.rmtree(self.dir, ignore_errors=True)
+        return not self.dir.exists()
 
     def finish(self, status: str = "ok") -> None:
         self.metrics["status"] = status
