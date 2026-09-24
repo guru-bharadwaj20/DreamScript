@@ -50,6 +50,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from src.features.build import IDENTITY
 from src.utils.config import ROOT
 
 TABLE = ROOT / "data" / "features" / "handcrafted.parquet"
@@ -57,7 +58,8 @@ REPORT_MD = ROOT / "reports" / "drift.md"
 REPORT_JSON = ROOT / "reports" / "drift.json"
 
 #: Columns that name a row rather than describe a page - 4.1.5's leak, and meaningless to drift.
-IDENTITY = ("id", "source", "diagram_type", "split", "scribe_id", "adverse", "synthetic")
+#: Imported above, from the module that writes the table (4.2.2), rather than restated here -
+#: it was one of four copies, and a column added to three of them is a silent leak in the fourth.
 
 #: PSI's conventional bands. Stated, not tuned: a threshold chosen to make this corpus pass would
 #: measure the corpus rather than the drift.

@@ -181,3 +181,43 @@ def test_the_copy_is_gone_and_not_merely_shadowed(module: str, name: str):
     tree = ast.parse((ROOT / module).read_text(encoding="utf-8"))
     defined = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
     assert name not in defined
+
+
+# --- one leak guard, not four (audit 47) ------------------------------------------------------
+
+
+def test_identity_has_one_definition():
+    """`IDENTITY` - the columns a model must never train on - was copy-pasted into four files,
+    each with its own comment saying the same thing. Add a column to the manifest, update three
+    of the four, and one stage trains on a leak while the others do not. Nothing would report
+    it, because each copy is internally consistent."""
+    from src.embed import cache
+    from src.features import build
+    from src.mlops import drift
+    from src.pipeline import fallback
+
+    for module in (cache, drift, fallback):
+        assert module.IDENTITY is build.IDENTITY, module.__name__
+
+
+@pytest.mark.parametrize(
+    "module",
+    ["src/embed/cache.py", "src/mlops/drift.py", "src/pipeline/fallback.py"],
+)
+def test_no_copy_is_left_behind(module: str):
+    tree = ast.parse((ROOT / module).read_text(encoding="utf-8"))
+    assigned = {
+        target.id
+        for node in tree.body
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+        if isinstance(target, ast.Name)
+    }
+    assert "IDENTITY" not in assigned
+
+
+def test_the_owner_is_the_module_that_writes_the_table():
+    from src.features.build import IDENTITY, OUT
+
+    assert OUT.name == "handcrafted.parquet"
+    assert "id" in IDENTITY and "source" in IDENTITY and "scribe_id" in IDENTITY

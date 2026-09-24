@@ -85,6 +85,12 @@ OUT = ROOT / "data" / "features" / "handcrafted.parquet"
 
 #: Columns that identify a row. Never features - a model that trains on `id` has memorised the
 #: corpus, and one that trains on `source` has learned 4.1.5's leak on purpose.
+#:
+#: **Defined here because this module writes the table.** It was copy-pasted into four files -
+#: here, `embed/cache.py`, `mlops/drift.py` and `pipeline/fallback.py` - each with its own
+#: comment saying the same thing. Add a column to the manifest, update three of the four, and one
+#: stage silently trains on a leak while the other two do not; nothing would have reported it,
+#: because each copy is internally consistent. The other three import this.
 IDENTITY = ("id", "source", "diagram_type", "split", "scribe_id", "adverse", "synthetic")
 
 

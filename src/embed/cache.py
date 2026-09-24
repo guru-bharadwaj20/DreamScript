@@ -65,6 +65,7 @@ from pathlib import Path
 import numpy as np
 
 from src.embed.backbone import BEST_BACKBONE, BEST_INPUT, embed
+from src.features.build import IDENTITY
 from src.utils.config import ROOT
 
 MATRIX = ROOT / "data" / "features" / "embeddings.npy"
@@ -72,7 +73,8 @@ INDEX = ROOT / "data" / "features" / "embeddings_index.parquet"
 META = ROOT / "data" / "features" / "embeddings_meta.json"
 
 #: Carried from 4.2.2 so a row here can be joined to a row there without a second lookup.
-IDENTITY = ("id", "source", "diagram_type", "split", "scribe_id", "adverse", "synthetic")
+#: Imported above, from the module that writes the table (4.2.2), rather than restated here -
+#: it was one of four copies, and a column added to three of them is a silent leak in the fourth.
 
 
 def _relative(path) -> str:

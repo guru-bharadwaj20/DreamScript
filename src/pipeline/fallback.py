@@ -81,6 +81,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import StratifiedGroupKFold
 
+from src.features.build import IDENTITY
 from src.utils.config import ROOT
 
 TABLE = ROOT / "data" / "features" / "handcrafted.parquet"
@@ -88,7 +89,8 @@ REPORT_MD = ROOT / "reports" / "p13_fallback_chain.md"
 REPORT_JSON = ROOT / "reports" / "p13_fallback_chain.json"
 
 #: Columns that name a row rather than describe a page. Training on any of them is 4.1.5's leak.
-IDENTITY = ("id", "source", "diagram_type", "split", "scribe_id", "adverse", "synthetic")
+#: Imported above, from the module that writes the table (4.2.2), rather than restated here -
+#: it was one of four copies, and a column added to three of them is a silent leak in the fourth.
 
 #: How each source's pages reach the pixels. This is a property of the archive, not a judgement:
 #: hdbpmn ships photographs of paper, the other three ship renders.
