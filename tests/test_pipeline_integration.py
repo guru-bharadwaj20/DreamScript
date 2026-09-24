@@ -320,7 +320,11 @@ def test_a_cache_entry_written_by_different_code_is_a_miss(tmp_path, monkeypatch
     monkeypatch.setattr(cache_module, "code_key", lambda: "0000000000000000")
     fresh = cache_module.StageCache(directory=tmp_path)
     assert fresh.get("assemble", "k1") is None
-    assert fresh.stats() == {"hits": 0, "misses": 1}
+    stats = fresh.stats()
+    assert (stats["hits"], stats["misses"]) == (0, 1)
+    # `stats()` also reports write failures now; a cache that cannot write is a legitimate
+    # configuration and a silent one is not (see `cache.CACHE_DIR`).
+    assert stats["write_failures"] == 0
 
 
 def test_the_code_key_is_stable_within_a_process():

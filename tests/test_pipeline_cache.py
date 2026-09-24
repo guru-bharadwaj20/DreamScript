@@ -54,6 +54,10 @@ NOT_IN_KEY = {
     "DREAMSCRIPT_NODE",
     # Throughput. `ownlearn` reads in batches of this size and concatenates the same result.
     "OWNLEARN_READ_BATCH",
+    # *Where* the stage cache lives, not what a stage answers. A cache in a different directory
+    # is a cold cache, not a different result - and folding it into the key would mean a
+    # container and a checkout could never share one.
+    "DREAMSCRIPT_CACHE_DIR",
     # Training-time augmentation. What it changes is the checkpoint, and the checkpoint's
     # identity is `S3_CHECKPOINT`, which *is* keyed.
     "S3_AUGMENT",
@@ -164,3 +168,66 @@ def test_uncovered_sources_are_a_subset_of_the_map_they_annotate():
     from src.pipeline.routing import SOURCE_TYPE, UNCOVERED_SOURCES
 
     assert set(UNCOVERED_SOURCES) < set(SOURCE_TYPE)
+
+
+# --- a cache that cannot write says so (audit 59) ---------------------------------------------
+
+
+def test_the_cache_directory_comes_from_the_environment(monkeypatch, tmp_path):
+    """The default is `data/interim/pipeline_cache`, which is inside the read-only `./data`
+    mount in docker-compose.yml - so every `put()` in the container raised OSError into a
+    `contextlib.suppress` and the cache silently never worked, in the deployment it is for."""
+    import importlib
+
+    from src.pipeline import cache as cache_module
+
+    monkeypatch.setenv(cache_module.CACHE_DIR_ENV, str(tmp_path / "elsewhere"))
+    reloaded = importlib.reload(cache_module)
+    try:
+        elsewhere = tmp_path / "elsewhere"
+        assert elsewhere == reloaded.CACHE_DIR
+        assert elsewhere == reloaded.StageCache().directory
+    finally:
+        monkeypatch.delenv(cache_module.CACHE_DIR_ENV, raising=False)
+        importlib.reload(cache_module)
+
+
+def test_a_write_that_cannot_land_is_counted_not_swallowed(tmp_path):
+    from src.pipeline.cache import StageCache
+
+    blocked = tmp_path / "file-not-a-directory"
+    blocked.write_text("", encoding="utf-8")
+    store = StageCache(directory=blocked)
+    assert store.put("detect", "k", [1, 2, 3]) == [1, 2, 3]
+    stats = store.stats()
+    assert stats["write_failures"] == 1
+    assert stats["write_error"]
+    assert store.get("detect", "k") is None
+
+
+def test_a_value_that_will_not_serialise_is_still_only_a_miss(tmp_path):
+    """The original reason for the suppress, kept: an unserialisable stage output is not cached
+    and is not an error."""
+    from src.pipeline.cache import StageCache
+
+    store = StageCache(directory=tmp_path)
+    circular: dict = {}
+    circular["self"] = circular
+    assert store.put("detect", "k", circular) is circular
+    assert store.stats()["write_failures"] == 1
+    assert store.get("detect", "k") is None
+
+
+def test_compose_points_the_container_at_a_writable_volume():
+    import yaml
+
+    from src.pipeline.cache import CACHE_DIR_ENV
+    from src.utils.config import ROOT
+
+    compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
+    model = compose["services"]["model"]
+    target = model["environment"][CACHE_DIR_ENV]
+    mounts = {entry.split(":")[1]: entry for entry in model["volumes"]}
+    assert target in mounts, f"{target} is not mounted"
+    assert not mounts[target].endswith(":ro"), "the cache is mounted read-only"
+    assert mounts[target].split(":")[0] in (compose.get("volumes") or {})

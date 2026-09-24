@@ -18,9 +18,9 @@ configuration is a miss rather than a wrong answer.
 
 from __future__ import annotations
 
-import contextlib
 import hashlib
 import json
+import logging
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -29,7 +29,15 @@ from typing import Any
 from src.utils.config import ROOT
 
 #: Where cached stage outputs live. Under `data/interim` because they are derived and disposable.
-CACHE_DIR = ROOT / "data" / "interim" / "pipeline_cache"
+#:
+#: **Overridable, because the default is unwritable in the deployment this cache exists for.**
+#: `docker-compose.yml` mounts `./data:/app/data:ro` - the server loads checkpoints and data and
+#: has no business writing either - so every `put()` in the container raised `OSError` into a
+#: `contextlib.suppress` and the cache silently never worked, in the one place it was for. The
+#: compose file sets `DREAMSCRIPT_CACHE_DIR` to a writable path now; the default stays the
+#: repo-relative one, which is right for a developer running the pipeline from a checkout.
+CACHE_DIR_ENV = "DREAMSCRIPT_CACHE_DIR"
+CACHE_DIR = Path(os.environ.get(CACHE_DIR_ENV) or ROOT / "data" / "interim" / "pipeline_cache")
 
 
 def digest_bytes(payload: bytes) -> str:
@@ -136,11 +144,18 @@ def image_key(path: str | Path) -> str:
 class StageCache:
     """Read-through cache for stage outputs, one JSON file per (stage, key)."""
 
-    def __init__(self, directory: Path = CACHE_DIR, enabled: bool = True) -> None:
-        self.directory = Path(directory)
+    def __init__(self, directory: Path | None = None, enabled: bool = True) -> None:
+        # Resolved per instance rather than bound as a default argument: a default is evaluated
+        # once at import, so a process that sets the environment afterwards got the old path.
+        self.directory = Path(CACHE_DIR if directory is None else directory)
         self.enabled = enabled
         self.hits = 0
         self.misses = 0
+        #: How many writes were dropped, and why the first one was. A cache that cannot write is
+        #: a legitimate configuration; a silent one is not. This is what turns "the container is
+        #: slow" into "the cache directory is read-only".
+        self.write_failures = 0
+        self.write_error = ""
 
     def _path(self, stage: str, key: str) -> Path:
         return self.directory / stage / f"{key}.json"
@@ -168,17 +183,35 @@ class StageCache:
         if not self.enabled:
             return value
         path = self._path(stage, key)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # A stage whose output will not serialise is simply not cached; it is not an error.
-        with contextlib.suppress(OSError, TypeError, ValueError):
+        # A stage whose output will not serialise is simply not cached; it is not an error. A
+        # directory that cannot be written to is also not an error - but it is not nothing
+        # either, so it is counted and the first reason is kept. See `CACHE_DIR`.
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 json.dumps({"key": key, "code": code_key(), "value": value}, default=str) + "\n",
                 encoding="utf-8",
             )
+        except (OSError, TypeError, ValueError) as error:
+            self.write_failures += 1
+            if not self.write_error:
+                self.write_error = f"{type(error).__name__}: {error}"
+                logging.getLogger("dreamscript.cache").warning(
+                    "stage cache cannot write to %s (%s); every put will be dropped. "
+                    "Set %s to a writable path.",
+                    self.directory,
+                    self.write_error,
+                    CACHE_DIR_ENV,
+                )
         return value
 
-    def stats(self) -> dict[str, int]:
-        return {"hits": self.hits, "misses": self.misses}
+    def stats(self) -> dict[str, Any]:
+        return {
+            "hits": self.hits,
+            "misses": self.misses,
+            "write_failures": self.write_failures,
+            "write_error": self.write_error,
+        }
 
     def clear(self) -> int:
         """Remove every entry. Returns how many files went."""

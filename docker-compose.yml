@@ -22,12 +22,21 @@ services:
       # (a served run logging itself) should not need the compose file changed.
       - ./experiments:/app/experiments:ro
       - ./data:/app/data:ro
+      # 13.6's stage cache, and the one thing in this service that must be writable. Its default
+      # is `data/interim/pipeline_cache`, which is inside the read-only mount above - so every
+      # `put()` in this container raised OSError into a suppress and the cache silently never
+      # worked, in the deployment it exists for. A named volume rather than a bind mount: it is
+      # derived and disposable, `docker volume rm` is the whole of its lifecycle, and it must not
+      # write into the checkout.
+      - pipeline-cache:/var/cache/dreamscript
       - ./mlruns:/app/mlruns
     environment:
       PYTHONUTF8: "1"
       # Torch allocates lazily; capping here rather than in code keeps the GPU rules in one place
       # for anything else sharing the card.
       PYTORCH_CUDA_ALLOC_CONF: "expandable_segments:True"
+      # Points 13.6's cache at the writable volume above. See src/pipeline/cache.py:CACHE_DIR.
+      DREAMSCRIPT_CACHE_DIR: "/var/cache/dreamscript"
     deploy:
       resources:
         reservations:
@@ -65,3 +74,8 @@ services:
     depends_on:
       model:
         condition: service_healthy
+
+volumes:
+  # Derived and disposable: `docker volume rm dreamscript_pipeline-cache` is the whole of its
+  # lifecycle. Declared rather than bind-mounted so the cache never writes into the checkout.
+  pipeline-cache:
