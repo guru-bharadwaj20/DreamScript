@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import pandas as pd
@@ -69,7 +70,7 @@ def _row(**kw) -> dict:
 # --- per-source collectors ---------------------------------------------------------------
 
 
-def from_hdbpmn() -> list[dict]:
+def from_hdbpmn(limit: int | None = None) -> list[dict]:
     root = RAW / "hdbpmn"
     if not root.is_dir():
         return []
@@ -112,10 +113,10 @@ def from_hdbpmn() -> list[dict]:
                 adverse=False,
             )
         )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-def from_flowchartseg() -> list[dict]:
+def from_flowchartseg(limit: int | None = None) -> list[dict]:
     """Parquet-packed; one manifest row per record, addressed by shard and row index."""
     root = RAW / "flowchartseg"
     if not root.is_dir():
@@ -154,7 +155,7 @@ def from_flowchartseg() -> list[dict]:
                     adverse=False,
                 )
             )
-    return rows
+    return rows[:limit] if limit else rows
 
 
 def from_didi(limit: int | None = None) -> list[dict]:
@@ -183,10 +184,10 @@ def from_didi(limit: int | None = None) -> list[dict]:
                     adverse=False,
                 )
             )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-def from_iam() -> list[dict]:
+def from_iam(limit: int | None = None) -> list[dict]:
     root = RAW / "iam_line"
     if not root.is_dir():
         return []
@@ -211,10 +212,10 @@ def from_iam() -> list[dict]:
                     adverse=False,
                 )
             )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-def from_sketch2code() -> list[dict]:
+def from_sketch2code(limit: int | None = None) -> list[dict]:
     root = RAW / "sketch2code"
     sketches = root / "sketches"
     if not sketches.is_dir():
@@ -236,10 +237,10 @@ def from_sketch2code() -> list[dict]:
                 adverse=False,
             )
         )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-def from_fa_bresler() -> list[dict]:
+def from_fa_bresler(limit: int | None = None) -> list[dict]:
     """The 300 state machines, addressed by their rendered page.
 
     This source carries the only `state_machine` rows in the corpus, and it was missing from the
@@ -272,10 +273,10 @@ def from_fa_bresler() -> list[dict]:
                 adverse=False,
             )
         )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-def from_chaos() -> list[dict]:
+def from_chaos(limit: int | None = None) -> list[dict]:
     rows = []
     for r in collected():
         p = Path(r["path"])
@@ -294,10 +295,15 @@ def from_chaos() -> list[dict]:
                 native_split=None,
             )
         )
-    return rows
+    return rows[:limit] if limit else rows
 
 
-SOURCES = {
+#: source name -> its loader. **Every loader takes the same arguments**, which is the point:
+#: `build` used to dispatch with `fn(limit=didi_limit) if name == "didi" else fn()`, because
+#: `from_didi` was the only one that took a cap. A dispatch table whose entries have different
+#: signatures, worked around by comparing the key to a string literal, breaks the moment the key
+#: is renamed - and mypy had been flagging the call for exactly that reason.
+SOURCES: dict[str, Callable[..., list[dict]]] = {
     "hdbpmn": from_hdbpmn,
     "flowchartseg": from_flowchartseg,
     "didi": from_didi,
@@ -308,10 +314,18 @@ SOURCES = {
 }
 
 
-def build(didi_limit: int | None = None) -> pd.DataFrame:
+def build(limit: int | None = None, *, didi_limit: int | None = None) -> pd.DataFrame:
+    """The manifest, one loader per source.
+
+    `limit` caps every source's rows; `didi_limit` is kept as the name the CLI has always used
+    and means the same thing. DIDI is why a cap exists at all - it is an 88k-line NDJSON and the
+    only source large enough to want one - but capping it by name meant the table could not be
+    iterated uniformly.
+    """
+    limit = didi_limit if limit is None else limit
     frames = []
     for name, fn in SOURCES.items():
-        rows = fn(limit=didi_limit) if name == "didi" else fn()
+        rows = fn(limit=limit)
         print(f"  {name:<14} {len(rows):>7} rows")
         if rows:
             frames.append(pd.DataFrame(rows, columns=COLUMNS))
