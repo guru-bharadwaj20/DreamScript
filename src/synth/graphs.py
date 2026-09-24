@@ -67,13 +67,30 @@ import random
 import sys
 from collections import Counter, deque
 
-IR_VERSION = 1.0
+# Imported rather than restated. It was declared here as the float `1.0` while the schema
+# requires a string matching `^[0-9]+[.][0-9]+$`, so every document this module produced
+# failed `schemas/ir.schema.json` on its version field alone. One definition cannot drift.
+from src.ir.model import IR_VERSION
 
 #: The structural families the corpus is generated over. `pairs.build_dataset` requests a mix of
 #: these; nothing here samples a "typical" graph without naming which of these it is.
 STRUCTURES: tuple[str, ...] = ("linear", "branching", "looping", "nested", "disconnected")
 
-DIAGRAM_TYPES: tuple[str, ...] = ("flowchart", "state_machine", "er", "wireframe", "circuit")
+#: The schema's own enum, spelled the schema's way. This read `"er"`, which is not in
+#: `schemas/ir.schema.json`'s `diagram_type` enum, so every ER document was invalid.
+#: `"er"` stays accepted as an input alias in `random_diagram` - it is the key
+#: `codegen.targets` dispatches on - but it is never what comes out.
+DIAGRAM_TYPES: tuple[str, ...] = (
+    "flowchart",
+    "state_machine",
+    "er_diagram",
+    "wireframe",
+    "circuit",
+)
+
+#: Input spellings that mean one of the above. `codegen.targets` keys its ER emitter on
+#: `"er"`, so callers reaching for that name keep working and get canonical IR back.
+TYPE_ALIASES = {"er": "er_diagram", "erd": "er_diagram"}
 
 _VERBS = (
     "validate",
@@ -447,7 +464,7 @@ def _er(rng: random.Random, diagram_id: str, structure: str) -> dict:
         edges.append(_edge(f"re{counter}b", relation["id"], "E0", "n", side="right"))
 
     _layout(nodes, edges)
-    return _document(diagram_id, "er", nodes, edges, structure)
+    return _document(diagram_id, "er_diagram", nodes, edges, structure)
 
 
 def _wireframe(rng: random.Random, diagram_id: str, structure: str) -> dict:
@@ -488,7 +505,11 @@ def _circuit(rng: random.Random, diagram_id: str, structure: str) -> dict:
             "P0",
             "circle",
             "V1",
-            "source",
+            # `component`, not `"source"`. The role vocabulary is closed - `src.ir.vocab.BY_TYPE`
+            # allows a circuit only `component`, `wire`, `ui-label`, `container`, `unknown` - and
+            # the device kind belongs in `attrs["component"]`, which is where
+            # `codegen.targets.emit_circuit_spice` already reads it from.
+            "component",
             component="V",
             ref="V1",
             value="5",
@@ -512,7 +533,7 @@ def _circuit(rng: random.Random, diagram_id: str, structure: str) -> dict:
                 part_id,
                 "rectangle",
                 f"{kind}{index + 1}",
-                name,
+                "component",
                 component=kind,
                 ref=f"{kind}{index + 1}",
                 value=value,
@@ -530,7 +551,7 @@ def _circuit(rng: random.Random, diagram_id: str, structure: str) -> dict:
                 "P99",
                 "rectangle",
                 "R99",
-                "resistor",
+                "component",
                 component="R",
                 ref="R99",
                 value="1k",
@@ -546,7 +567,7 @@ def _circuit(rng: random.Random, diagram_id: str, structure: str) -> dict:
 _GENERATORS = {
     "flowchart": _flowchart,
     "state_machine": _state_machine,
-    "er": _er,
+    "er_diagram": _er,
     "wireframe": _wireframe,
     "circuit": _circuit,
 }
@@ -563,6 +584,7 @@ def random_diagram(diagram_type: str, structure: str, seed: int) -> dict:
     Deterministic in the triple: the same (type, structure, seed) always yields identical IR,
     which is what lets a 10K corpus be reproduced from a one-line command rather than shipped.
     """
+    diagram_type = TYPE_ALIASES.get(diagram_type, diagram_type)
     if diagram_type not in _GENERATORS:
         raise ValueError(f"unknown diagram_type {diagram_type!r}; expected one of {DIAGRAM_TYPES}")
     if structure not in STRUCTURES:
