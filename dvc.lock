@@ -193,3 +193,84 @@ stages:
       hash: md5
       md5: d979c0d130da650158c3eb85e8a3ddb8
       size: 8759
+  detector:
+    cmd: python -m src.detect.train
+    deps:
+    - path: data/processed/detect
+      hash: md5
+      md5: a9a6ab079e534e703fbaa6253c3893fe.dir
+      size: 1054849975
+      nfiles: 4628
+    - path: src/detect/train.py
+      hash: md5
+      md5: a6a520b6fe5559a1f169e2130c0770cf
+      size: 17232
+    outs:
+    - path: experiments/detect/final
+      hash: md5
+      md5: e10002e74999c6e44f54bab2c9509bca.dir
+      size: 12448104
+      nfiles: 4
+  arrows:
+    cmd: python -m src.detect.arrows --train
+    deps:
+    - path: data/processed/arrows
+      hash: md5
+      md5: 1301a4c5f409d382e2789d1258da84aa.dir
+      size: 963960909
+      nfiles: 1990
+    - path: src/detect/arrows.py
+      hash: md5
+      md5: d11563696c176714e64edd0dee8aac24
+      size: 20585
+    outs:
+    - path: experiments/detect/arrows/pose_m
+      hash: md5
+      md5: 375dbdc47047a2687c5cacf3fcc541ed.dir
+      size: 106694685
+      nfiles: 4
+  ocr:
+    cmd: python -m src.ocr.s3 --train --model microsoft/trocr-large-handwritten
+      --epochs 16
+    deps:
+    - path: data/processed/label_crops
+      hash: md5
+      md5: 59e57418d514564b12c20003a8d140fe.dir
+      size: 66916517
+      nfiles: 16199
+    - path: src/ocr/s3.py
+      hash: md5
+      md5: b7abf7ddbd5dec934e03948a9e036e4e
+      size: 22472
+    outs:
+    - path: experiments/ocr/trocr_large
+      hash: md5
+      md5: 99e0812eec21832953371f5f60608247.dir
+      size: 2237806684
+      nfiles: 9
+  lora:
+    cmd: python -m src.llm.run train
+    deps:
+    - path: configs/llm.yaml
+      hash: md5
+      md5: 8763948e9fe3af8edeaafb0ad5c843d6
+      size: 1839
+    - path: data/processed/codegen/pairs
+      hash: md5
+      md5: d0b663518c2ce6f5942d0c6c462a21ee.dir
+      size: 71434503
+      nfiles: 9
+    - path: src/llm/run.py
+      hash: md5
+      md5: bfbd8af1f5299e7042ab4e904840c602
+      size: 6046
+    - path: src/llm/train.py
+      hash: md5
+      md5: ca00b4df70e8a22bca8574aa6d6fdf3e
+      size: 14161
+    outs:
+    - path: experiments/llm/train
+      hash: md5
+      md5: 3e9f7547c0efc3de4922456f6923466d.dir
+      size: 2653
+      nfiles: 1

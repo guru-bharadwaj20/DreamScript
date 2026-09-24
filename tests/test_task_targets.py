@@ -604,3 +604,32 @@ def test_a_hooks_target_exists_on_both_runners():
 
 def test_pre_commit_is_declared():
     assert "pre-commit" in (ROOT / "requirements" / "dev.txt").read_text(encoding="utf-8")
+
+
+# --- the frozen GPU stages are recorded (audit 62) --------------------------------------------
+
+
+def test_every_stage_in_dvc_yaml_has_an_entry_in_dvc_lock():
+    """`detector`, `arrows`, `ocr` and `lora` were in `dvc.yaml` and **absent from `dvc.lock`**,
+    so DVC held no hash at all for the 3.4 + 10.8 GPU-hours of checkpoints they produce - the
+    exact thing the DAG exists to protect. `dvc status` called their outputs "modified" because
+    there was nothing to compare them against."""
+    import yaml
+
+    pipeline = yaml.safe_load((ROOT / "dvc.yaml").read_text(encoding="utf-8"))
+    lock = yaml.safe_load((ROOT / "dvc.lock").read_text(encoding="utf-8"))
+    missing = sorted(set(pipeline["stages"]) - set(lock["stages"]))
+    assert not missing, missing
+
+
+def test_the_frozen_stages_record_a_size_and_a_file_count():
+    """A hash with no size is a hash of nothing. `experiments/ocr/trocr_large` is 2.2 GB across
+    nine files; if that ever reads as 0, the checkpoint went and the lock did not notice."""
+    import yaml
+
+    lock = yaml.safe_load((ROOT / "dvc.lock").read_text(encoding="utf-8"))
+    for name in ("detector", "arrows", "ocr", "lora"):
+        for out in lock["stages"][name]["outs"]:
+            assert out.get("md5"), f"{name}/{out['path']} has no hash"
+            assert out.get("size", 0) > 0, f"{name}/{out['path']} records size 0"
+            assert out.get("nfiles", 0) > 0, f"{name}/{out['path']} records no files"
