@@ -633,3 +633,41 @@ def test_the_frozen_stages_record_a_size_and_a_file_count():
             assert out.get("md5"), f"{name}/{out['path']} has no hash"
             assert out.get("size", 0) > 0, f"{name}/{out['path']} records size 0"
             assert out.get("nfiles", 0) > 0, f"{name}/{out['path']} records no files"
+
+
+# --- the README answers the questions a reader arrives with (audit 68) ------------------------
+
+
+def test_the_readme_links_only_to_files_that_exist():
+    """It was 510 bytes and deferred everything to a 457 KB plan document. Now it links to eight
+    other places; a link to a file that does not exist is worse than no link."""
+    import re
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    targets = [
+        target
+        for _label, target in re.findall(r"\[([^\]]+)\]\(([^)]+)\)", text)
+        if not target.startswith(("http", "#"))
+    ]
+    assert targets, "the README links to nothing"
+    missing = [target for target in targets if not (ROOT / target).exists()]
+    assert not missing, missing
+
+
+def test_the_readme_says_how_to_run_the_thing():
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    for expected in ("make env", "make test", "uvicorn src.serve.api:app", "docs/data_remote.md"):
+        assert expected in text, expected
+
+
+def test_every_package_the_readme_lists_is_runnable():
+    """A table of commands that do not exist is the defect this replaced, one level up."""
+    import re
+
+    from src.utils.stage import runnable
+
+    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    listed = set(re.findall(r"\| `(src\.[a-z]+)` \|", text))
+    assert len(listed) >= 14, sorted(listed)
+    for package in sorted(listed):
+        assert runnable(package), f"{package} is listed and has nothing to run"
