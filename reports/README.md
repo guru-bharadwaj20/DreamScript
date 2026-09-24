@@ -148,7 +148,7 @@ Matched by stem, and incompletely: several plotting modules build the filename a
 | `figures/p2_agreement.png` | `src.ir.agreement` |
 | `figures/p2_crop_sheet.png` | `src.ir.agreement` |
 | `figures/p2_crop_sheet_keys.csv` | `src.ir.agreement` |
-| `figures/p3_rectification.png` | `src.preprocess.rectify` |
+| `figures/p3_rectification.png` | `src.preprocess.rectify`, `src.utils.figures` |
 | `figures/p3_robustness.png` | `src.preprocess.robustness` |
 | `figures/p3_vertex_histogram.png` | `src.preprocess.primitives.polygons` |
 | `figures/p4_feature_importance.png` | `src.features.importance` |
