@@ -36,9 +36,13 @@ from pathlib import Path
 
 from src.utils.config import ROOT
 
-#: Modules that are not commands even though they define `main`. Nothing yet; the hook exists so
-#: an exclusion is a named decision rather than a silent filter.
-HIDDEN: frozenset[str] = frozenset()
+#: Modules that define `main` and are not commands. An exclusion is a named decision here rather
+#: than a silent filter, which is why this is a table and not a heuristic.
+#:
+#: `cli` is `src.utils.cli.main(package, run, argv)` - the Phase 0.2.3 contract *this module
+#: dispatches to*, not a command. Detecting it as one would give `src.utils` an entry point whose
+#: only offer is the machinery behind every other entry point.
+HIDDEN: frozenset[str] = frozenset({"cli"})
 
 
 def _summary(tree: ast.Module) -> str:
@@ -75,11 +79,22 @@ def runnable(package: str) -> dict[str, str]:
     return found
 
 
+def has_config(package: str) -> bool:
+    """Whether the Phase 0.2.3 config contract applies to this package.
+
+    Eleven pipeline packages have a `configs/<name>.yaml`; the seven that gained an entry point
+    for their own sake - assemble, cluster, codegen, embed, ir, llm, mlops - do not, and
+    advertising `--print-config` at them would offer a command that raises `ConfigError`.
+    """
+    return (ROOT / "configs" / f"{package.split('.')[-1]}.yaml").is_file()
+
+
 def _usage(package: str, commands: dict[str, str]) -> str:
     width = max((len(name) for name in commands), default=0)
-    lines = [
-        f"usage: python -m {package} <command> [args ...]",
-        f"       python -m {package} --print-config [--config PATH] [key=value ...]",
+    lines = [f"usage: python -m {package} <command> [args ...]"]
+    if has_config(package):
+        lines.append(f"       python -m {package} --print-config [--config PATH] [key=value ...]")
+    lines += [
         "",
         f"{len(commands)} commands in {package}:" if commands else f"no commands in {package}",
     ]
@@ -102,6 +117,10 @@ def dispatch(package: str, argv: list[str] | None = None) -> int:
         return 0
 
     if args[0].startswith("-"):
+        if not has_config(package):
+            print(f"{package} has no config; it takes a command name.", file=sys.stderr)
+            print(_usage(package, commands), file=sys.stderr)
+            return 2
         # The Phase 0.2.3 contract, untouched: --config, overrides, --print-config.
         from src.utils.cli import main as config_main
 

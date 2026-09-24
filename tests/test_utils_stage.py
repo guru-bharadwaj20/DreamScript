@@ -97,3 +97,81 @@ def test_the_config_contract_is_untouched():
 
 def test_packages_finds_every_package_with_a_main():
     assert set(STAGES) <= set(packages())
+
+
+# --- a module reachable by name is not an orphan (audit 42) -----------------------------------
+
+#: Packages that gained an entry point for their own sake rather than as a pipeline stage.
+LIBRARY_PACKAGES = (
+    "src.assemble",
+    "src.cluster",
+    "src.codegen",
+    "src.embed",
+    "src.ir",
+    "src.llm",
+    "src.mlops",
+)
+
+#: Of those, the ones with no `configs/<name>.yaml`, which do not want one. `src.llm` is the
+#: exception and keeps the config contract: `configs/llm.yaml` drives `src.llm.run`, and it is
+#: one of the two configs in the repo that steers real code.
+NO_CONFIG = tuple(p for p in LIBRARY_PACKAGES if p != "src.llm")
+
+#: The five modules the audit found imported by nothing and named in no config, doc or workflow,
+#: and the command each is reachable as now. Named rather than counted, because the point is that
+#: a specific module stopped being unreachable.
+FORMER_ORPHANS = {
+    "src.assemble": "labels",
+    "src.llm": "sweep",
+    "src.ingest": "balance",
+    "src.ocr": "linewise",
+}
+
+
+@pytest.mark.parametrize("package", LIBRARY_PACKAGES)
+def test_every_package_with_runnable_modules_has_an_entry_point(package):
+    from pathlib import Path
+
+    from src.utils.config import ROOT
+
+    assert runnable(package), f"{package} was given an entry point and has nothing to run"
+    assert Path(ROOT, *package.split("."), "__main__.py").is_file()
+
+
+@pytest.mark.parametrize(("package", "command"), sorted(FORMER_ORPHANS.items()))
+def test_a_former_orphan_is_reachable_by_name(package, command):
+    assert command in runnable(package)
+
+
+def test_the_hidden_table_is_the_only_thing_keeping_a_package_without_an_entry_point():
+    """`src.utils.cli.main(package, run, argv)` is the contract `dispatch` calls, not a command.
+    Detecting it as one gave `src.utils` an entry point whose only offer was the machinery behind
+    every other entry point."""
+    from src.utils.stage import HIDDEN
+
+    assert "cli" in HIDDEN
+    assert not runnable("src.utils")
+
+
+def test_no_package_with_runnable_modules_is_left_without_one():
+
+    from src.utils.config import ROOT
+
+    missing = []
+    for directory in sorted((ROOT / "src").iterdir()):
+        if not directory.is_dir() or directory.name.startswith(("_", ".")):
+            continue
+        package = f"src.{directory.name}"
+        if runnable(package) and not (directory / "__main__.py").is_file():
+            missing.append(package)
+    assert not missing, missing
+
+
+@pytest.mark.parametrize("package", NO_CONFIG)
+def test_a_library_package_does_not_advertise_a_config_it_has_not_got(package, capsys):
+    from src.utils.stage import has_config
+
+    assert not has_config(package)
+    dispatch(package, [])
+    assert "--print-config" not in capsys.readouterr().out
+    assert dispatch(package, ["--print-config"]) == 2
