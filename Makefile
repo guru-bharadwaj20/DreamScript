@@ -42,7 +42,8 @@ env:  ## create the venv and install every requirements layer
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/torch.txt \
 		--index-url https://download.pytorch.org/whl/cu124
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/classical.txt \
-		-r requirements/cv.txt -r requirements/serve.txt -r requirements/genai.txt \n		-r requirements/test.txt
+		-r requirements/cv.txt -r requirements/serve.txt -r requirements/genai.txt \
+		-r requirements/test.txt
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/dev.txt
 
 verify:  ## Phase 0.1 — check every installed stack
