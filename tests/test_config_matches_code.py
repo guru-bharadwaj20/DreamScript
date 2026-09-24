@@ -88,3 +88,33 @@ def test_ruled_line_suppression_matches(preprocess):
     assert preprocess["ruled_line_suppression"]["min_line_length_ratio"] == pytest.approx(
         MIN_SPAN_FRAC
     )
+
+
+# --- a config may not name a corpus that is not there (audit 28) ------------------------------
+
+
+def test_llm_training_sources_all_exist_in_the_ir_corpus():
+    """`didi` was listed as a training source. `data/raw/didi.dvc` is a pointer whose payload is
+    "neither locally nor on remote", `data/processed/ir/` holds four sources and didi is not one,
+    and `pairs.load` answers a request for it with nothing - so the list was a false account of
+    what the model was trained on, costing nothing and claiming something."""
+    from src.codegen.pairs import IR_DIR
+
+    raw = yaml.safe_load((CONFIG_DIR / "llm.yaml").read_text(encoding="utf-8"))
+    named = {s for s in raw["data"]["sources"] if s != "synthetic"} | set(
+        raw["data"]["val_sources"]
+    )
+    on_disk = {p.name for p in IR_DIR.iterdir() if p.is_dir()} if IR_DIR.is_dir() else set()
+    if not on_disk:
+        pytest.skip("needs the DVC payload (data/processed/ir)")
+    assert named <= on_disk, sorted(named - on_disk)
+
+
+def test_the_didi_converter_is_kept_and_said_to_be_kept():
+    """Removing the name from the config is not a claim that the source is abandoned - the
+    converter and the loader entry are what would read the payload if it came back."""
+    from src.codegen.pairs import REAL_SOURCES
+
+    assert "didi" in REAL_SOURCES
+    text = (CONFIG_DIR / "llm.yaml").read_text(encoding="utf-8")
+    assert "src/ir/convert/didi.py" in text

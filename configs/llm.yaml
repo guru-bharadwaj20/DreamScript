@@ -21,7 +21,14 @@ lora:
 
 data:
   # Validation/test are hdbpmn + fa_bresler only (the scribed sources, 12.1.8).
-  sources: [hdbpmn, fa_bresler, didi, sketch2code, synthetic]
+  #
+  # `didi` was listed here and is not in the corpus: `data/raw/didi.dvc` is a pointer whose
+  # payload is "neither locally nor on remote", `data/processed/ir/` holds four sources and didi
+  # is not one of them, and `pairs.load` answers a request for it with nothing. So naming it
+  # bought no data and cost the reader a false account of what the model was trained on. The
+  # converter and the loader entry stay (`src/ir/convert/didi.py`, `pairs.REAL_SOURCES`) because
+  # the payload is recoverable and the code is what would read it; this list is what ran.
+  sources: [hdbpmn, fa_bresler, sketch2code, synthetic]
   # Synthetic tokens as a multiple of real tokens; null keeps every synthetic pair.
   synthetic_ratio: null
   # Examples longer than this are dropped, never truncated (a cut target teaches a cut program).
