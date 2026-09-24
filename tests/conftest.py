@@ -173,17 +173,24 @@ def seeded():
 #
 # `data/` holds `.dvc` pointers in git and its payload in a DVC remote, so a fresh clone - CI
 # above all - has the pointers and none of the content. Measured on a detached worktree with
-# exactly that shape, **40 tests across 16 modules failed for want of the payload rather than
+# exactly that shape, **tests across 15 modules failed for want of the payload rather than
 # because anything was wrong**, which is the difference between a suite that reports a real
 # regression and one nobody can read.
 #
-# Those tests skip here instead. The modules are listed by name rather than detected, because a
-# test that quietly stops running is worse than one that fails: a name in this tuple is a
+# Those modules skip here instead. They are listed by name rather than detected, because a test
+# that quietly stops running is worse than one that fails: a name in `NEEDS_PAYLOAD` is a
 # deliberate statement that the module needs the corpus, and it is greppable.
 #
-# This is not a way to make CI green. The 20 failures that remain with the payload present are
-# still failures and CI still reports them; what this removes is only the noise of asking a
-# machine to check something it has not been given.
+# This is not a way to make CI green; it removes only the noise of asking a machine to check
+# something it has not been given. Anything that still fails with the payload present is a real
+# failure and CI still reports it.
+#
+# **No count of failures is written here any more.** Two were, and both went stale: "40 tests
+# across 16 modules" against a tuple holding 15 names, and "the 20 failures that remain with the
+# payload present" against a run that had 3 and now has none. A number in a comment is a
+# measurement with no way to be re-taken, and the two that were here outlived the runs they came
+# from. The module count is asserted in tests/test_conftest_accounting.py instead, where it
+# fails rather than misleads.
 
 #: Presence of any one of these means the payload was pulled.
 PAYLOAD = (
