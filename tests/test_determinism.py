@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import random
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -133,3 +134,14 @@ def test_strict_chooses_whether_a_nondeterministic_op_raises_or_warns():
 
     assert "strict" in inspect.signature(set_seed).parameters
     assert "warn_only=not strict" in inspect.getsource(set_seed)
+
+
+def test_set_seeds_global_switches_do_not_leak_into_the_next_test():
+    """The flags `set_seed(deterministic=True)` sets are process-global, and one test setting
+    them broke another ten modules later: CUDA graph capture cannot run under deterministic
+    algorithms, so `test_captured_update_is_bit_identical_to_the_eager_update` passed alone and
+    failed in the suite with "operation failed due to a previous error during capture". The
+    autouse fixture in conftest snapshots and restores them; this asserts it is still there."""
+    source = (Path(__file__).parent / "conftest.py").read_text(encoding="utf-8")
+    assert "_torch_global_flags_are_restored" in source
+    assert "use_deterministic_algorithms(before[2]" in source

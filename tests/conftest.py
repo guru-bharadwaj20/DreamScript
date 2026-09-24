@@ -73,6 +73,47 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
                 item.add_marker(no_data)
 
 
+@pytest.fixture(autouse=True)
+def _torch_global_flags_are_restored():
+    """Undo torch's process-global switches after every test that changes them.
+
+    `src.utils.seed.set_seed(deterministic=True)` sets `cudnn.deterministic`, `cudnn.benchmark`
+    and `torch.use_deterministic_algorithms` on the *process*, not on a scope, and several tests
+    call it. The consequence was one order-dependent failure that looked like a bug in the thing
+    it pointed at: `test_captured_update_is_bit_identical_to_the_eager_update` passed alone and
+    failed in the suite with "CUDA error: operation failed due to a previous error during
+    capture", because CUDA graph capture cannot run under deterministic algorithms - and the run
+    that turned them on was `tests/test_determinism.py`, ten modules earlier.
+
+    Snapshot and restore rather than force a value: a test that wants deterministic kernels still
+    gets them, and only stops handing them to the next test. Skipped entirely when torch has not
+    been imported, so a suite of pure-python tests pays nothing.
+    """
+    torch = sys.modules.get("torch")
+    if torch is None:
+        yield
+        return
+    before = (
+        torch.backends.cudnn.deterministic,
+        torch.backends.cudnn.benchmark,
+        torch.are_deterministic_algorithms_enabled(),
+        torch.is_deterministic_algorithms_warn_only_enabled(),
+    )
+    try:
+        yield
+    finally:
+        after = (
+            torch.backends.cudnn.deterministic,
+            torch.backends.cudnn.benchmark,
+            torch.are_deterministic_algorithms_enabled(),
+            torch.is_deterministic_algorithms_warn_only_enabled(),
+        )
+        if after != before:
+            torch.backends.cudnn.deterministic = before[0]
+            torch.backends.cudnn.benchmark = before[1]
+            torch.use_deterministic_algorithms(before[2], warn_only=before[3])
+
+
 @pytest.fixture(scope="session")
 def fixtures_dir() -> Path:
     assert FIXTURES.is_dir(), "tests/fixtures missing - run scripts/make_fixtures.py"

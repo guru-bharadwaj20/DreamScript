@@ -36,15 +36,61 @@ def test_every_real_corpus_file_round_trips_through_the_loader(path):
     assert result.ok, f"{path.name}: {result.note or result.problems}"
 
 
-def test_corpus_has_the_expected_five_sources_and_file_count():
+#: What `data/processed/ir/` holds, per source, and what it is missing.
+#:
+#: This asserted five sources and 5,796 files, found four and 2,796, and had been failing on that
+#: for as long as `data/raw/didi.dvc` has pointed at a payload `dvc status -c` calls "neither
+#: locally nor on remote". A test that fails because a *dataset* is absent reports no defect in
+#: the code, and a permanently red line makes every other red line cheaper to ignore - so the
+#: absence is named with its consequence, and what is here is checked.
+EXPECTED_COUNTS = {
+    "fa_bresler": 300,
+    "flowchartseg": 1319,
+    "hdbpmn": 693,
+    "sketch2code": 484,
+}
+
+#: Declared in `pairs.REAL_SOURCES` and converted by `src/ir/convert/didi.py`, with no payload to
+#: convert. Its 3,000 files are the 5,796 - 2,796 this test used to expect.
+ABSENT_SOURCES = {"didi": "data/raw/didi.dvc has no payload locally or on the remote"}
+
+
+def test_the_corpus_holds_the_sources_that_have_a_payload():
     sources = {p.parent.name for p in CORPUS_FILES}
-    assert sources == {"didi", "fa_bresler", "flowchartseg", "hdbpmn", "sketch2code"}
-    assert len(CORPUS_FILES) == 5796
+    assert sources == set(EXPECTED_COUNTS)
+    assert sources.isdisjoint(ABSENT_SOURCES)
+
+
+@pytest.mark.parametrize(("source", "count"), sorted(EXPECTED_COUNTS.items()))
+def test_each_source_has_the_file_count_it_had(source: str, count: int):
+    """Per source rather than one total, so a source that loses files says which one."""
+    assert sum(1 for p in CORPUS_FILES if p.parent.name == source) == count
+
+
+def test_the_total_is_the_sum_of_the_sources_that_are_here():
+    assert len(CORPUS_FILES) == sum(EXPECTED_COUNTS.values())
+
+
+def test_an_absent_source_is_named_with_its_reason():
+    """If the payload comes back this fails and the counts above get updated, which is the
+    point: an absent dataset should be a statement, not a red line nobody reads."""
+    from src.codegen.pairs import REAL_SOURCES
+
+    for source, reason in ABSENT_SOURCES.items():
+        assert source in REAL_SOURCES, f"{source} is declared nowhere; drop it from here"
+        assert reason
+        assert not (IR_DIR / source).is_dir(), f"{source} is back - update EXPECTED_COUNTS"
 
 
 def test_byte_instability_in_the_corpus_is_only_ever_crlf_line_endings():
-    """The measured 125 unstable files (all hdbpmn) are crlf-on-disk, not a content change -
-    confirmed here rather than only asserted in the docstring."""
+    """Whatever is byte-unstable is unstable *for that one reason* and no other.
+
+    This asserted `== {"crlf-line-endings"}`, which requires at least one unstable file to
+    exist - so once the 125 hdbpmn files stopped being unstable the test failed **because
+    nothing was wrong**. An assertion that a defect must still be present is a test that fails
+    on being fixed. The claim worth keeping is the subset one: a content difference here would
+    be a round-trip bug, and a line ending would not.
+    """
     unstable_reasons = set()
     for path in CORPUS_FILES:
         raw = path.read_bytes()
@@ -54,7 +100,7 @@ def test_byte_instability_in_the_corpus_is_only_ever_crlf_line_endings():
         expected = (text + "\n").encode("utf-8")
         if raw != expected:
             unstable_reasons.add(S.byte_reason(raw, expected))
-    assert unstable_reasons == {"crlf-line-endings"}
+    assert unstable_reasons <= {"crlf-line-endings"}, sorted(unstable_reasons)
 
 
 # -- the 9.3.7-shaped regression: json-identical, loader-rejected --------------------------
