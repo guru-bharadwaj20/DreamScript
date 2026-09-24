@@ -22,6 +22,8 @@ from src.utils.stage import runnable
 MAKEFILE = ROOT / "Makefile"
 
 #: `python -m <thing>` invocations that are not this project's code.
+BACKSLASH = chr(92)
+
 EXTERNAL = {"pytest", "ruff", "black", "isort", "dvc", "uvicorn"}
 
 
@@ -137,3 +139,37 @@ def test_a_service_depended_on_for_health_declares_a_healthcheck():
 def test_the_model_healthcheck_uses_the_probe_that_does_not_load_the_model():
     check = " ".join(_compose()["services"]["model"]["healthcheck"]["test"])
     assert "/health" in check
+
+
+# --- .PHONY and the rules are the same set (audit 33) -----------------------------------------
+
+
+def _makefile_targets() -> set[str]:
+    return {
+        match.group(1)
+        for line in MAKEFILE.read_text(encoding="utf-8").splitlines()
+        if (match := re.match(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:(?!=)", line))
+    }
+
+
+def _phony() -> set[str]:
+    text = MAKEFILE.read_text(encoding="utf-8")
+    block = text.split(".PHONY:", 1)[1]
+    lines = []
+    for line in block.splitlines():
+        lines.append(line.rstrip(BACKSLASH + " "))
+        if not line.rstrip().endswith(BACKSLASH):
+            break
+    return set(" ".join(lines).split())
+
+
+def test_phony_declares_every_target_and_no_others():
+    """It had drifted both ways: `verify-classical` was declared with no rule behind it, so
+    `make verify-classical` answered "No rule to make target", and `dummy-run` had a rule and was
+    not declared, so a file named `dummy-run` would have shadowed it."""
+    assert _phony() == _makefile_targets()
+
+
+def test_verify_classical_has_the_rule_its_declaration_promised():
+    assert "verify-classical" in _makefile_targets()
+    assert "--only classical" in MAKEFILE.read_text(encoding="utf-8")

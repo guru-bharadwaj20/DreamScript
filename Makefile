@@ -21,9 +21,13 @@ CONFIG ?= configs/base.yaml
 OVERRIDES ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help env verify verify-gpu verify-cv verify-classical verify-genai determinism \
-        test test-fast lint format data preprocess features train-clf train-nn train-ens \
-        detect ocr parse rl finetune eval app serve clean clean-experiments repro dag
+# Every target, in one place and in sorted order. This list and the rules below had drifted
+# apart in both directions: `verify-classical` was declared with no rule behind it (so
+# `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
+# not declared. tests/test_task_targets.py compares the two sets now.
+.PHONY: app clean clean-experiments dag data detect determinism dummy-run env eval features \
+        finetune format help lint ocr parse preprocess repro rl serve stages test test-fast \
+        train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
 
@@ -54,6 +58,9 @@ verify-gpu:  ## Phase 0.1.2 — CUDA, bf16 and VRAM
 
 verify-cv:  ## Phase 0.1.3 — CV stack binarization smoke test
 	$(PY) scripts/smoke_cv.py
+
+verify-classical:  ## Phase 0.1.4 - sklearn, xgboost, lightgbm, hmmlearn, imblearn
+	$(PY) scripts/verify_env.py --only classical
 
 verify-genai:  ## Phase 0.1.5 — load the 7B base model in 4-bit
 	$(PY) scripts/check_4bit_load.py
