@@ -64,6 +64,12 @@ def test_a_registry_that_cannot_be_read_does_not_stop_the_service(monkeypatch, c
     assert client.get("/version").status_code == 200
 
 
+#: A real PNG signature, all eight bytes of it. It was the first six here, which was enough
+#: while `/predict` only looked at the filename and is not now: `api.sniff` reads the
+#: signature, which is the point of it.
+PNG = bytes([0x89]) + b"PNG\r\n\x1a\n"
+
+
 def test_a_non_image_is_refused_with_415(client):
     response = client.post("/predict", files={"image": ("notes.txt", b"hello", "text/plain")})
     assert response.status_code == 415
@@ -94,7 +100,7 @@ def test_a_pipeline_crash_is_502_not_500(client, monkeypatch):
             raise RuntimeError("the card fell out")
 
     monkeypatch.setattr(api, "pipeline", lambda: Broken())
-    response = client.post("/predict", files={"image": ("page.png", b"\x89PNG\r\n", "image/png")})
+    response = client.post("/predict", files={"image": ("page.png", PNG, "image/png")})
     assert response.status_code == 502
     assert "the card fell out" in response.json()["detail"]
 
@@ -112,7 +118,7 @@ def test_a_page_that_does_not_reach_code_is_200_with_ok_false(client, monkeypatc
             return result
 
     monkeypatch.setattr(api, "pipeline", lambda: Stopped())
-    response = client.post("/predict", files={"image": ("page.png", b"\x89PNG\r\n", "image/png")})
+    response = client.post("/predict", files={"image": ("page.png", PNG, "image/png")})
     assert response.status_code == 200
     body = response.json()
     assert body["ok"] is False
@@ -158,3 +164,34 @@ def test_self_test_covers_every_route_that_needs_no_model():
     result = api.self_test()
     assert result["ok"] is True
     assert set(result["checks"]) >= {"health", "version", "openapi", "rejects_wrong_type"}
+
+
+# --- the content check the module documented and did not do (audit 9) -------------------------
+
+
+def test_a_pdf_named_png_is_refused_with_415(client):
+    """The documented failure, produced by the documented input: the comment above
+    `ALLOWED_SUFFIXES` promised a clear rejection "rather than a stack trace from OpenCV", and
+    the check was on `Path(filename).suffix` alone - so this reached `cv2.imread` and came back
+    as a 502 naming the pipeline."""
+    pdf = b"%PDF-1.7" + bytes([0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A])
+    response = client.post("/predict", files={"image": ("page.png", pdf, "image/png")})
+    assert response.status_code == 415
+    assert "contents are not" in response.json()["detail"]
+
+
+def test_sniff_names_each_family_it_claims_and_nothing_else():
+    assert api.sniff(PNG) == "png"
+    assert api.sniff(bytes([0xFF, 0xD8, 0xFF, 0xE0])) == "jpeg"
+    assert api.sniff(b"BM" + bytes(64)) == "bmp"
+    assert api.sniff(b"II*" + bytes(1)) == "tiff"
+    assert api.sniff(b"MM" + bytes(1) + b"*") == "tiff"
+    assert api.sniff(b"RIFF" + bytes(4) + b"WEBP") == "webp"
+    assert api.sniff(b"") == ""
+    assert api.sniff(b"GIF89a") == ""
+
+
+def test_a_wav_is_not_accepted_for_starting_like_a_webp():
+    """RIFF is a container. Accepting one member because it starts like another is the same
+    mistake as trusting the extension, one layer down."""
+    assert api.sniff(b"RIFF" + bytes(4) + b"WAVE") == ""

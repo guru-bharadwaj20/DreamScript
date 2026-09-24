@@ -64,9 +64,42 @@ from fastapi.responses import JSONResponse
 #: body cannot exhaust the process. Not abuse protection - that is 16.1.4 - but self-defence.
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
-#: What a caller may upload. Checked by content, not only by the declared type: a client that
-#: labels a PDF as image/png should get a clear rejection rather than a stack trace from OpenCV.
+#: What a caller may upload, by name. The cheap half of the check, and the half that was here:
+#: it rejects `notes.txt` before 25 MB have been read off the wire.
 ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff")
+
+#: ...and the half that was documented and missing. The comment above this tuple used to read
+#: "Checked by content, not only by the declared type: a client that labels a PDF as image/png
+#: should get a clear rejection rather than a stack trace from OpenCV" - and the code looked at
+#: `Path(filename).suffix` and nothing else. So a PDF named `x.png` reached `cv2.imread`, which
+#: returns None, which `page_for` raises on, which arrives at the caller as a 502 naming the
+#: pipeline: the documented failure, produced by the documented input.
+#:
+#: Signatures rather than a library. These are fixed byte prefixes, and taking on a dependency
+#: that decodes untrusted uploads in order to tell you their type is a larger thing than a table.
+MAGIC: tuple[tuple[str, int, bytes], ...] = (
+    ("png", 0, b"\x89PNG\r\n\x1a\n"),
+    ("jpeg", 0, b"\xff\xd8\xff"),
+    ("bmp", 0, b"BM"),
+    ("tiff", 0, b"II*\x00"),
+    ("tiff", 0, b"MM\x00*"),
+    # RIFF is a container, so this mark alone is also WAV and AVI; `sniff` requires both.
+    ("webp", 0, b"RIFF"),
+    ("webp", 8, b"WEBP"),
+)
+
+
+def sniff(body: bytes) -> str:
+    """The image family these bytes actually are, or `""` for anything else.
+
+    WebP needs both of its marks: `RIFF` at 0 on its own is a WAV file, and accepting one because
+    it starts like the other is the same mistake as trusting the extension, one layer down.
+    """
+    hits = {name for name, offset, mark in MAGIC if body[offset : offset + len(mark)] == mark}
+    if "webp" in hits and not (body[:4] == b"RIFF" and body[8:12] == b"WEBP"):
+        hits.discard("webp")
+    return sorted(hits)[0] if hits else ""
+
 
 _PIPELINE: Any = None
 
@@ -147,6 +180,14 @@ def build_app():
             raise HTTPException(status_code=413, detail=f"image exceeds {MAX_UPLOAD_BYTES} bytes")
         if not body:
             raise HTTPException(status_code=400, detail="empty upload")
+        if not sniff(body):
+            # 415, like the suffix rejection, and for the same reason: the request is well formed
+            # and the payload is of a type this service does not read.
+            raise HTTPException(
+                status_code=415,
+                detail=f"{image.filename or 'upload'} is named {suffix} but its contents are "
+                f"not a {'/'.join(sorted({name for name, _, _ in MAGIC}))} image",
+            )
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / f"upload{suffix}"
@@ -207,6 +248,17 @@ def self_test() -> dict[str, Any]:
 
     empty = client.post("/predict", files={"image": ("page.png", b"", "image/png")})
     checks["rejects_empty"] = {"status": empty.status_code, "ok": empty.status_code == 400}
+
+    # The claim this module makes about itself, exercised rather than asserted: a PDF that says
+    # it is a PNG in both its filename and its declared content type.
+    disguised = client.post(
+        "/predict",
+        files={"image": ("page.png", b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n", "image/png")},
+    )
+    checks["rejects_disguised_content"] = {
+        "status": disguised.status_code,
+        "ok": disguised.status_code == 415,
+    }
 
     return {"checks": checks, "ok": all(check["ok"] for check in checks.values())}
 
