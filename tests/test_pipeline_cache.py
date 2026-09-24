@@ -86,3 +86,40 @@ def test_the_pipeline_config_key_moves_with_the_environment(monkeypatch):
     before = DreamScriptPipeline(generate=False).config_key
     monkeypatch.setenv("DREAMSCRIPT_PAGE_TEXT", "0")
     assert DreamScriptPipeline(generate=False).config_key != before
+
+
+# --- the code key covers the code that decides an answer (audit 5) ----------------------------
+
+
+def test_code_key_changes_when_any_package_under_src_changes(tmp_path, monkeypatch):
+    """It covered five packages: pipeline, assemble, codegen, ocr, parse. Editing
+    `preprocess/binarize.py` changed the ink mask, the trace and the IR, and left the key alone."""
+    from src.pipeline import cache
+
+    root = tmp_path / "src"
+    for package in ("pipeline", "preprocess", "detect", "ir", "llm", "utils", "features"):
+        (root / package).mkdir(parents=True)
+        (root / package / "m.py").write_text("x = 1\n", encoding="utf-8")
+
+    monkeypatch.setattr(cache, "CODE_ROOT", root)
+    for package in ("pipeline", "preprocess", "detect", "ir", "llm", "utils", "features"):
+        cache.code_key.cache_clear()
+        before = cache.code_key()
+        (root / package / "m.py").write_text("x = 2\n", encoding="utf-8")
+        cache.code_key.cache_clear()
+        assert cache.code_key() != before, f"editing src/{package} left the key unchanged"
+
+
+def test_code_key_changes_when_a_module_moves_without_being_edited(tmp_path, monkeypatch):
+    from src.pipeline import cache
+
+    root = tmp_path / "src"
+    (root / "a").mkdir(parents=True)
+    (root / "b").mkdir(parents=True)
+    (root / "a" / "m.py").write_text("x = 1\n", encoding="utf-8")
+    monkeypatch.setattr(cache, "CODE_ROOT", root)
+    cache.code_key.cache_clear()
+    before = cache.code_key()
+    (root / "a" / "m.py").rename(root / "b" / "m.py")
+    cache.code_key.cache_clear()
+    assert cache.code_key() != before

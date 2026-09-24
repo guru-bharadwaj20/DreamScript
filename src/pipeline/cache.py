@@ -42,9 +42,20 @@ def digest_obj(obj: Any) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:32]
 
 
-#: Which trees decide what a stage returns. `code_key` fingerprints these, so editing an
-#: assembler or an emitter invalidates entries written by the old one.
-_CODE_ROOTS = ("pipeline", "assemble", "codegen", "ocr", "parse")
+#: The tree `code_key` fingerprints: all of `src/`.
+#:
+#: It was five packages - `pipeline`, `assemble`, `codegen`, `ocr`, `parse` - and a stage's answer
+#: is decided by more than five. `detect` runs the detector, `ir` defines the document, `preprocess`
+#: produces the ink mask every traced edge is derived from, `llm` answers `generate`'s first rung,
+#: `utils` holds the seeding. Editing `preprocess/binarize.py` changed the mask, changed the trace,
+#: changed the IR - and left the key untouched, so the cache went on serving IR the current code
+#: would not produce. That is the same failure `code_key` was written to stop, one directory over.
+#:
+#: Whole-tree rather than a wider hand-maintained tuple, because the tuple is the defect: any list
+#: of "the packages that matter" is a list that goes stale the next time a stage reaches one more.
+#: The cost is ~325 files of a few hundred kilobytes hashed once per process, against stage work
+#: measured in hundreds of milliseconds, and it errs towards an extra miss rather than a wrong hit.
+CODE_ROOT = ROOT / "src"
 
 
 @lru_cache(maxsize=1)
@@ -62,20 +73,21 @@ def code_key() -> str:
 
     Hashing source text rather than mtimes, because a checkout, a rebase or a copy all move
     mtimes without changing behaviour, and the point is to invalidate on behaviour. Computed
-    once per process: ~200 small files, a few milliseconds, against stage work measured in
-    hundreds of milliseconds.
+    once per process: a few hundred small files, a few milliseconds, against stage work measured
+    in hundreds of milliseconds. See `CODE_ROOT` on why it is the whole tree.
     """
     digest = hashlib.sha256()
-    for root in _CODE_ROOTS:
-        base = ROOT / "src" / root
-        if not base.is_dir():
-            continue
-        for file in sorted(base.rglob("*.py")):
-            try:
-                digest.update(file.read_bytes())
-            except OSError:
-                # An unreadable file is a reason to invalidate, not to crash.
-                digest.update(str(file).encode("utf-8"))
+    if not CODE_ROOT.is_dir():
+        return digest.hexdigest()[:16]
+    for file in sorted(CODE_ROOT.rglob("*.py")):
+        # Relative path as well as content: moving a module without editing it changes which
+        # import resolves where, and that changes answers.
+        digest.update(str(file.relative_to(CODE_ROOT)).replace("\\", "/").encode("utf-8"))
+        try:
+            digest.update(file.read_bytes())
+        except OSError:
+            # An unreadable file is a reason to invalidate, not to crash.
+            digest.update(str(file).encode("utf-8"))
     return digest.hexdigest()[:16]
 
 
