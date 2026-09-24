@@ -38,21 +38,20 @@ from typing import Any
 
 import numpy as np
 
+from src.detect.classes import CLASSES
 from src.pipeline.contracts import UNKNOWN
 from src.utils.config import ROOT
 from src.utils.splits import normalise
 
-#: The detector's class vocabulary, in a fixed order so a histogram is a stable vector.
-CLASSES = (
-    "rectangle",
-    "rounded-rect",
-    "diamond",
-    "circle",
-    "double-circle",
-    "parallelogram",
-    "freeform",
-    "arrowhead",
-)
+# `CLASSES` is imported above rather than restated here, where a verbatim copy of it used to
+# live. The original's own comment says "Index is the YOLO class id and must never be reordered -
+# a trained checkpoint stores integers, not names, so a reorder silently relabels every
+# prediction". A copy of a list that must never be reordered is a list that can be reordered in
+# one place, and the failure would be a prior fitted on one histogram scoring another with its
+# columns shuffled - which reports a number rather than an error.
+#
+# Kept as a comment rather than deleted: the histogram's column order is this module's contract
+# with every router.json it ever wrote, and the next reader deserves to be told where it lives.
 
 #: Which diagram type each corpus source is drawn from. The manifest's own assignment.
 SOURCE_TYPE = {

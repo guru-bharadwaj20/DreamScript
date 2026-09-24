@@ -123,3 +123,17 @@ def test_code_key_changes_when_a_module_moves_without_being_edited(tmp_path, mon
     (root / "a" / "m.py").rename(root / "b" / "m.py")
     cache.code_key.cache_clear()
     assert cache.code_key() != before
+
+
+# --- one class vocabulary (audit 12) ----------------------------------------------------------
+
+
+def test_routing_and_the_detector_share_one_class_vocabulary():
+    """`routing.CLASSES` was a verbatim copy of `detect.classes.CLASSES`, whose own comment says
+    it must never be reordered because a checkpoint stores integers, not names. A copy of that
+    list is a list that can be reordered in one place, and the result would be a prior fitted on
+    one histogram scoring another with its columns shuffled."""
+    from src.detect.classes import CLASSES as DETECTOR
+    from src.pipeline.routing import CLASSES as ROUTER
+
+    assert ROUTER is DETECTOR
