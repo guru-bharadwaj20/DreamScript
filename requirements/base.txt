@@ -6,7 +6,6 @@ pyyaml==6.0.2
 tqdm==4.67.1
 matplotlib==3.9.3
 seaborn==0.13.2
-pytest==8.3.4
 omegaconf==2.3.0
 
 # Phase 11.2.9 - the sandbox job object (Windows only); src/rl/sandbox.py imports win32api.
@@ -17,7 +16,10 @@ pywin32==308; sys_platform == "win32"
 py7zr==1.1.3
 
 # Phase 15.9 - imported across src/ and tests/ but declared nowhere until CI actually ran from
-# these files. On this machine every one of them was present as a transitive install, so the
+# these files. The four that only the *suite* needs - pytest, hypothesis, psutil, piexif - have
+# moved on to `test.txt`: they belong in a layer CI installs, which this is, but the Dockerfile
+# also installs this one and a serving container has no use for a property-based testing library.
+# On this machine every one of them was present as a transitive install, so the
 # omission was invisible; on a clean runner `jsonschema` alone interrupted collection with 34
 # errors. Same failure class as the OpenCV shadowing: the environment was answering questions
 # the requirements never asked.
@@ -25,10 +27,3 @@ jsonschema==4.26.0     # src/ir/schema.py - IR validation
 referencing==0.37.0    # src/ir/schema.py - imported directly, not only via jsonschema
 pydantic==2.13.5       # src/pipeline/contracts.py
 joblib==1.6.0          # src/classify/torchnet.py and the sklearn stages' model persistence
-hypothesis==6.168.0    # tests/test_pipeline_fuzz.py
-psutil==7.2.2          # tests/test_rl_sandbox.py
-
-# Moved here from dev.txt: tests/test_preprocess_exif.py needs it, and CI installs the runtime
-# layers rather than the developer tooling, so a test dependency parked in dev.txt is a test that
-# never runs on a runner. One pin, in the layer that actually requires it.
-piexif==1.1.3

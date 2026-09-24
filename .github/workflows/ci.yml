@@ -101,6 +101,7 @@ jobs:
           pip install -r requirements/cv.txt
           pip install -r requirements/serve.txt
           pip install -r requirements/genai.txt
+          pip install -r requirements/test.txt
       # genai and serve are installed because their tests need no corpus, only their declared
       # dependencies - without them 12 tests across test_llm_quant, test_ocr_s3, test_ocr_styled
       # and test_llm_train failed as ModuleNotFoundError while claiming to be code failures.

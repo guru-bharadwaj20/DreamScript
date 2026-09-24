@@ -31,7 +31,17 @@ REQUIREMENTS = ROOT / "requirements"
 
 #: The layers CI installs for the test job. `dev.txt` is deliberately absent - that is the whole
 #: point of the second failure above.
-CI_LAYERS = ("base.txt", "classical.txt", "cv.txt", "serve.txt", "genai.txt", "torch.txt")
+CI_LAYERS = (
+    "base.txt",
+    "classical.txt",
+    "cv.txt",
+    "serve.txt",
+    "genai.txt",
+    "torch.txt",
+    # What the suite needs and the product does not. Split out of `base.txt`, which the
+    # Dockerfile installs: a serving container was getting pytest, hypothesis, psutil and piexif.
+    "test.txt",
+)
 
 #: Import name -> distribution name, for the cases where they differ. Kept explicit rather than
 #: resolved through importlib.metadata so the test does not depend on what happens to be
@@ -189,6 +199,11 @@ WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 #: installing fewer layers than CI is a decision this file records rather than a drift it misses.
 SERVE_LAYERS = ("base.txt", "torch.txt", "classical.txt", "cv.txt", "serve.txt")
 
+#: Layers a *serving* image must not receive, with the reason. `test.txt` is the whole of it:
+#: a container answering /predict has no use for a property-based testing library, and shipping
+#: one is surface a deployment did not ask for.
+NOT_IN_THE_IMAGE = ("test.txt", "dev.txt", "genai.txt")
+
 
 def _layers(text: str) -> set[str]:
     """Every `requirements/<name>.txt` mentioned in a block of text."""
@@ -242,3 +257,17 @@ def test_no_layer_is_installed_by_a_path_that_does_not_declare_it(layer: str):
     assert (REQUIREMENTS / layer).is_file()
     reachable = _layers(_make_target("env")) | _layers(ENV_YML.read_text(encoding="utf-8"))
     assert layer in reachable
+
+
+def test_the_serving_image_gets_no_test_or_developer_layer():
+    """`pytest`, `hypothesis`, `psutil` and `piexif` were in `base.txt` - correctly, because CI
+    installs the runtime layers and a test dependency in `dev.txt` never runs on a runner. The
+    Dockerfile installs `base.txt` too, so the serving image got all four."""
+    installed = _layers(DOCKERFILE.read_text(encoding="utf-8"))
+    assert installed.isdisjoint(NOT_IN_THE_IMAGE), installed & set(NOT_IN_THE_IMAGE)
+
+
+@pytest.mark.parametrize("package", ["pytest", "hypothesis", "psutil", "piexif"])
+def test_the_suite_only_packages_live_in_test_txt(package: str):
+    assert _normalise(package) in _declared(("test.txt",))
+    assert _normalise(package) not in _declared(("base.txt",))
