@@ -162,3 +162,83 @@ def test_every_ci_layer_exists_and_pins_exactly(layer: str):
         if not line or line.startswith("-"):
             continue
         assert "==" in line, f"{layer}: {line!r} is not pinned with =="
+
+
+# ---------------------------------------------------------------------------------------------
+# Phase 15.9, second half (audit 31/41) - the four install paths agree with each other.
+#
+# The test above asks "is every import declared in a layer CI installs". That is one of the two
+# questions, and the other one had three live answers: `make env` installed base, torch, cv,
+# classical, genai; `env.yml` installed the same five; the Dockerfile installs five *different*
+# ones; CI installs six. Nobody following the project's own setup instructions got the
+# environment CI tests against, and `make serve`, `make lint`, `make repro` and `make dag` all
+# failed on a clean `make env` for that reason.
+#
+# Parsed as text, like everything else here, so this answers the same on a machine with
+# everything installed and on one with nothing.
+# ---------------------------------------------------------------------------------------------
+
+MAKEFILE = ROOT / "Makefile"
+ENV_YML = ROOT / "env.yml"
+DOCKERFILE = ROOT / "Dockerfile"
+WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
+
+#: What the *serving* image needs, which is deliberately not what a test runner needs.
+#: `genai.txt` is the QLoRA training stack - bitsandbytes, peft, trl - and a container that
+#: answers `/predict` from the emitter never loads any of it. Named here so the Dockerfile
+#: installing fewer layers than CI is a decision this file records rather than a drift it misses.
+SERVE_LAYERS = ("base.txt", "torch.txt", "classical.txt", "cv.txt", "serve.txt")
+
+
+def _layers(text: str) -> set[str]:
+    """Every `requirements/<name>.txt` mentioned in a block of text."""
+    return set(re.findall(r"requirements/([a-z]+\.txt)", text))
+
+
+def _make_target(name: str) -> str:
+    """One Makefile target's recipe."""
+    lines = MAKEFILE.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(f"{name}:"))
+    body = []
+    for line in lines[start + 1 :]:
+        if line and not line.startswith(("\t", " ", "#")):
+            break
+        body.append(line)
+    return "\n".join(body)
+
+
+def test_make_env_installs_every_layer_ci_installs():
+    """A developer who runs the documented setup must end up with at least what CI tests."""
+    installed = _layers(_make_target("env"))
+    assert set(CI_LAYERS) <= installed, sorted(set(CI_LAYERS) - installed)
+
+
+def test_make_env_also_installs_the_developer_tooling():
+    """`make lint`, `make repro` and `make dag` run ruff, black, isort and dvc, all of which live
+    in `dev.txt`. CI does not install it, deliberately; a developer machine must."""
+    assert "dev.txt" in _layers(_make_target("env"))
+
+
+def test_env_yml_installs_exactly_what_make_env_installs():
+    """Two documented setup paths that disagree is one of them being wrong for somebody."""
+    assert _layers(ENV_YML.read_text(encoding="utf-8")) == _layers(_make_target("env"))
+
+
+def test_the_dockerfile_installs_the_serve_layers_and_says_so():
+    """Fewer than CI, on purpose: a container that answers /predict never loads the QLoRA stack.
+    The set is named in this file so it is a recorded decision, not an unnoticed difference."""
+    assert _layers(DOCKERFILE.read_text(encoding="utf-8")) == set(SERVE_LAYERS)
+    assert set(SERVE_LAYERS) < set(CI_LAYERS)
+
+
+def test_the_ci_test_job_installs_exactly_ci_layers():
+    """`CI_LAYERS` is this file's claim about the workflow; the workflow is the fact."""
+    assert _layers(WORKFLOW.read_text(encoding="utf-8")) == set(CI_LAYERS)
+
+
+@pytest.mark.parametrize("layer", CI_LAYERS)
+def test_no_layer_is_installed_by_a_path_that_does_not_declare_it(layer: str):
+    """Every layer CI installs exists in `requirements/` and is reachable from a setup path."""
+    assert (REQUIREMENTS / layer).is_file()
+    reachable = _layers(_make_target("env")) | _layers(ENV_YML.read_text(encoding="utf-8"))
+    assert layer in reachable
