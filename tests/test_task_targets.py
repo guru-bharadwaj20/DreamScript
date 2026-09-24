@@ -671,3 +671,49 @@ def test_every_package_the_readme_lists_is_runnable():
     assert len(listed) >= 14, sorted(listed)
     for package in sorted(listed):
         assert runnable(package), f"{package} is listed and has nothing to run"
+
+
+# --- one author identity (audit 69) -----------------------------------------------------------
+
+
+def test_git_reports_one_author_for_this_repository():
+    """Three spellings of one name - "Guru Bharadwaj", "Guru R Bharadwaj", "guru-bharadwaj20" -
+    which is what a `git config user.name` changed part-way through looks like afterwards. It
+    breaks `git shortlog`, blame attribution and any contribution graph. `.mailmap` maps them
+    onto the canonical form and rewrites no commit."""
+    import subprocess
+
+    result = subprocess.run(
+        ["git", "--no-pager", "log", "--format=%aN <%aE>"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        import pytest
+
+        pytest.skip("not a git checkout")
+    authors = {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    assert len(authors) == 1, sorted(authors)
+
+
+def test_the_canonical_author_matches_pyproject():
+    """The two places this project states who wrote it."""
+    import subprocess
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    declared = config["project"]["authors"][0]
+    result = subprocess.run(
+        ["git", "--no-pager", "log", "-1", "--format=%aN <%aE>"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        import pytest
+
+        pytest.skip("not a git checkout")
+    assert result.stdout.strip() == f"{declared['name']} <{declared['email']}>"

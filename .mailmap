@@ -1,0 +1,24 @@
+# One person, three spellings.
+#
+# `git log --format=%an | sort -u` listed three authors on this repository, all of them the same
+# human with the same address:
+#
+#     Guru Bharadwaj <gururb20@gmail.com>
+#     Guru R Bharadwaj <gururb20@gmail.com>
+#     guru-bharadwaj20 <gururb20@gmail.com>
+#
+# That is what a `git config user.name` changed part-way through looks like afterwards, and it
+# breaks anything that counts by author: `git shortlog`, blame attribution, a contribution graph,
+# "who last touched this".
+#
+# `.mailmap` is Git's own answer and it rewrites nothing - `git log`, `shortlog` and `blame` read
+# it and map the variants onto the canonical form. Every commit is untouched.
+#
+# The canonical name matches `pyproject.toml`'s `authors` entry, which is the other place this
+# project states who wrote it. An audit note claimed those two disagreed on the *address*; they
+# do not and never did - it has been `gururb20@gmail.com` in every commit. The disagreement is
+# the name, which is the half that was not checked.
+
+Guru Bharadwaj <gururb20@gmail.com> Guru R Bharadwaj <gururb20@gmail.com>
+Guru Bharadwaj <gururb20@gmail.com> guru-bharadwaj20 <gururb20@gmail.com>
+Guru Bharadwaj <gururb20@gmail.com> <krbmba15@gmail.com>
