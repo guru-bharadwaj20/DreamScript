@@ -664,7 +664,7 @@
       "stage": "classify",
       "model": "handcrafted logreg (14.2 rerun)",
       "metric": "macro F1",
-      "value": 0.9965,
+      "value": 0.9819,
       "target": null,
       "higher_is_better": true,
       "passes": null,

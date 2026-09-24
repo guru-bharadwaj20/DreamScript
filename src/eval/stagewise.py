@@ -21,8 +21,14 @@ produced by the protocol this row would otherwise repeat, so they are read (and 
 than re-run. Classification is re-measured here, and the reason is a finding rather than a
 preference: **`reports/s1_heldout_scribes.json` was computed on a corpus that no longer exists**.
 It reports 1,340 rows over five classes; `data/features/handcrafted.parquet` after the DVC
-rebuild holds **1,435 rows over two** - flowchart and wireframe - because the circuit, ER and
-state-machine photographs did not survive. Quoting 0.9871 as this stage's accuracy today would
+rebuild holds a different corpus, and how different has already changed once - it was 1,435 rows
+over two (flowchart, wireframe) and is 3,054 over three now. The row count and the class list in
+the report below are therefore read off the table at generation time rather than written here,
+because a count in a docstring is a count that goes stale silently and this one did. What has
+not changed is the shape of the gap: the circuit and ER photographs did not survive the rebuild,
+so the published five-class figure and this one are not the same problem.
+
+Quoting 0.9871 as this stage's accuracy today would
 be quoting a measurement of a different problem, so this module re-runs the same protocol
 (repeated GroupKFold by writer, 5 folds x 3 seeds) on the data that exists and reports both, with
 the difference stated rather than smoothed.
@@ -324,9 +330,10 @@ def render(result: dict) -> str:
                 f" {published['s1_rows']} rows and five classes; the corpus that survived the DVC"
                 f" rebuild is {entry['corpus']['rows']} rows over"
                 f" {len(entry['corpus']['classes'])}"
-                f" ({', '.join(entry['corpus']['classes'])}).** Every accuracy in the table above"
-                " is the two-class problem, which is easier, and is reported here rather than"
-                " compared to a number measured on a corpus that no longer exists.",
+                f" ({', '.join(entry['corpus']['classes'])}).** Every accuracy in the table"
+                f" above is the {len(entry['corpus']['classes'])}-class problem, which is easier,"
+                " and is reported here rather than compared to a number measured on a corpus that"
+                " no longer exists.",
                 "",
             ]
     return "\n".join(lines)

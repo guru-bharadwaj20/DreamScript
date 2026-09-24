@@ -9,11 +9,11 @@
     "models": {
       "majority": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.5094,
+        "accuracy": 0.6624,
         "accuracy_std": 0.0,
-        "macro_f1": 0.3375,
+        "macro_f1": 0.2656,
         "macro_f1_std": 0.0,
-        "worst_repeat_accuracy": 0.5094,
+        "worst_repeat_accuracy": 0.6624,
         "seeds": [
           42,
           43,
@@ -22,11 +22,11 @@
       },
       "logreg": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9965,
-        "accuracy_std": 0.0006,
-        "macro_f1": 0.9965,
-        "macro_f1_std": 0.0006,
-        "worst_repeat_accuracy": 0.9958,
+        "accuracy": 0.9828,
+        "accuracy_std": 0.0007,
+        "macro_f1": 0.9819,
+        "macro_f1_std": 0.0007,
+        "worst_repeat_accuracy": 0.982,
         "seeds": [
           42,
           43,
@@ -35,11 +35,11 @@
       },
       "knn": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9928,
-        "accuracy_std": 0.0009,
-        "macro_f1": 0.9928,
-        "macro_f1_std": 0.0009,
-        "worst_repeat_accuracy": 0.9916,
+        "accuracy": 0.9813,
+        "accuracy_std": 0.0007,
+        "macro_f1": 0.9799,
+        "macro_f1_std": 0.0005,
+        "worst_repeat_accuracy": 0.9807,
         "seeds": [
           42,
           43,
@@ -48,11 +48,11 @@
       },
       "tree": {
         "features": "33 handcrafted (4.2.1)",
-        "accuracy": 0.9933,
-        "accuracy_std": 0.0003,
-        "macro_f1": 0.9933,
-        "macro_f1_std": 0.0003,
-        "worst_repeat_accuracy": 0.993,
+        "accuracy": 0.9693,
+        "accuracy_std": 0.0015,
+        "macro_f1": 0.9665,
+        "macro_f1_std": 0.0013,
+        "worst_repeat_accuracy": 0.9673,
         "seeds": [
           42,
           43,
@@ -91,17 +91,18 @@
     },
     "corpus": {
       "corpus": "real",
-      "rows": 1435,
+      "rows": 3054,
       "features": 33,
       "classes": {
-        "flowchart": 704,
+        "flowchart": 2023,
+        "state_machine": 300,
         "wireframe": 731
       },
-      "groups": 838,
-      "rows_with_a_known_scribe": 704,
-      "minority_share": 0.4906
+      "groups": 2182,
+      "rows_with_a_known_scribe": 1004,
+      "minority_share": 0.0982
     },
-    "fit_seconds": 12.4
+    "fit_seconds": 39.7
   },
   "detect": {
     "input": "raw page (no upstream)",
