@@ -357,3 +357,30 @@ def test_every_s5_report_is_one_something_names():
             check=False,
         ).stdout
         assert hits.strip(), f"{name} is kept and referenced by nothing"
+
+
+# --- every report says what writes it (audit 52) ----------------------------------------------
+
+
+def test_the_reports_index_is_current():
+    """`reports/` holds 108 files and nothing said where any of them came from, which is how a
+    4.96 MB training log, nineteen arms of one S5 sweep and a 43 KB edge-pair dump accumulated.
+    The index is generated, so it cannot go stale the way a hand-written list does."""
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [sys.executable, "scripts/reports_index.py", "--check"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_the_index_names_every_file_in_reports():
+    index = (ROOT / "reports" / "README.md").read_text(encoding="utf-8")
+    for path in sorted((ROOT / "reports").rglob("*")):
+        if path.is_file():
+            assert f"`{path.relative_to(ROOT / 'reports').as_posix()}`" in index, path.name
