@@ -54,8 +54,10 @@ $Tasks = [ordered]@{
     "lint"              = @{ Steps = @(
                                 @("-m", "ruff", "check", "src", "tests", "scripts"),
                                 @("-m", "black", "--check", "src", "tests", "scripts"),
-                                @("-m", "isort", "--check-only", "src", "tests", "scripts"));
-                             Help = "ruff + black --check + isort --check" }
+                                @("-m", "isort", "--check-only", "src", "tests", "scripts"),
+                                @("scripts/typecheck.py"));
+                             Help = "ruff + black --check + isort --check + mypy baseline" }
+    "typecheck"         = @{ Cmd = @("scripts/typecheck.py"); Help = "mypy, held to its recorded baseline" }
     "format"            = @{ Steps = @(
                                 @("-m", "isort", "src", "tests", "scripts"),
                                 @("-m", "black", "src", "tests", "scripts"),

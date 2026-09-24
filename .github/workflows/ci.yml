@@ -31,7 +31,7 @@ env:
 
 jobs:
   lint:
-    name: lint (ruff, black, isort)
+    name: lint (ruff, black, isort, mypy)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,12 +40,21 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: install the linters only
-        # Not the full stack: ruff, black and isort need none of torch, CUDA or OpenCV, and
+        # Not the full stack: these need none of torch, CUDA or OpenCV, and
         # installing 3 GB of wheels to check formatting is how a lint job comes to take 8 minutes.
-        run: pip install ruff==0.8.4 black==24.10.0 isort==5.13.2
+        run: pip install ruff==0.8.4 black==24.10.0 isort==5.13.2 mypy==2.3.1
       - run: ruff check src tests scripts
       - run: black --check src tests scripts
       - run: isort --check src tests scripts
+      - name: mypy, against its recorded baseline
+        # mypy was installed on the development machine, reported 661 errors across 193 files,
+        # and was in no gate at all. A pass/fail gate would make main red on day one and keep it
+        # there; this one fails only on a *regression* against reports/mypy_baseline.json, so the
+        # number can fall and cannot rise without `--update` putting it in a diff.
+        #
+        # No stack install: `ignore_missing_imports` is on precisely because third-party stubs
+        # say nothing about this repo's code, so the checker needs no third-party packages.
+        run: python scripts/typecheck.py
 
   schemas:
     name: schema validation

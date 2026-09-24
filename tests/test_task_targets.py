@@ -201,3 +201,42 @@ def test_no_ci_step_passes_a_flag_that_would_stack_with_addopts():
         passed = [token for token in line.split() if token.startswith("-")]
         clash = addopts.intersection(passed)
         assert not clash, f"{line.strip()!r} repeats {sorted(clash)} from addopts"
+
+
+# --- mypy is in a gate (audit 38) -------------------------------------------------------------
+
+
+def test_mypy_is_configured_and_ignores_third_party_stubs():
+    """661 errors, 318 of them `Library stubs not installed for "cv2"`-shaped reports about
+    third-party packages, which say nothing about this repo's code."""
+    import tomllib
+
+    config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    mypy = config["tool"]["mypy"]
+    assert mypy["ignore_missing_imports"] is True
+    assert mypy["files"] == ["src"]
+
+
+def test_mypy_runs_in_make_lint_and_in_ci():
+    """It was in no gate at all - not `make lint`, not pre-commit, not CI - while a
+    `.mypy_cache/` sat in the tree proving it was being run by hand and ignored."""
+    makefile = MAKEFILE.read_text(encoding="utf-8")
+    lint = makefile.split("lint:", 1)[1].split("\n\n", 1)[0]
+    assert "typecheck.py" in lint
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert "scripts/typecheck.py" in workflow
+    assert "mypy==" in workflow
+
+
+def test_the_baseline_exists_and_is_per_error_code():
+    """A single total makes a regression illegible: "3 new arg-type" is a review comment,
+    "344 errors" is not."""
+    import json
+
+    baseline = json.loads((ROOT / "reports" / "mypy_baseline.json").read_text(encoding="utf-8"))
+    assert baseline["total"] == sum(baseline["by_code"].values())
+    assert baseline["by_code"], "the baseline records no error codes"
+
+
+def test_mypy_is_declared_where_the_thing_that_runs_it_is_installed():
+    assert "mypy" in (ROOT / "requirements" / "dev.txt").read_text(encoding="utf-8")

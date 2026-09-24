@@ -26,7 +26,7 @@ OVERRIDES ?=
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
 .PHONY: app clean clean-experiments dag data detect determinism dummy-run env eval features \
-        finetune format help lint ocr parse preprocess repro rl serve stages test test-fast \
+        finetune format help lint ocr parse preprocess repro rl serve stages test test-fast typecheck \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
@@ -79,10 +79,14 @@ test:  ## run the full pytest suite
 test-fast:  ## skip anything marked slow
 	$(PY) -m pytest -m "not slow"
 
-lint:  ## ruff + black --check + isort --check
+lint:  ## ruff + black --check + isort --check + mypy against its baseline
 	$(PY) -m ruff check src tests scripts
 	$(PY) -m black --check src tests scripts
 	$(PY) -m isort --check-only src tests scripts
+	$(PY) scripts/typecheck.py
+
+typecheck:  ## mypy, held to reports/mypy_baseline.json - the count may fall, not rise
+	$(PY) scripts/typecheck.py
 
 format:  ## apply black + isort + ruff --fix
 	$(PY) -m isort src tests scripts

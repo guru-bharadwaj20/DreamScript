@@ -1,0 +1,20 @@
+{
+  "total": 343,
+  "files": 123,
+  "by_code": {
+    "arg-type": 72,
+    "assignment": 42,
+    "attr-defined": 36,
+    "call-overload": 53,
+    "dict-item": 7,
+    "index": 24,
+    "list-item": 1,
+    "misc": 14,
+    "no-redef": 1,
+    "operator": 31,
+    "return-value": 9,
+    "type-var": 5,
+    "union-attr": 11,
+    "var-annotated": 37
+  }
+}

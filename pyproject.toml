@@ -34,6 +34,30 @@ testpaths = ["tests"]
 # repeats the project's own default is not worth the saved keystroke.
 addopts = "-rs"
 
+# Phase 15 - type checking, as a ratchet rather than an all-or-nothing gate.
+#
+# mypy was installed (there is a `.mypy_cache/` in the tree), reported 661 errors across 193
+# files, and was in **no gate at all** - not `make lint`, not pre-commit, not CI. A checker
+# nobody runs is a checker whose findings are indistinguishable from noise, and 661 is too many
+# to fix in one pass and too many to ignore honestly.
+#
+# `ignore_missing_imports` removes 318 of those: they are `Library stubs not installed for
+# "cv2"`-shaped reports about third-party packages, which say nothing about this code. What is
+# left is about this repo, and `scripts/typecheck.py` holds it to a recorded baseline that may
+# fall and may not rise.
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+ignore_missing_imports = true
+follow_imports = "silent"
+# Off deliberately, for now. Turning any of these on is a separate, measurable step - the point
+# of the ratchet is that the number can only go down, not that it is already zero.
+check_untyped_defs = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+warn_return_any = false
+pretty = false
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]
