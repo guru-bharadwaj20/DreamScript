@@ -19,12 +19,24 @@ produce a training set, for four independent reasons:
 2. **Targets not recoverable from the input.** 12.1.2's IR text carries shape, text, role and
    edges, not `attrs`. The draft kept ER columns and every circuit value and net only in
    `attrs`, so the SQL columns and the entire netlist were invisible to the model it trains.
-3. **Invalid IR.** 0 of 500 of its diagrams pass `schemas/ir.schema.json`: `ir_version` is a
-   float, ER is typed `er`, and circuit roles `source`/`resistor` are not in the vocabulary.
+3. ~~**Invalid IR.**~~ **Fixed.** This read "0 of 500 of its diagrams pass
+   `schemas/ir.schema.json`: `ir_version` is a float, ER is typed `er`, and circuit roles
+   `source`/`resistor` are not in the vocabulary". All three are corrected in `src.synth.graphs`
+   and `tests/test_synth_schema.py` validates the whole type x structure x seed grid against the
+   schema, so 200 of 200 pass. Kept in this list, struck through, because the other three reasons
+   are what decide the question and striking one out is more honest than deleting it.
 4. **Unsolvable circuits.** 926 of 2,500 draft circuits fail ngspice's operating point (12.1.7).
 
-It is left unchanged because the 11.2 curriculum shares it; this module generates its own
-graphs, reusing only 11.x-independent pieces (`graphs.STRUCTURES`, `graphs._layout`).
+**On "left unchanged".** That sentence said `src.synth.graphs` was left alone because the 11.2
+curriculum shares it - which read as "it is broken and we cannot touch it", and was the reason
+its schema failures survived three phases. It is not true and it was not a good reason: a
+generator shared by two consumers is a generator whose defects reach both, and 11.2's curriculum
+was being fed invalid IR the entire time. Reason 3 is fixed in `graphs` itself, for both callers.
+
+What is still true is the *design* half: this module generates its own graphs, because reasons
+1, 2 and 4 are about what `graphs` generates rather than about bugs in it, and fixing those
+would mean replacing the generator rather than repairing it. It reuses only the 11.x-independent
+pieces (`graphs.STRUCTURES`, `graphs._layout`).
 
 ## How each type is generated so that code is a function of `ir_text`
 

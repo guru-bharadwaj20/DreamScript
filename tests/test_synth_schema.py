@@ -57,3 +57,29 @@ def test_an_alias_is_accepted_and_canonicalised_never_emitted(alias: str):
     diagram = graphs.random_diagram(alias, "linear", 1)
     assert diagram["diagram_type"] == graphs.TYPE_ALIASES[alias]
     assert not problems("ir", diagram)
+
+
+def test_the_note_that_called_this_generator_invalid_is_no_longer_true():
+    """`codegen/synthetic.py` listed four reasons it does not use `src.synth.graphs`, and the
+    third was "0 of 500 of its diagrams pass schemas/ir.schema.json". That one is fixed, and the
+    sentence that followed it - "it is left unchanged because the 11.2 curriculum shares it" -
+    was the reason it survived three phases: a generator shared by two consumers is a generator
+    whose defects reach both, and 11.2's curriculum was being fed invalid IR throughout."""
+    from src.utils.config import ROOT
+
+    text = (ROOT / "src" / "codegen" / "synthetic.py").read_text(encoding="utf-8")
+    assert "0 of 500 of its diagrams pass" not in text.replace('"0 of 500', "@@")
+    assert "It is left unchanged because the 11.2 curriculum shares it" not in text
+
+
+def test_the_curriculum_gets_schema_valid_diagrams():
+    """11.2 is the other consumer, and the one the note said could not be disturbed."""
+    import inspect
+
+    from src.ir.schema import problems
+    from src.rl import curriculum
+
+    assert "random_diagram" in inspect.getsource(curriculum), "11.2 stopped using this generator"
+    for structure in graphs.STRUCTURES:
+        diagram = graphs.random_diagram("flowchart", structure, 5)
+        assert not problems("ir", diagram)
