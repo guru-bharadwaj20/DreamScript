@@ -175,3 +175,32 @@ def test_a_library_package_does_not_advertise_a_config_it_has_not_got(package, c
     dispatch(package, [])
     assert "--print-config" not in capsys.readouterr().out
     assert dispatch(package, ["--print-config"]) == 2
+
+
+# --- a producer says it is a producer (audit 43) ----------------------------------------------
+
+#: The six modules whose only importer was their own test - 2,182 lines that read as dead from
+#: the outside. Each is a producer or a report generator, which is a different thing from dead,
+#: and each now says which in its first lines and names the command that runs it.
+PRODUCERS = {
+    "src/ir/targets.py": "src.ir targets",
+    "src/ir/agreement.py": "src.ir agreement",
+    "src/preprocess/failures.py": "src.preprocess failures",
+    "src/ir/convert/didi.py": "src.ir convert.didi",
+    "src/ir/convert/sketch2code.py": "src.ir convert.sketch2code",
+    "src/ingest/audit.py": "src.ingest audit",
+}
+
+
+@pytest.mark.parametrize(("path", "command"), sorted(PRODUCERS.items()))
+def test_each_producer_names_the_command_that_runs_it(path: str, command: str):
+    from src.utils.config import ROOT
+
+    head = (ROOT / path).read_text(encoding="utf-8").split('"""')[1]
+    assert f"python -m {command}" in head, f"{path} does not say how to run it"
+
+
+@pytest.mark.parametrize(("path", "command"), sorted(PRODUCERS.items()))
+def test_each_producer_is_reachable_by_that_command(path: str, command: str):
+    package, name = command.rsplit(" ", 1)
+    assert name in runnable(package)

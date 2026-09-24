@@ -1,5 +1,13 @@
 """Phase 2.2.2 - DIDI prompts to DreamScript IR.
 
+    python -m src.ir convert.didi
+
+**Kept deliberately against an absent payload.** `data/raw/didi.dvc` points at content that
+`dvc status -c` calls "neither locally nor on remote", so this converter has nothing to convert
+today and `configs/llm.yaml` no longer lists didi as a training source. The code is what would
+read the payload if it came back, and `tests/test_assemble_serialise.py::ABSENT_SOURCES` fails
+when it does, which is when its 3,000 files rejoin the corpus counts.
+
 DIDI is 22,287 diagrams drawn by people who were shown a generated prompt and asked to copy
 it. The prompt's graph is published as graphviz `.dot` and its laid-out form as `.xdot`, so the
 structure behind every drawing is known exactly. What is *not* published is any mapping from

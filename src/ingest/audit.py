@@ -1,5 +1,10 @@
 """Phase 1.1.6 — the license and availability audit.
 
+    python -m src.ingest audit
+
+A report generator. Its output is `reports/license_audit.md` and its consumer is a person, which
+is why nothing imports it.
+
 Walks the dataset registry, re-probes what can be re-probed, and writes
 `reports/license_audit.md`: for every source, what license governs it, whether the raw files
 may leave this machine, and whether it is still obtainable.

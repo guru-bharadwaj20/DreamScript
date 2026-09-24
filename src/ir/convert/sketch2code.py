@@ -1,5 +1,10 @@
 """Phase 2.2.2 - Sketch2Code webpages to DreamScript IR.
 
+    python -m src.ir convert.sketch2code
+
+A converter: it writes `data/processed/ir/sketch2code/` and every later stage reads those files,
+not this module. 484 of them are in the corpus today.
+
 Sketch2Code pairs 731 human sketches with the 484 real webpages they depict. The pairing is
 what makes it valuable and also what makes it awkward: the ground truth is *HTML*, which says
 what elements exist and how they nest, but nothing about where anything sits on the page

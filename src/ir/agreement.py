@@ -1,5 +1,11 @@
 """Phase 2.2.4 - inter-annotator agreement on shape and role.
 
+    python -m src.ir agreement
+
+A measurement, run once and reported. Nothing imports it because nothing should: its output is
+`reports/annotator_agreement.md`, and a later stage that wanted the number would read the report,
+not recompute the kappa.
+
 **Read this first: there are not two human annotation teams on this project.** The plan asks
 for 50 double-labelled images and Cohen's kappa between the two labellers. What exists instead
 is three labellers of different kinds, and the honest thing is to name each one and report

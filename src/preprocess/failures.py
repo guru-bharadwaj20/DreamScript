@@ -1,5 +1,11 @@
 """Phase 3.3.3 - the twenty worst pages, and what went wrong on each.
 
+    python -m src.preprocess failures
+
+An error analysis, not a stage. Its consumer is a person reading `reports/error_taxonomy.md`,
+which is why nothing imports it - the alternative would be a pipeline stage that computes a
+taxonomy nobody reads at runtime.
+
 3.3.1 and 3.3.2 measure the pipeline on rendered strokes, where the ground truth is exact and
 the material is clean. Both say so about themselves. This module does the opposite: it runs the
 pipeline over real photographs, ranks them by how badly it did, and writes the twenty worst out

@@ -1,5 +1,12 @@
 """Phase 2.2.6 - target code for every diagram whose structure is known.
 
+    python -m src.ir targets
+
+**Nothing in `src/` imports this and that is correct.** It is a producer: it writes the target
+code into `data/processed/ir/`, and Phase 12 fine-tunes on the artefact rather than calling the
+function that made it. Only its own test imported it, which is what a 565-line module with no
+importers looks like from the outside, so this line exists to say which of the two it is.
+
 A (diagram, code) pair is what Phase 12 fine-tunes on and what Phase 14 scores against, so the
 question that matters here is where the code comes from. Three answers, and they are not equal:
 
