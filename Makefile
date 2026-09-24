@@ -26,7 +26,7 @@ OVERRIDES ?=
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
 .PHONY: app clean clean-experiments dag data detect determinism dummy-run env eval features \
-        finetune format help lint ocr parse preprocess repro rl serve stages test test-fast typecheck \
+        finetune format help hooks lint ocr parse preprocess repro rl serve stages test test-fast typecheck \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
@@ -49,6 +49,10 @@ env:  ## create the venv and install every requirements layer
 		-r requirements/cv.txt -r requirements/serve.txt -r requirements/genai.txt \
 		-r requirements/test.txt
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/dev.txt
+	# The hooks are configured in .pre-commit-config.yaml and had never been installed in
+	# this clone - which is how a 4.96 MB log got past check-added-large-files. Installing
+	# is per clone and there is no way to do it from the config, so it belongs here.
+	$(PY) -m pre_commit install
 
 verify:  ## Phase 0.1 — check every installed stack
 	$(PY) scripts/verify_env.py
@@ -84,6 +88,9 @@ lint:  ## ruff + black --check + isort --check + mypy against its baseline
 	$(PY) -m black --check src tests scripts
 	$(PY) -m isort --check-only src tests scripts
 	$(PY) scripts/typecheck.py
+
+hooks:  ## install the pre-commit hooks into .git/hooks (run once per clone)
+	$(PY) -m pre_commit install
 
 typecheck:  ## mypy, held to reports/mypy_baseline.json - the count may fall, not rise
 	$(PY) scripts/typecheck.py

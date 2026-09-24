@@ -25,7 +25,7 @@ MAKEFILE = ROOT / "Makefile"
 #: `python -m <thing>` invocations that are not this project's code.
 BACKSLASH = chr(92)
 
-EXTERNAL = {"pytest", "ruff", "black", "isort", "dvc", "uvicorn"}
+EXTERNAL = {"pytest", "ruff", "black", "isort", "dvc", "uvicorn", "pre_commit"}
 
 
 def invocations() -> list[tuple[str, str]]:
@@ -583,3 +583,24 @@ def test_the_verify_scripts_credentials_are_generated_per_run():
     assert "secrets.token_urlsafe" in source
     assert "secrets.token_hex" in source
     assert 'os.environ.get("LABEL_STUDIO_PASSWORD")' in source
+
+
+# --- the hooks are installable in one documented command (audit 50) ---------------------------
+
+
+def test_a_hooks_target_exists_on_both_runners():
+    """`.pre-commit-config.yaml` has been configured since Phase 0.2.6 and the hook had never
+    been installed in this clone - which is how a 4.96 MB log got past
+    `check-added-large-files --maxkb=2048`, and why 36 files had no final newline while an
+    `end-of-file-fixer` hook sat in the config. Installing is per clone and cannot be done from
+    the config, so it needs a command and `make env` needs to run it."""
+    makefile = MAKEFILE.read_text(encoding="utf-8")
+    assert "hooks:" in makefile
+    assert "pre_commit install" in makefile
+    env_recipe = makefile.split("env:", 1)[1].split("\n\n", 1)[0]
+    assert "pre_commit install" in env_recipe, "make env does not install the hooks"
+    assert "pre_commit" in (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+
+
+def test_pre_commit_is_declared():
+    assert "pre-commit" in (ROOT / "requirements" / "dev.txt").read_text(encoding="utf-8")

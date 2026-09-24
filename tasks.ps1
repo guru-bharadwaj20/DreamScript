@@ -58,6 +58,7 @@ $Tasks = [ordered]@{
                                 @("scripts/typecheck.py"));
                              Help = "ruff + black --check + isort --check + mypy baseline" }
     "typecheck"         = @{ Cmd = @("scripts/typecheck.py"); Help = "mypy, held to its recorded baseline" }
+    "hooks"             = @{ Cmd = @("-m", "pre_commit", "install"); Help = "install the pre-commit hooks (once per clone)" }
     "format"            = @{ Steps = @(
                                 @("-m", "isort", "src", "tests", "scripts"),
                                 @("-m", "black", "src", "tests", "scripts"),
@@ -127,6 +128,8 @@ if ($spec.Env) {
                 "test.txt", "dev.txt")
     Write-Host "> uv venv --python 3.11 .venv" -ForegroundColor DarkGray
     if (-not $DryRun) { & uv venv --python 3.11 .venv }
+        Write-Host "> install the pre-commit hooks" -ForegroundColor DarkGray
+        if (-not $DryRun) { & $Py -m pre_commit install }
     foreach ($layer in $layers) {
         $extra = @()
         if ($layer -eq "torch.txt") {
