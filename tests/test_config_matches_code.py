@@ -118,3 +118,48 @@ def test_the_didi_converter_is_kept_and_said_to_be_kept():
     assert "didi" in REAL_SOURCES
     text = (CONFIG_DIR / "llm.yaml").read_text(encoding="utf-8")
     assert "src/ir/convert/didi.py" in text
+
+
+# --- the dispatch dict is the dispatch (audit 30) ---------------------------------------------
+
+
+def test_binarize_dispatches_through_methods():
+    import inspect
+
+    from src.preprocess import binarize as mod
+
+    source = inspect.getsource(mod.binarize)
+    assert "METHODS[method]" in source
+    assert 'if method == "sauvola"' not in source
+
+
+def test_method_args_matches_every_signature():
+    """`METHODS` and the if/elif chain were two tables that had to agree and nothing checked, so
+    `adaptive`'s `c` was dropped at the call site - there was no `c` on `binarize` to pass."""
+    import inspect
+
+    from src.preprocess.binarize import METHOD_ARGS, METHODS
+
+    assert set(METHOD_ARGS) == set(METHODS)
+    for name, declared in METHOD_ARGS.items():
+        accepted = set(inspect.signature(METHODS[name]).parameters) - {"gray"}
+        assert set(declared) == accepted, f"{name}: declares {declared}, takes {sorted(accepted)}"
+
+
+def test_c_reaches_adaptive():
+    import numpy as np
+
+    from src.preprocess.binarize import binarize
+
+    gray = (np.random.default_rng(0).random((64, 64)) * 255).astype("uint8")
+    assert binarize(gray, "adaptive", c=0).sum() != binarize(gray, "adaptive", c=40).sum()
+
+
+def test_an_unknown_method_still_names_the_ones_there_are():
+    import numpy as np
+
+    from src.preprocess.binarize import binarize
+
+    gray = np.zeros((8, 8), dtype="uint8")
+    with pytest.raises(ValueError, match="expected one of"):
+        binarize(gray, "nope")

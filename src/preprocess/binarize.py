@@ -93,6 +93,7 @@ def otsu(gray: np.ndarray) -> np.ndarray:
 
 
 def adaptive(gray: np.ndarray, window: int = DEFAULT_WINDOW, c: int = 10) -> np.ndarray:
+    """`cv2.adaptiveThreshold` with a Gaussian neighbourhood; `c` is subtracted from the mean."""
     window = max(3, window | 1)
     mask = cv2.adaptiveThreshold(
         gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, window, c
@@ -116,7 +117,26 @@ def sauvola(gray: np.ndarray, window: int = DEFAULT_WINDOW, k: float = DEFAULT_K
     return image < threshold
 
 
+#: name -> the function, and name -> which of `binarize`'s knobs that function takes.
+#:
+#: `METHODS` existed and `binarize` did not dispatch through it: it re-implemented the same
+#: routing as an if/elif chain, which is how `adaptive`'s `c` came to be dropped at the call site
+#: - the chain called `adaptive(gray, window)` and there was no `c` on `binarize` to pass. Two
+#: tables that must agree, one of which nothing checked.
+#:
+#: The signatures differ (otsu takes none, adaptive takes `c`, sauvola takes `k`), so the
+#: argument list is declared rather than guessed, and a test asserts each entry matches the
+#: function's real signature.
 METHODS = {"otsu": otsu, "adaptive": adaptive, "sauvola": sauvola}
+METHOD_ARGS: dict[str, tuple[str, ...]] = {
+    "otsu": (),
+    "adaptive": ("window", "c"),
+    "sauvola": ("window", "k"),
+}
+
+#: `cv2.adaptiveThreshold`'s constant subtracted from the local mean. 10 is `adaptive`'s own
+#: default and stays it, so passing it through changes nothing and makes it reachable.
+DEFAULT_C = 10
 
 
 def binarize(
@@ -125,6 +145,7 @@ def binarize(
     *,
     window: int = DEFAULT_WINDOW,
     k: float = DEFAULT_K,
+    c: int = DEFAULT_C,
     correct_illumination: bool = True,
     illumination_mode: str | None = None,
 ) -> np.ndarray:
@@ -150,13 +171,12 @@ def binarize(
         raise ValueError(
             f"unknown illumination_mode {illumination_mode!r}; expected correct, flat or none"
         )
-    if method == "sauvola":
-        return sauvola(gray, window, k)
-    if method == "adaptive":
-        return adaptive(gray, window)
-    if method == "otsu":
-        return otsu(gray)
-    raise ValueError(f"unknown binarization method {method!r}; expected one of {sorted(METHODS)}")
+    if method not in METHODS:
+        raise ValueError(
+            f"unknown binarization method {method!r}; expected one of {sorted(METHODS)}"
+        )
+    options = {"window": window, "k": k, "c": c}
+    return METHODS[method](gray, **{name: options[name] for name in METHOD_ARGS[method]})
 
 
 def compare(count: int = 30, *, correct_illumination: bool = True) -> dict:
