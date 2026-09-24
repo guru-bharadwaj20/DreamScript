@@ -67,6 +67,7 @@ from pathlib import Path
 import numpy as np
 
 from src.parse.roles import STATES
+from src.parse.viterbi import folds
 from src.utils.config import ROOT
 
 TARGET_MACRO_F1 = 0.80
@@ -161,15 +162,12 @@ def decode_split(test: list[dict], models: dict, pooled: dict, index: dict) -> t
     return predicted, truth
 
 
-def folds(sequences: list[dict], n: int, seed: int):
-    rng = np.random.default_rng(seed)
-    order = rng.permutation(len(sequences))
-    for k in range(n):
-        test = set(order[k::n].tolist())
-        yield (
-            [s for i, s in enumerate(sequences) if i not in test],
-            [s for i, s in enumerate(sequences) if i in test],
-        )
+# `folds` was defined here and in `viterbi`, with identical bodies and different defaults - so
+# the two could have been re-tuned apart while still producing "the same" split. One definition,
+# in the module whose docstring explains why a sequence is the unit and there is no leak.
+# `folds` is imported above. It was defined here and in `viterbi` with identical bodies and
+# different defaults, so the two could have been re-tuned apart while still producing "the same"
+# split. One definition, in the module whose docstring explains why a sequence is the unit.
 
 
 def choose_lambda(train: list[dict], alphabet: list[str], index: dict, seed: int) -> float:

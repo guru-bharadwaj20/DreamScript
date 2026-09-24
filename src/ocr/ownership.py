@@ -41,6 +41,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from src.ocr.labelcrops import inset_box
+
 #: Classes whose label is a title in a header strip rather than text inside the box.
 CONTAINER_PREFIXES = ("Lane", "lane", "pool", "Pool", "Participant", "participant")
 
@@ -313,15 +315,12 @@ def below_box(element: dict, page_shape) -> list[int]:
     return [int(x0), int(y0), int(min(span, width - x0)), int(min(max(h * 0.9, 24.0), height - y0))]
 
 
-def inset_box(element: dict, inset: float = 0.10) -> list[int]:
-    """9.3.1's node crop: the box, inset to drop the drawn outline."""
-    x, y, w, h = element["bbox"]
-    return [
-        int(round(x + inset * w)),
-        int(round(y + inset * h)),
-        int(round(w * (1 - 2 * inset))),
-        int(round(h * (1 - 2 * inset))),
-    ]
+# `inset_box` is 9.3.1's node crop and it lived here *and* in `labelcrops`, byte for byte.
+# Imported from the module that owns the rule: the inset is a measured value, and two copies of a
+# measured value is one place for it to be re-tuned and one place for it to stay.
+# `inset_box` is imported above. It was defined here *and* in `labelcrops`, byte for byte, and
+# the inset is a measured value - two copies of a measured value is one place for it to be
+# re-tuned and one place for it to stay.
 
 
 def edge_fallback(element: dict) -> list[int]:

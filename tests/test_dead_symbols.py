@@ -151,3 +151,33 @@ def test_the_one_that_was_kept_is_reported_instead_of_dropped():
     function cannot honour it - it echoes it into the result rather than swallowing it."""
     source = (ROOT / "src" / "classify" / "svm.py").read_text(encoding="utf-8")
     assert '"proxy_for_loss": loss' in source
+
+
+# --- one definition per measured rule (audit 46) ----------------------------------------------
+
+
+def test_inset_box_has_one_definition():
+    """9.3.1's node crop lived in `labelcrops` and `ownership`, byte for byte. The inset is a
+    measured value, and two copies of a measured value is one place for it to be re-tuned and
+    one place for it to stay behind."""
+    from src.ocr import labelcrops, ownership
+
+    assert ownership.inset_box is labelcrops.inset_box
+
+
+def test_folds_has_one_definition():
+    """Identical bodies in `s4` and `viterbi`, with *different defaults* - so the two could have
+    been re-tuned apart while still producing "the same" split."""
+    from src.parse import s4, viterbi
+
+    assert s4.folds is viterbi.folds
+
+
+@pytest.mark.parametrize(
+    ("module", "name"),
+    [("src/ocr/ownership.py", "inset_box"), ("src/parse/s4.py", "folds")],
+)
+def test_the_copy_is_gone_and_not_merely_shadowed(module: str, name: str):
+    tree = ast.parse((ROOT / module).read_text(encoding="utf-8"))
+    defined = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
+    assert name not in defined
