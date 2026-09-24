@@ -101,3 +101,43 @@ def test_entrypoint_contract(package: str):
 def test_to_dict_is_plain():
     d = to_dict(load_config("base"))
     assert isinstance(d, dict) and d["paths"]["data"] == "data"
+
+
+# --- every config is accounted for (audit 26) -------------------------------------------------
+
+
+def test_every_config_is_named_in_the_readme_with_its_status():
+    """Eleven of thirteen configs steered nothing, and nothing said so. A value nothing reads can
+    be tuned, committed and reported, and the number it was supposed to change never moves - the
+    failure is silent by construction, so the accounting has to be explicit."""
+    readme = (CONFIG_DIR / "README.md").read_text(encoding="utf-8")
+    for path in sorted(CONFIG_DIR.glob("*.yaml")):
+        assert (
+            f"`{path.name}`" in readme
+        ), f"{path.name} is in configs/ and not in configs/README.md"
+
+
+def test_the_readme_names_no_config_that_does_not_exist():
+    import re
+
+    readme = (CONFIG_DIR / "README.md").read_text(encoding="utf-8")
+    named = set(re.findall(r"`([a-z_]+\.yaml)`", readme))
+    missing = {name for name in named if not (CONFIG_DIR / name).is_file()}
+    assert not missing, missing
+
+
+def test_the_readme_puts_each_config_in_exactly_one_of_the_three_sections():
+    readme = (CONFIG_DIR / "README.md").read_text(encoding="utf-8")
+    sections = readme.split("## ")
+    bodies = {
+        head.splitlines()[0].strip(): head
+        for head in sections
+        if head.startswith(("Read by code", "Checked against code", "Declarations"))
+    }
+    assert set(bodies) == {"Read by code", "Checked against code", "Declarations"}
+    for path in sorted(CONFIG_DIR.glob("*.yaml")):
+        stem = path.stem
+        hits = [
+            name for name, body in bodies.items() if f"`{path.name}`" in body or f"`{stem}`" in body
+        ]
+        assert len(hits) == 1, f"{path.name} appears in {hits or 'no section'}"
