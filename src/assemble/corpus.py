@@ -51,6 +51,7 @@ from src.detect.classes import CLASSES
 from src.detect.train import WEIGHTS
 from src.ir.model import Diagram
 from src.utils.config import ROOT
+from src.utils.splits import normalise
 
 DATA = ROOT / "data" / "processed" / "detect"
 IR = ROOT / "data" / "processed" / "ir"
@@ -106,10 +107,18 @@ def index() -> list[dict[str, Any]]:
 
 @lru_cache(maxsize=8)
 def pages(splits: tuple[str, ...] = HELD_OUT, source: str | None = None) -> tuple[Page, ...]:
-    """The held-out pages, in a fixed order so any two runs enumerate them identically."""
+    """The held-out pages, in a fixed order so any two runs enumerate them identically.
+
+    `splits` is normalised rather than compared as text. This index spells the middle split
+    `val` and the manifest spells it `validation`, so `pages(("validation",))` used to match
+    nothing and return an empty tuple - a typo and the other half of the project's own
+    vocabulary both produced "no pages" rather than an error. `utils.splits.normalise` raises on
+    a spelling that is neither.
+    """
+    wanted = {normalise(name) for name in splits}
     out = []
     for row in index():
-        if row["split"] not in splits or (source and row["source"] != source):
+        if normalise(row["split"]) not in wanted or (source and row["source"] != source):
             continue
         page = Page(
             name=row["name"],

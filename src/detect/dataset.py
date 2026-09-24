@@ -50,6 +50,7 @@ import numpy as np
 
 from src.detect.classes import CLASS_INDEX, CLASSES, SOURCES, boxes_for, pages
 from src.utils.config import ROOT
+from src.utils.splits import CANONICAL, DETECT, detect_name
 
 OUT = ROOT / "data" / "processed" / "detect"
 FA_RENDER = ROOT / "data" / "processed" / "fa_render"
@@ -59,9 +60,10 @@ MANIFEST = ROOT / "data" / "processed" / "manifest.parquet"
 #: export and the trainer agree and no page is resized twice.
 LONG_SIDE = 1280
 
-SPLITS = ("train", "val", "test")
-#: The manifest spells it `validation`; YOLO's data.yaml spells it `val`.
-SPLIT_ALIAS = {"train": "train", "validation": "val", "test": "test", "val": "val"}
+#: The manifest spells it `validation`; YOLO's data.yaml spells it `val`. Both tables come from
+#: `src.utils.splits`, which is the one place the two vocabularies are related.
+SPLITS = DETECT
+SPLIT_ALIAS = {name: detect_name(name) for name in (*CANONICAL, *DETECT)}
 
 RATIOS = {"train": 0.70, "val": 0.15, "test": 0.15}
 

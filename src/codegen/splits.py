@@ -122,8 +122,9 @@ from pathlib import Path
 from typing import Any
 
 from src.utils.config import ROOT
+from src.utils.splits import ALIASES, CANONICAL
 
-SPLITS = ("train", "validation", "test")
+SPLITS = CANONICAL
 
 #: The canonical corpus manifest written by `python -m src.ingest.splits`.
 MANIFEST = ROOT / "data" / "processed" / "manifest.parquet"
@@ -137,17 +138,15 @@ SYNTHETIC_SOURCES = frozenset({"synthetic", "synthetic_graphs", "generated"})
 
 
 def _normalise(split: Any) -> str | None:
-    """`val` and `validation` are the same split under two names in this repo."""
+    """`val` and `validation` are the same split under two names in this repo.
+
+    None rather than a raise, because this one is a *filter* over manifest rows that may carry
+    anything: an unlabelled row is skipped, not an error. `utils.splits.normalise` is the strict
+    form, and the table is shared so the two cannot drift.
+    """
     if split is None:
         return None
-    text = str(split).strip().lower()
-    if text in ("val", "valid", "validation", "dev"):
-        return "validation"
-    if text in ("train", "training"):
-        return "train"
-    if text in ("test", "eval"):
-        return "test"
-    return None
+    return ALIASES.get(str(split).strip().lower())
 
 
 @lru_cache(maxsize=1)

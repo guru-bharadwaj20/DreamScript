@@ -40,6 +40,7 @@ import numpy as np
 
 from src.pipeline.contracts import UNKNOWN
 from src.utils.config import ROOT
+from src.utils.splits import normalise
 
 #: The detector's class vocabulary, in a fixed order so a histogram is a stable vector.
 CLASSES = (
@@ -80,9 +81,13 @@ def fit(split: str = "val", model_path: Path = MODEL) -> dict[str, Any]:
     """Fit the prior on one split's detector output and store it."""
     from src.assemble.corpus import detections, pages
 
+    # Normalised, not compared as text: this index says `val` and the manifest says
+    # `validation`, and `fit("validation")` used to match no page and then raise "no detector
+    # output" three frames later instead of here.
+    wanted = normalise(split)
     rows, labels = [], []
     for page in pages():
-        if page.split != split:
+        if normalise(page.split) != wanted:
             continue
         kind = SOURCE_TYPE.get(page.source)
         if kind is None:
