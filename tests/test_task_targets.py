@@ -240,3 +240,28 @@ def test_the_baseline_exists_and_is_per_error_code():
 
 def test_mypy_is_declared_where_the_thing_that_runs_it_is_installed():
     assert "mypy" in (ROOT / "requirements" / "dev.txt").read_text(encoding="utf-8")
+
+
+# --- line endings are the repository's decision, not the clone's (audit 53) -------------------
+
+
+def test_gitattributes_exists_and_normalises_text():
+    text = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    assert "* text=auto eol=lf" in text
+
+
+def test_the_two_file_types_windows_needs_crlf_for_are_pinned():
+    """`.ps1` and `.bat` will not run with LF endings, and `tasks.ps1` is how this project is
+    driven on the machine it is developed on."""
+    text = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    for pattern in ("*.ps1 text eol=crlf", "*.bat text eol=crlf"):
+        assert pattern in text
+
+
+def test_every_binary_extension_in_the_tree_is_declared():
+    """Git's text/binary heuristic guessing wrong on one file corrupts it silently, and this
+    repo tracks .pt checkpoints, .parquet tables and .npy matrices."""
+    text = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+    declared = {line.split()[0].lstrip("*") for line in text.splitlines() if " binary" in line}
+    for extension in (".png", ".pt", ".npy", ".parquet", ".joblib", ".pdf"):
+        assert extension in declared, extension

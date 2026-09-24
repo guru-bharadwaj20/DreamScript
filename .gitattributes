@@ -1,0 +1,52 @@
+# How the repository stores text, decided here instead of by whoever cloned it.
+#
+# There was no .gitattributes at all, so every clone's line endings were decided by its own
+# `core.autocrlf`. Checked before writing this: the index is **815 LF, 104 binary, 11 empty and
+# zero CRLF**, so what is stored is already right and `core.autocrlf=true` is what puts CRLF in
+# this working tree on checkout. (An earlier reading of "726 files with CRLF" was of the working
+# tree, not the repository - worth recording, because the two look identical from `grep` and only
+# one of them is a problem.)
+#
+# What this file buys is that the answer stops depending on a per-clone setting: `text=auto
+# eol=lf` normalises on commit and checks out LF everywhere, so a contributor whose git is
+# configured differently cannot flip 800 files in one diff, and CI, the Docker build and this
+# machine all read the same bytes.
+#
+# The two rules that are not merely explicitness are at the bottom: `.ps1` and `.bat` need CRLF
+# or Windows will not run them, and the Makefile's tab-indented recipes must never be filtered.
+
+* text=auto eol=lf
+
+# Files whose bytes are their content. Marked explicitly rather than left to Git's heuristic,
+# because a heuristic that guesses wrong on one file corrupts it silently.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.bmp binary
+*.tif binary
+*.tiff binary
+*.pdf binary
+*.pt binary
+*.pth binary
+*.onnx binary
+*.npy binary
+*.npz binary
+*.parquet binary
+*.joblib binary
+*.pkl binary
+*.7z binary
+*.zip binary
+*.gz binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+
+# Windows needs CRLF in these two or they do not run.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# A tab-indented recipe line is the Makefile's syntax; never let a filter touch it.
+Makefile text eol=lf
