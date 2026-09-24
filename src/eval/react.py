@@ -211,6 +211,7 @@ def check_many(
             encoding="utf-8",
             cwd=TOOL_DIR,
             timeout=60 + len(chunk) * (timeout_ms / 1000.0) * 2,
+            check=False,
         )
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout)[-300:]

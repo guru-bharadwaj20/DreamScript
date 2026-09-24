@@ -125,9 +125,7 @@ PLAN_PAIR = ("flowchart", "state_machine")
 HARD_PAIR = ("circuit", "flowchart")
 
 
-def pipeline(
-    degree: int = 3, gamma="scale", coef0: float = 0.0, C: float = 1.0, **kwargs
-):  # noqa: N803
+def pipeline(degree: int = 3, gamma="scale", coef0: float = 0.0, C: float = 1.0, **kwargs):
     """4.2.3's imputation and 4.2.4's scaling, then a polynomial-kernel SVC.
 
     Scaling matters more for a polynomial kernel than for any other model in this phase: the

@@ -104,7 +104,7 @@ CS = (0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0)
 LOSSES = ("hinge", "squared_hinge")
 
 
-def pipeline(C: float = 1.0, loss: str = "squared_hinge", **kwargs):  # noqa: N803
+def pipeline(C: float = 1.0, loss: str = "squared_hinge", **kwargs):
     """4.2.3's imputation and 4.2.4's scaling, then a linear SVM.
 
     Scaling is not optional for an SVM in the way it was optional for 5.1.3's tree: the margin is
@@ -132,7 +132,7 @@ def pipeline(C: float = 1.0, loss: str = "squared_hinge", **kwargs):  # noqa: N8
     return Pipeline([("prepare", feature_scaler()), ("model", LinearSVC(**settings))])
 
 
-def hinge_loss_value(estimator, X, y) -> float:  # noqa: N803
+def hinge_loss_value(estimator, X, y) -> float:
     """Mean multiclass hinge loss - the quantity the model actually minimises.
 
     Reported beside macro F1 because they answer different questions. Macro F1 counts decisions;
@@ -146,7 +146,7 @@ def hinge_loss_value(estimator, X, y) -> float:  # noqa: N803
     return float(hinge_loss(y, decision, labels=list(estimator.named_steps["model"].classes_)))
 
 
-def support_vector_count(data, C: float, loss: str = "squared_hinge") -> dict:  # noqa: N803
+def support_vector_count(data, C: float, loss: str = "squared_hinge") -> dict:
     """How many training rows sit on or inside the margin, via an equivalent `SVC(kernel="linear")`.
 
     `LinearSVC` does not expose support vectors at all - it solves the primal and never forms the

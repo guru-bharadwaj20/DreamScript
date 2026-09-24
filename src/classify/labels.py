@@ -34,7 +34,7 @@ class LabelSafe(ClassifierMixin, BaseEstimator):
     def __init__(self, estimator):
         self.estimator = estimator
 
-    def fit(self, X, y, **kwargs):  # noqa: N803 - sklearn's parameter name
+    def fit(self, X, y, **kwargs):  # sklearn's parameter name
         from sklearn.preprocessing import LabelEncoder
 
         self.encoder_ = LabelEncoder().fit(np.asarray(y).astype(str))
@@ -43,10 +43,10 @@ class LabelSafe(ClassifierMixin, BaseEstimator):
         self.estimator_.fit(X, self.encoder_.transform(np.asarray(y).astype(str)), **kwargs)
         return self
 
-    def predict(self, X):  # noqa: N803
+    def predict(self, X):
         return self.encoder_.inverse_transform(np.asarray(self.estimator_.predict(X)).astype(int))
 
-    def predict_proba(self, X):  # noqa: N803
+    def predict_proba(self, X):
         # The inner estimator's columns are in encoded order, and `LabelEncoder` sorts, so they
         # already line up with `classes_`. Asserted rather than assumed because a mismatch here
         # would be invisible - the probabilities would look fine and belong to the wrong classes.
@@ -54,7 +54,7 @@ class LabelSafe(ClassifierMixin, BaseEstimator):
         assert proba.shape[1] == len(self.classes_)
         return proba
 
-    def decision_function(self, X):  # noqa: N803
+    def decision_function(self, X):
         return self.estimator_.decision_function(X)
 
     @property

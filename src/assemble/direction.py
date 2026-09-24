@@ -346,7 +346,8 @@ def _geometric_heads(page: Page) -> list[tuple[float, float, float]]:
         from src.preprocess.cache import load_or_compute
 
         primitives, _ = load_or_compute(page.name, page.image, PRIMITIVES)
-    except Exception:  # a page whose primitives cannot be built has no geometric heads
+    # A page whose primitives cannot be built has no geometric heads.
+    except Exception:  # noqa: BLE001
         return []
     return [
         (float(a["x"]), float(a["y"]), math.radians(float(a["shaft_angle"])))

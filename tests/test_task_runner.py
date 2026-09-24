@@ -59,6 +59,7 @@ def test_task_dispatches(task: str):
         capture_output=True,
         text=True,
         cwd=ROOT,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     # Three tasks are the venv rather than a command inside it: `env` builds it with `uv`,
@@ -85,6 +86,7 @@ def test_unknown_task_fails_loudly():
         capture_output=True,
         text=True,
         cwd=ROOT,
+        check=False,
     )
     assert result.returncode != 0
     assert "unknown task" in (result.stderr + result.stdout)

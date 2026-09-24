@@ -51,7 +51,7 @@ def automaton() -> Diagram:
 
 def run_generated(code: str) -> dict:
     namespace: dict = {"__name__": "generated"}
-    exec(compile(code, "<generated>", "exec"), namespace)  # noqa: S102 - the check itself
+    exec(compile(code, "<generated>", "exec"), namespace)  # the check itself
     return namespace
 
 

@@ -109,7 +109,7 @@ def activate_grad(z: np.ndarray, kind: str = "relu") -> np.ndarray:
     raise ValueError(f"unknown activation {kind!r}")
 
 
-def forward(X: np.ndarray, params: dict, kind: str = "relu") -> dict:  # noqa: N803
+def forward(X: np.ndarray, params: dict, kind: str = "relu") -> dict:
     """One hidden layer and an output layer, keeping every intermediate the backward pass needs.
 
     Caching `z1` rather than recomputing it is not an optimisation here; `a1` alone is not enough
@@ -136,9 +136,7 @@ def softmax_cross_entropy_grad(probabilities: np.ndarray, y: np.ndarray) -> np.n
     return delta / n
 
 
-def backward(
-    X: np.ndarray, y: np.ndarray, params: dict, cache: dict, kind: str = "relu"  # noqa: N803
-) -> dict:
+def backward(X: np.ndarray, y: np.ndarray, params: dict, cache: dict, kind: str = "relu") -> dict:
     """The four gradients, exactly as `docs/backprop_derivation.md` derives them.
 
     No autograd, no finite differences - this is the closed form, and the tests are what say it
@@ -185,7 +183,7 @@ def initialise(n_features: int, hidden: int, n_classes: int, seed: int = SEED) -
 
 
 def numerical_gradient(
-    X, y, params: dict, name: str, kind: str = "relu", eps: float = 1e-6  # noqa: N803
+    X, y, params: dict, name: str, kind: str = "relu", eps: float = 1e-6
 ) -> np.ndarray:
     """Central differences on one parameter array - the check that needs no torch at all.
 

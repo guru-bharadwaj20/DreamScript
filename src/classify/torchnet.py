@@ -244,7 +244,7 @@ class TorchMLP(ClassifierMixin, BaseEstimator):
 
     # -- fit ----------------------------------------------------------------------------
 
-    def fit(self, X, y):  # noqa: N803 - sklearn's parameter name
+    def fit(self, X, y):  # sklearn's parameter name
         import torch
         import torch.nn as nn
         from sklearn.metrics import f1_score
@@ -364,7 +364,7 @@ class TorchMLP(ClassifierMixin, BaseEstimator):
 
     # -- predict ------------------------------------------------------------------------
 
-    def _logits(self, X):  # noqa: N803
+    def _logits(self, X):
         import torch
 
         X = np.asarray(X, dtype=np.float32)
@@ -372,17 +372,17 @@ class TorchMLP(ClassifierMixin, BaseEstimator):
         with torch.no_grad():
             return self.net_(torch.as_tensor(X, device=self.device_)).cpu().numpy()
 
-    def predict(self, X):  # noqa: N803
+    def predict(self, X):
         return self.encoder_.inverse_transform(self._logits(X).argmax(1))
 
-    def predict_proba(self, X):  # noqa: N803
+    def predict_proba(self, X):
         logits = self._logits(X)
         # Softmax with the row max subtracted. The raw logits of a converged 5-class network on
         # an easy page reach 20-plus, and the shift is what keeps `exp` in range regardless.
         shifted = np.exp(logits - logits.max(axis=1, keepdims=True))
         return shifted / shifted.sum(axis=1, keepdims=True)
 
-    def training_score(self, X, y) -> float:  # noqa: N803
+    def training_score(self, X, y) -> float:
         """Macro F1 on the rows this estimator was fitted on - 6.2.3's overfit gap needs it."""
         from sklearn.metrics import f1_score
 

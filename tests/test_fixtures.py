@@ -85,6 +85,7 @@ def test_fixture_generation_is_deterministic(tmp_path: Path):
         capture_output=True,
         text=True,
         cwd=ROOT,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     after = {p.name: p.read_bytes() for p in (ROOT / "tests" / "fixtures").glob("*.png")}

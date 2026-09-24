@@ -462,7 +462,7 @@ def benchmark(per_source: int = 80) -> dict[str, Any]:
     ratios: dict[str, list[float]] = {}
     try:
         count_tokens, tokeniser_name = _tokeniser()
-    except Exception as exc:  # pragma: no cover - environment dependent
+    except Exception as exc:  # noqa: BLE001 - pragma: no cover - environment dependent
         count_tokens, tokeniser_name = _fallback_tokeniser()
         tokeniser_name += f" [{exc.__class__.__name__}]"
     total = 0

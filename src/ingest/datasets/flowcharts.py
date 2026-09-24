@@ -90,7 +90,7 @@ def probe_original(timeout: int = 20) -> dict[str, int | str]:
     for name, url in FC_ORIGINAL_URLS.items():
         try:
             req = urllib.request.Request(url, method="HEAD")
-            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 results[name] = resp.status
         except urllib.error.HTTPError as exc:
             results[name] = exc.code

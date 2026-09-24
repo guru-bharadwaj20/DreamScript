@@ -156,7 +156,8 @@ def score_variant(page, kind: str, severity: float, directory: Path) -> dict[str
             prune_loops=True,
         )
         row.update(decompose(predicted, truth(page)))
-    except Exception as error:  # a stage that cannot answer is a data point, not a crash
+    # A stage that cannot answer is a data point, not a crash.
+    except Exception as error:  # noqa: BLE001
         row["error"] = f"{type(error).__name__}: {error}"
         return row
 
@@ -168,7 +169,8 @@ def score_variant(page, kind: str, severity: float, directory: Path) -> dict[str
         row["routed_type"] = predicted_type
         row["routed_confidence"] = round(float(confidence), 4)
         row["routed"] = int(predicted_type == truth(page).diagram_type)
-    except Exception as error:
+    # The routing half fails independently of the assembly half.
+    except Exception as error:  # noqa: BLE001
         row["routed_error"] = f"{type(error).__name__}: {error}"
     return row
 

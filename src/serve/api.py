@@ -168,7 +168,7 @@ def build_app():
         return {"service": "15.11", "registry": registry_versions()}
 
     @app.post("/predict", summary="One page photograph to IR and code.")
-    async def predict(image: UploadFile = File(...)) -> JSONResponse:  # noqa: B008 - FastAPI's DI
+    async def predict(image: UploadFile = File(...)) -> JSONResponse:
         suffix = Path(image.filename or "").suffix.lower()
         if suffix not in ALLOWED_SUFFIXES:
             raise HTTPException(
@@ -196,7 +196,7 @@ def build_app():
             started = time.perf_counter()
             try:
                 result = pipeline().run(path)
-            except Exception as exc:  # noqa: BLE001 - one bad page must not take the service down
+            except Exception as exc:
                 # 502 rather than 500: the pipeline is the upstream here, and the distinction
                 # tells a caller whether to retry the page or the request.
                 raise HTTPException(status_code=502, detail=f"pipeline failed: {exc}") from exc

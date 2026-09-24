@@ -62,7 +62,7 @@ def _git_provenance() -> dict[str, Any]:
     def git(*args: str) -> str | None:
         try:
             out = subprocess.run(
-                ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=10
+                ["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=10, check=False
             )
             return out.stdout.strip() if out.returncode == 0 else None
         except Exception:  # noqa: BLE001 - provenance must never break a run
@@ -265,7 +265,7 @@ def start_run(
                     tags={"run_dir": str(run_dir)},
                 )
             )
-            run._tracking = stack  # noqa: SLF001 - its own attribute
+            run._tracking = stack  # its own attribute
     logger.info("run started: %s", run_dir)
     if cfg is not None:
         logger.debug("config: %s", json.dumps(to_dict(cfg), default=str))

@@ -137,7 +137,7 @@ def estimator(model: str, table: str = "hybrid"):
             random_state=SEED,
         )
     elif model == "mlp":
-        from src.classify.multiclass import base_estimator  # noqa: F401  (kept symmetric)
+        from src.classify.multiclass import base_estimator
         from src.classify.regularize import ACTIVATION, best_settings
         from src.classify.torchnet import TorchMLP
 

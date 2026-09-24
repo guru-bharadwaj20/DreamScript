@@ -86,7 +86,7 @@ class MedianImputer(BaseEstimator, TransformerMixin):
     def __init__(self, add_indicator: bool = True):
         self.add_indicator = add_indicator
 
-    def fit(self, X, y=None):  # noqa: N803
+    def fit(self, X, y=None):
         matrix = np.asarray(X, float)
         if matrix.ndim != 2:
             raise ValueError("expected a 2-d feature matrix")
@@ -105,7 +105,7 @@ class MedianImputer(BaseEstimator, TransformerMixin):
         self.missing_columns_ = np.flatnonzero(np.isnan(matrix).any(axis=0))
         return self
 
-    def transform(self, X) -> np.ndarray:  # noqa: N803
+    def transform(self, X) -> np.ndarray:
         matrix = np.asarray(X, float).copy()
         if matrix.shape[1] != self.n_features_in_:
             raise ValueError(f"expected {self.n_features_in_} columns, got {matrix.shape[1]}")

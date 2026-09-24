@@ -423,10 +423,11 @@ def dot_binary_check(text: str) -> tuple[bool | None, str]:
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "preview.dot"
         path.write_text(text, encoding="utf-8")
-        done = subprocess.run(  # noqa: S603 - fixed binary, file argument
+        done = subprocess.run(  # fixed binary, file argument
             [binary, "-Tcanon", "-o", str(Path(tmp) / "out.dot"), str(path)],
             capture_output=True,
             text=True,
+            check=False,
         )
     return done.returncode == 0, done.stderr.strip()[:200]
 

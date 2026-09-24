@@ -291,7 +291,7 @@ def test_the_emitted_state_machine_class_actually_runs():
         "edges": [edge("e0", "s0", "s1", "a"), edge("e1", "s1", "s0", "b")],
     }
     namespace: dict = {}
-    exec(compile(emit(diagram, "state_machine"), "<machine>", "exec"), namespace)  # noqa: S102
+    exec(compile(emit(diagram, "state_machine"), "<machine>", "exec"), namespace)
     machine = namespace["DfaMachine"]()
     assert machine.INITIAL == "q0"
     assert machine.accepts(["a"]) is True
@@ -304,7 +304,7 @@ def test_a_machine_with_no_accepting_state_gets_an_empty_set_not_an_empty_dict()
     """Regression: `ACCEPTING = {}` is a dict, and a dict of accepting states is meaningless."""
     namespace: dict = {}
     code = emit(HOSTILE["duplicate_labels"], "state_machine")
-    exec(compile(code, "<machine>", "exec"), namespace)  # noqa: S102
+    exec(compile(code, "<machine>", "exec"), namespace)
     machine = next(v for k, v in namespace.items() if k.endswith("Machine"))
     assert isinstance(machine.ACCEPTING, set)  # `{}` would be a dict
     assert not machine.ACCEPTING
@@ -314,7 +314,7 @@ def test_states_whose_ocr_text_collided_do_not_merge_into_one_row():
     """Three states all read as "q"; the transition table must still have three rows."""
     code = emit(HOSTILE["duplicate_labels"], "state_machine")
     namespace: dict = {}
-    exec(compile(code, "<machine>", "exec"), namespace)  # noqa: S102
+    exec(compile(code, "<machine>", "exec"), namespace)
     machine = next(v for k, v in namespace.items() if k.endswith("Machine"))
     assert len(machine.STATES) == len(set(machine.STATES)) == 3
     assert len(machine.TABLE) == 3

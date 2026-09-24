@@ -17,10 +17,10 @@ import sys
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.pyplot as plt
+import pandas as pd
 
-from src.utils.config import ROOT  # noqa: E402
+from src.utils.config import ROOT
 from src.utils.figures import save as _figsave
 
 REPORT = ROOT / "reports" / "class_balance.md"

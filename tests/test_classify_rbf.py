@@ -107,7 +107,7 @@ def test_a_tiny_gamma_agrees_with_the_linear_model_more_than_a_large_one_does(to
     splitter = StratifiedKFold(5, shuffle=True, random_state=rbf.SEED)
     linear = cross_val_predict(linear_pipeline(C=1.0), toy.X, toy.y, cv=splitter, n_jobs=2)
 
-    def agreement(gamma, C):  # noqa: N803
+    def agreement(gamma, C):
         predicted = cross_val_predict(
             rbf.pipeline(gamma=gamma, C=C), toy.X, toy.y, cv=splitter, n_jobs=2
         )

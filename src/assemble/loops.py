@@ -430,7 +430,8 @@ def verify(diagram: Diagram) -> bool:
 def _measure(path: Path) -> dict[str, Any]:
     try:
         diagram = Diagram.load(path)
-    except Exception as exc:  # one unreadable file in 5,796 is a row, not a crashed sweep
+    # One unreadable file in 5,796 is a row, not a crashed sweep.
+    except Exception as exc:  # noqa: BLE001
         return {"source": path.parent.name, "error": f"{type(exc).__name__}: {exc}"[:120]}
     found = loops(diagram)
     graph = adjacency(diagram)

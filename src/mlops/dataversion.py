@@ -70,7 +70,7 @@ def _run(*args: str) -> tuple[int, str]:
     executable = str(DVC) if DVC.is_file() else "dvc"
     try:
         done = subprocess.run(
-            [executable, *args], cwd=ROOT, capture_output=True, text=True, timeout=1800
+            [executable, *args], cwd=ROOT, capture_output=True, text=True, timeout=1800, check=False
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         return 1, f"{type(error).__name__}: {error}"

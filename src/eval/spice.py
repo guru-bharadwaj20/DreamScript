@@ -61,7 +61,7 @@ def ensure_toolchain() -> bool:
         return False
     TOOL_DIR.mkdir(parents=True, exist_ok=True)
     archive = TOOL_DIR / "ngspice.7z"
-    urllib.request.urlretrieve(URL, archive)  # noqa: S310 - fixed https release URL
+    urllib.request.urlretrieve(URL, archive)  # fixed https release URL
     with py7zr.SevenZipFile(archive) as handle:
         handle.extractall(TOOL_DIR)
     return available()
@@ -100,6 +100,7 @@ def check(netlist: str, timeout_s: float = 20.0) -> dict:
                 errors="replace",
                 cwd=tmp,
                 timeout=timeout_s,
+                check=False,
             )
         except subprocess.TimeoutExpired:
             return {"ok": False, "kind": "spice.timeout", "detail": f">{timeout_s}s"}

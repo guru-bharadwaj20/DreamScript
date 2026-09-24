@@ -292,7 +292,7 @@ def _widths(image: Path, sites: list[tuple[float, float]]) -> list[float | None]
         if grey is None:
             return [None] * len(sites)
         dist = cv2.distanceTransform((grey < 128).astype(np.uint8), cv2.DIST_L2, 3)
-    except Exception:
+    except Exception:  # noqa: BLE001 - no distance transform means no width evidence, not a crash
         return [None] * len(sites)
     h, w = dist.shape
     out: list[float | None] = []

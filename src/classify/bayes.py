@@ -125,7 +125,7 @@ def log_transform(names: list[str]):
 
     index = [i for i, name in enumerate(names) if name in LOGGABLE]
 
-    def apply(X):  # noqa: N803
+    def apply(X):
         out = np.array(X, dtype=float, copy=True)
         if index:
             out[:, index] = np.log1p(np.clip(out[:, index], 0, None))

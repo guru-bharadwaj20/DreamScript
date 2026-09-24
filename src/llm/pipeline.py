@@ -122,6 +122,7 @@ def gpu_used_mb() -> int | None:
             capture_output=True,
             text=True,
             timeout=20,
+            check=False,
         ).stdout
         return int(out.strip().splitlines()[0])
     except Exception:  # noqa: BLE001
@@ -166,6 +167,7 @@ def run_job(ctx: Ctx, kind: str, spec: dict, name: str) -> dict:
             env=env,
             stdout=out,
             stderr=subprocess.STDOUT,
+            check=False,
         ).returncode
     log(ctx, f"job {name} end rc={code} {time.perf_counter() - began:.0f}s")
     if code != 0 or not result_path.exists():
@@ -574,6 +576,7 @@ def commit_row(
         capture_output=True,
         text=True,
         timeout=7200,
+        check=False,
     )
     log(
         ctx,
@@ -685,6 +688,7 @@ def live_process(tag: str) -> bool:
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,
         ).stdout
         return any(
             f"--tag {tag}" in line and "src.llm.benchmark" in line for line in out.splitlines()
@@ -895,6 +899,7 @@ def run_training_arm(
                 env=dict(os.environ, HF_HUB_OFFLINE="1"),
                 stdout=out,
                 stderr=subprocess.STDOUT,
+                check=False,
             ).returncode
         text = (logs / f"train-{name}.log").read_text(
             encoding="utf-8",

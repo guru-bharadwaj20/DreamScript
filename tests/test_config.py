@@ -93,6 +93,7 @@ def test_entrypoint_contract(package: str):
         ],
         capture_output=True,
         text=True,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     assert "project: dreamscript" in result.stdout

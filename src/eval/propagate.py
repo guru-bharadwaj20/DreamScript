@@ -96,7 +96,7 @@ def emit(diagram, source: str) -> str | None:
 
     try:
         return make_pair(diagram.to_dict(), source)["target_code"]
-    except Exception:  # an emitter that cannot answer is a rung result, not a crash
+    except Exception:  # noqa: BLE001 - an emitter that cannot answer is a rung result, not a crash
         return None
 
 

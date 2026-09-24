@@ -184,6 +184,7 @@ def to_gguf(merged_dir: Path, out: Path, quants: tuple[str, ...] = ("Q8_0", "Q4_
         env=env,
         capture_output=True,
         text=True,
+        check=False,
     )
     if convert.returncode != 0:
         # `check=True` here raised CalledProcessError with the converter's own diagnosis captured
@@ -223,7 +224,7 @@ class LlamaServer:
     def __enter__(self) -> LlamaServer:
         import urllib.request
 
-        log = open(self.gguf.with_suffix(f".server{self.parallel}.log"), "w")  # noqa: SIM115
+        log = open(self.gguf.with_suffix(f".server{self.parallel}.log"), "w")
         self.proc = subprocess.Popen(
             [
                 str(LLAMA_BIN / "llama-server.exe"),

@@ -111,7 +111,7 @@ def wait_for(url: str, timeout: float) -> bool:
                 return True
         except urllib.error.HTTPError:
             return True  # answering at all means it is up
-        except Exception:
+        except Exception:  # noqa: BLE001 - the boot loop retries anything until BOOT_TIMEOUT
             time.sleep(3)
     return False
 
@@ -171,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
             capture_output=True,
             text=True,
             cwd=str(workdir),
+            check=False,
         )
         checks["legacy_tokens_enabled"] = "tokens enabled" in orm.stdout
 

@@ -261,7 +261,7 @@ def semantic_score(
         code = emit_code(graph, list(state.emit_sequence), _marked_set(graph, state))
         try:
             verdict = config.sandbox(code)
-        except Exception as exc:  # a sandbox failure must not kill a training run
+        except Exception as exc:  # noqa: BLE001 - a sandbox failure must not kill a training run
             detail["sandbox_error"] = repr(exc)
             verdict = {}
         if verdict:

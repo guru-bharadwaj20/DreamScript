@@ -140,7 +140,7 @@ def test_a_generated_state_machine_agrees_with_its_own_ir(tmp_path):
     code = for_type("state_machine")(diagram, order)
 
     namespace: dict = {}
-    exec(compile(code, "<generated>", "exec"), namespace)  # noqa: S102 - the point of the test
+    exec(compile(code, "<generated>", "exec"), namespace)  # the point of the test
     machine_class = next(
         value
         for value in namespace.values()

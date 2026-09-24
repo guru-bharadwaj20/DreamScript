@@ -474,7 +474,7 @@ def add_detected(out: Path = OUT, source: str = "hdbpmn", limit: int | None = No
             cv2.imwrite(str(out / "images" / row["file"]), patch)
         rows.extend(page)
 
-    import pandas as pd  # noqa: F811  (local re-import keeps the optional dep at call site)
+    import pandas as pd
 
     combined = pd.concat([frame, pd.DataFrame(rows)], ignore_index=True)
     combined.to_parquet(index_path, index=False)

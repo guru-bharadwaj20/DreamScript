@@ -73,7 +73,33 @@ target-version = "py311"
 exclude = [".venv", "experiments", "data", "notebooks"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "ARG"]
+select = [
+    "E", "F", "W", "I", "UP", "B", "C4", "SIM", "ARG",
+    # Added with the rest of the style sweep, each because it caught something real:
+    "RUF100",   # `# noqa` directives that suppress nothing. A silenced warning that is not
+                # warning is worse than no comment, because the next reader trusts it
+    "PLW1510",  # `subprocess.run` without an explicit `check`. The default is False, so a
+                # failing command was a silent no-op in a verification script
+    "BLE001",   # `except Exception` with no re-raise. 33 `# noqa: BLE001` directives were
+                # already in the tree explaining why a particular one is right - which is a rule
+                # the author expected to be on, suppressed by a rule that was off
+    "SIM115",   # a file opened outside a context manager
+]
+
+# Deliberately NOT selected, each because the fix would be worse than the finding:
+#
+#   N803/N806  `X` for a design matrix and `X_train`/`y` for its splits is the convention every
+#              sklearn and numpy caller in this repo reads by. 350 violations, all idiomatic.
+#   SLF001     147, almost all a test reaching into the module it tests.
+#   S603       37 `subprocess.run` with a list argument and a fixed binary. The rule cannot see
+#              that, and `check=` - the part that was actually wrong - is PLW1510 above.
+#   S310       `urllib.request.urlopen` against a URL this project constructs.
+#   NPY002     9 legacy `np.random.seed` calls beside `default_rng` elsewhere. Replacing them
+#              changes the RNG stream and therefore every number downstream, so it is a
+#              re-measurement rather than a lint fix. Left, and named here so it is a decision.
+#
+# The directives that named these have been converted to plain comments: the reason a reader
+# needs is kept and the machine-readable half that pointed at a rule nobody runs is gone.
 ignore = [
     "E501",   # line length is enforced by black
     "B008",   # FastAPI Depends() in defaults is idiomatic

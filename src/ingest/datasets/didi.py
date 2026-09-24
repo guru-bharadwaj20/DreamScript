@@ -58,7 +58,7 @@ def download(force: bool = False) -> Path:
             print(f"already present: {out.name} ({out.stat().st_size:,} bytes)")
             continue
         print(f"downloading {name} ...")
-        urllib.request.urlretrieve(url, out)  # noqa: S310 - fixed https bucket
+        urllib.request.urlretrieve(url, out)  # fixed https bucket
         print(f"  {out.stat().st_size:,} bytes")
     return target
 

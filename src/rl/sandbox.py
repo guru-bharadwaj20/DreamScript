@@ -232,7 +232,8 @@ def _reader(stream, cap: int, out: list) -> None:
             total += len(chunk)
             if len(kept) < cap:
                 kept += chunk[: cap - len(kept)]
-    except Exception:
+    # Draining a dead pipe; the exit code is the result, not this read.
+    except Exception:  # noqa: BLE001
         pass
     finally:
         with contextlib.suppress(Exception):
@@ -476,7 +477,8 @@ def _peak(job):  # pragma: no cover - platform branch
     try:
         info = win32job.QueryInformationJobObject(job, win32job.JobObjectExtendedLimitInformation)
         return int(info["PeakJobMemoryUsed"])
-    except Exception:
+    # A Win32 job object query on a process that has already gone.
+    except Exception:  # noqa: BLE001
         return None
 
 

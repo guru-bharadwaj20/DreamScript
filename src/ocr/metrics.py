@@ -214,7 +214,8 @@ def style_clusters() -> dict[str, int]:
         from src.ocr.styled import style_groups
 
         return {str(k): int(v) for k, v in style_groups().items()}
-    except Exception:
+    # Style groups are a decoration on this report, not its content.
+    except Exception:  # noqa: BLE001
         return {}
 
 

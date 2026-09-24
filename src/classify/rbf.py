@@ -105,7 +105,7 @@ CS = (0.1, 1.0, 10.0, 100.0, 1000.0)
 LINEAR = {"hybrid": 0.9628, "embedding": 0.9691, "handcrafted": 0.7656}
 
 
-def pipeline(gamma="scale", C: float = 1.0, **kwargs):  # noqa: N803
+def pipeline(gamma="scale", C: float = 1.0, **kwargs):
     from sklearn.pipeline import Pipeline
     from sklearn.svm import SVC
 

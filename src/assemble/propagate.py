@@ -297,7 +297,7 @@ def _hmm_confidence_map(held_out_ids: set[str]) -> dict[tuple[str, str], float]:
         from src.parse.posteriors import forward_backward
         from src.parse.sequences import labelled_diagrams, sequence_of
         from src.parse.viterbi import build_model, decode, logs
-    except Exception:
+    except Exception:  # noqa: BLE001 - an optional Phase 7 import; its absence is an empty result
         return {}
 
     diagrams = labelled_diagrams()

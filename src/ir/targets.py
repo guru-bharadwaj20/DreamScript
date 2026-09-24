@@ -392,7 +392,7 @@ def verify(pairs: list[dict]) -> dict:
             result["compiled"] += 1
             namespace: dict = {"__name__": "generated"}
             try:
-                exec(code, namespace)  # noqa: S102 - running our own output is the check
+                exec(code, namespace)  # running our own output is the check
                 if pair["diagram_type"] == "state_machine":
                     for symbol in namespace.get("ALPHABET", [])[:3]:
                         namespace["accepts"](symbol)

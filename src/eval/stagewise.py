@@ -143,7 +143,7 @@ def classify_stage(fit: bool = True) -> dict:
             "by_type": {k: v for k, v in routed.items() if k != "overall"},
             "note": "two classes only; the router's label space is the pipeline's, not Phase 5's",
         }
-    except Exception as error:  # a missing detector or corpus must not lose the rest
+    except Exception as error:  # noqa: BLE001 - a missing detector or corpus must not lose the rest
         entry["models"]["router"] = {"unavailable": f"{type(error).__name__}: {error}"}
 
     entry["fit_seconds"] = round(time.time() - started, 1)

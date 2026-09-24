@@ -129,13 +129,13 @@ class FeatureExtractor(BaseEstimator, TransformerMixin):
     def __init__(self, n_jobs: int | None = None):
         self.n_jobs = n_jobs
 
-    def fit(self, X, y=None):  # noqa: N803 - sklearn's parameter name
+    def fit(self, X, y=None):  # sklearn's parameter name
         """Nothing is learned. Present for the sklearn contract, and it records the width."""
         self.n_features_out_ = len(FEATURE_NAMES)
         self.feature_names_out_ = list(FEATURE_NAMES)
         return self
 
-    def transform(self, X) -> np.ndarray:  # noqa: N803
+    def transform(self, X) -> np.ndarray:
         from src.utils.parallel import pmap
 
         paths = list(X)

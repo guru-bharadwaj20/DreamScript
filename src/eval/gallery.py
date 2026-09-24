@@ -79,7 +79,8 @@ def emitted_code(page) -> tuple[str, str]:
 
     try:
         diagram = _assembled(page)
-    except Exception as error:
+    # An assembly failure is a caption in the gallery, not a stop.
+    except Exception as error:  # noqa: BLE001
         return "", f"assembly failed: {type(error).__name__}: {error}"
     code = emit(diagram, page.source)
     if code is None:

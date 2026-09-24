@@ -108,7 +108,7 @@ class StringSafeMLP(MLPClassifier):
     so 5.2.1's harness, 5.2.3's report and `scoring="f1_macro"` all need no special case.
     """
 
-    def fit(self, X, y):  # noqa: N803 - sklearn's parameter name
+    def fit(self, X, y):  # sklearn's parameter name
         from sklearn.preprocessing import LabelEncoder
 
         self.encoder_ = LabelEncoder().fit(np.asarray(y).astype(str))
@@ -119,7 +119,7 @@ class StringSafeMLP(MLPClassifier):
         self.classes_ = self.encoder_.classes_
         return self
 
-    def predict(self, X):  # noqa: N803
+    def predict(self, X):
         encoded = np.asarray(super().predict(X))
         if not hasattr(self, "encoder_"):
             return encoded

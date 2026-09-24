@@ -70,7 +70,7 @@ def probe_microsoft(timeout: int = 15) -> dict[str, int | str]:
     for name, url in MS_URLS.items():
         try:
             req = urllib.request.Request(url, method="HEAD")
-            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 out[name] = resp.status
         except urllib.error.HTTPError as exc:
             out[name] = exc.code

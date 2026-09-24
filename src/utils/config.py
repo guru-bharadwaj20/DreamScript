@@ -78,7 +78,7 @@ def load_config(path: str | Path, overrides: Iterable[str] | None = None) -> Dic
         provenance = resolved.relative_to(ROOT)
     except ValueError:
         provenance = resolved
-    cfg._config_path = str(provenance)  # noqa: SLF001
+    cfg._config_path = str(provenance)
     return cfg
 
 
