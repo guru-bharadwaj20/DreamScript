@@ -61,7 +61,13 @@ def test_task_dispatches(task: str):
         cwd=ROOT,
     )
     assert result.returncode == 0, result.stderr
-    assert "python.exe" in result.stdout
+    # Three tasks are the venv rather than a command inside it: `env` builds it with `uv`,
+    # `clean` and `clean-experiments` remove directories. They still have to print what they
+    # would do, which is what -DryRun is for.
+    if task in {"env", "clean", "clean-experiments"}:
+        assert result.stdout.strip(), f"{task} -DryRun printed nothing"
+    else:
+        assert "python.exe" in result.stdout
 
 
 def test_unknown_task_fails_loudly():
@@ -82,3 +88,63 @@ def test_unknown_task_fails_loudly():
     )
     assert result.returncode != 0
     assert "unknown task" in (result.stderr + result.stdout)
+
+
+# --- one for one with the Makefile, as the docstring claims (audit 34) ------------------------
+
+
+def _task_names() -> set[str]:
+    text = (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+    block = text.split("$Tasks = [ordered]@{", 1)[1].split("\n}", 1)[0]
+    return set(re.findall(r'^\s*"([a-z][a-z0-9-]*)"\s*=', block, re.M))
+
+
+def _make_names() -> set[str]:
+    return {
+        match.group(1)
+        for line in (ROOT / "Makefile").read_text(encoding="utf-8").splitlines()
+        if (match := re.match(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:(?!=)", line))
+    }
+
+
+def test_tasks_ps1_mirrors_every_makefile_target():
+    """The docstring says "mirrors every Makefile target one-for-one". It was missing env,
+    clean, clean-experiments, verify-classical and stages, so the claim was false for five."""
+    missing = _make_names() - _task_names() - {"help"}
+    assert not missing, sorted(missing)
+
+
+def test_no_task_exists_that_the_makefile_does_not_have():
+    extra = _task_names() - _make_names() - {"help"}
+    assert not extra, sorted(extra)
+
+
+def test_lint_runs_all_three_checkers_because_ci_does():
+    """It ran ruff alone, so the Windows lint path was weaker than the gate it stands in for:
+    a commit could pass `./tasks.ps1 lint` and fail CI on black or isort."""
+    text = (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+    block = text.split('"lint"', 1)[1].split('"format"', 1)[0]
+    for tool in ("ruff", "black", "isort"):
+        assert tool in block, f"lint does not run {tool}"
+
+
+def test_format_applies_all_three():
+    text = (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+    block = text.split('"format"', 1)[1].split('"repro"', 1)[0]
+    for tool in ("isort", "black", "ruff"):
+        assert tool in block
+
+
+def test_repro_prepends_the_venv_to_path():
+    """Without it `dvc repro` spawns `python`, Windows resolves it to the Store stub and every
+    stage exits 9009 - the trap dvc.yaml documents and `make repro` guards against."""
+    text = (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+    block = text.split('"repro"', 1)[1].split('"dag"', 1)[0]
+    assert "PrependPath" in block
+    assert "$env:PATH" in text
+
+
+def test_no_task_still_invokes_a_stage_entry_point_with_only_a_config():
+    text = (ROOT / "tasks.ps1").read_text(encoding="utf-8")
+    assert "configs/$configName.yaml" not in text
+    assert "uvicorn" in text
