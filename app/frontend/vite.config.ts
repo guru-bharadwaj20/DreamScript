@@ -23,10 +23,25 @@ import { defineConfig } from "vite";
  * mean rewriting paths - a rewrite is a second description of the API that can drift from the
  * first. Each route the client uses is listed, so adding one is a visible edit rather than a
  * silent match.
+ *
+ * **That visibility is the whole cost of the choice, and it was paid once already.** 16.2.8 added
+ * `POST /correct/{id}` to the backend and to the client and not to this list, so the sheet
+ * submitted a correction into a **404** that no test caught - the route existed on the server and
+ * the client called it correctly; only the development proxy did not know. `tests/
+ * test_app_frontend.py` compares this list against the paths `api.ts` fetches now.
  */
 const BACKEND = process.env.DREAMSCRIPT_BACKEND ?? "http://127.0.0.1:3000";
 
-const ROUTES = ["/health", "/predict", "/ir", "/code", "/run", "/feedback", "/openapi.json"];
+const ROUTES = [
+  "/health",
+  "/predict",
+  "/ir",
+  "/code",
+  "/run",
+  "/correct",
+  "/feedback",
+  "/openapi.json",
+];
 
 export default defineConfig({
   plugins: [react()],

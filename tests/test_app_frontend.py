@@ -251,6 +251,34 @@ def test_every_route_the_client_calls_is_one_the_backend_registers():
     assert not missing, f"the client calls routes the backend does not serve: {sorted(missing)}"
 
 
+def test_every_route_the_client_calls_is_in_the_dev_proxy():
+    """The third description of the same contract, and the one with no compiler behind it.
+
+    `vite.config.ts` lists the paths the dev server forwards to the backend. The list is explicit
+    on purpose - a `/api/*` prefix would need a rewrite, and a rewrite is a second description of
+    the API - but the cost is that adding a route means editing three places. 16.2.8 edited two:
+    the backend registered `POST /correct/{id}`, the client called it, and the correction sheet
+    submitted into a **404** that nothing caught, because every other test was satisfied.
+    """
+    proxied = set(
+        re.findall(
+            r'"(/[a-z.]+)"', read("vite.config.ts").split("const ROUTES = [", 1)[1].split("]", 1)[0]
+        )
+    )
+    assert proxied, "no ROUTES list found in vite.config.ts"
+
+    api = without_comments(read("src/lib/api.ts"))
+    called = {
+        "/" + raw.lstrip("/").split("/")[0].split("?")[0].split("$")[0]
+        for raw in re.findall(r'fetch\(\s*[`"](/[^`"]+)[`"]', api)
+    }
+    missing = {path for path in called if path not in proxied}
+    assert not missing, (
+        f"the client calls {sorted(missing)}, which the dev proxy does not forward - "
+        "these would 404 in development while working in production"
+    )
+
+
 def test_the_client_reads_the_four_trust_fields_the_backend_goes_to_trouble_to_send():
     """13.4, 13.7 and 13.8 spent three phases making the pipeline say when it fell back. A client
     that rendered `code` alone would throw that away at the last hop."""

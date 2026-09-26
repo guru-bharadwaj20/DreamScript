@@ -114,6 +114,16 @@ export type CorrectionKind =
   | "del_edge"
   | "other";
 
+/** What `/correct/{id}` did with a tap: always logged, sometimes applied, sometimes regenerated. */
+export interface CorrectionOutcome {
+  logged: Correction;
+  applied: boolean;
+  regenerated: boolean;
+  detail: string;
+  /** The kinds that rewrite the IR, so a client can explain an unapplied correction. */
+  applies_kinds: CorrectionKind[];
+}
+
 export interface RunVerdict {
   id: string;
   language: string | null;
@@ -224,6 +234,25 @@ export const api = {
   run(id: string, timeoutS?: number): Promise<RunVerdict> {
     const query = timeoutS ? `?timeout_s=${timeoutS}` : "";
     return fetch(`/run/${id}${query}`, { method: "POST" }).then(unwrap<RunVerdict>);
+  },
+
+  /**
+   * 16.2.8's round trip: log the tap, apply it, re-emit the code, all under the same id.
+   *
+   * Returns the whole prediction again rather than a patch. The corrected IR, the regenerated
+   * code and the updated `degraded` flag all move together, and a client that merged a patch into
+   * what it was already holding would be one refresh away from showing a label from the correction
+   * beside code from before it.
+   */
+  correct(
+    id: string,
+    correction: { kind: CorrectionKind; node?: string; now?: string; note?: string },
+  ): Promise<Prediction & { correction: CorrectionOutcome }> {
+    return fetch(`/correct/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(correction),
+    }).then(unwrap<Prediction & { correction: CorrectionOutcome }>);
   },
 
   feedback(correction: {

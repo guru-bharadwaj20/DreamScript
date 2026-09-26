@@ -1,0 +1,85 @@
+/* Phase 16.2.8 - the correction sheet. */
+
+.correct-was {
+  font-size: 17px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+/* Struck through rather than removed. A person who cannot see what the machine thought cannot tell
+   whether it was close or nowhere near - which is the judgement that decides whether to keep
+   correcting or photograph the page again. */
+.correct-was s {
+  text-decoration-color: var(--stopped);
+  text-decoration-thickness: 2px;
+  color: var(--ink-2);
+}
+
+.correct-kinds {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.correct-kind {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-3) var(--sp-4);
+  text-align: left;
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease);
+}
+
+.correct-kind[aria-checked="true"] {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+
+.correct-kind strong {
+  display: block;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+}
+
+.correct-kind[aria-checked="true"] strong {
+  color: var(--gold-text);
+}
+
+.correct-kind small {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.correct-field {
+  display: block;
+}
+
+.correct-field input {
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: var(--sp-2);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  /* 16px is the smallest size iOS Safari will render without zooming the page in on focus, which
+     on a bottom sheet means the sheet slides half off the screen. Not a preference. */
+  font-size: 16px;
+}
+
+.correct-field input:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+
+.correct-field input::placeholder {
+  color: var(--ink-3);
+}

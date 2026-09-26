@@ -15,8 +15,9 @@ import { useEffect, useState } from "react";
 
 import { type Prediction, ApiError, api } from "../lib/api";
 import { heldFor } from "../lib/held";
-import { Card, Pill, Segmented, TrustPill } from "../ui";
+import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
 import { Code } from "../ui/Code";
+import { Correct } from "../ui/Correct";
 import { Graph } from "../ui/Graph";
 import { LOW_CONFIDENCE, Overlay } from "../ui/Overlay";
 
@@ -31,6 +32,7 @@ export function Result({ id }: { id: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [tab, setTab] = useState<Tab>("code");
   const [selected, setSelected] = useState<string | null>(null);
+  const [correcting, setCorrecting] = useState(false);
   const photograph = heldFor(id);
 
   useEffect(() => {
@@ -175,14 +177,14 @@ export function Result({ id }: { id: string }) {
                     <i /> reading order
                   </span>
                 </div>
-                <Selected prediction={p} id={selected} />
+                <Selected prediction={p} id={selected} onCorrect={() => setCorrecting(true)} />
               </>
             ) : null}
           </div>
         ) : tab === "graph" ? (
           <div className="stack-sm">
             <Graph ir={p.ir} traversal={p.traversal} selected={selected} onSelect={setSelected} />
-            <Selected prediction={p} id={selected} />
+            <Selected prediction={p} id={selected} onCorrect={() => setCorrecting(true)} />
           </div>
         ) : (
           <Code prediction={p} />
@@ -190,6 +192,14 @@ export function Result({ id }: { id: string }) {
 
         <StageTable prediction={p} />
       </div>
+
+      <Correct
+        open={correcting}
+        node={(p.ir?.nodes ?? []).find((n) => n.id === selected) ?? null}
+        prediction={p}
+        onClose={() => setCorrecting(false)}
+        onCorrected={(next) => setLoad({ state: "ready", prediction: next })}
+      />
     </div>
   );
 }
@@ -207,7 +217,15 @@ function reasonFor(prediction: Prediction): string | null {
  * nowhere to put four facts about one box without covering the handwriting they are about. So the
  * detail sits below, and 16.2.8's correction will attach to exactly this panel.
  */
-function Selected({ prediction, id }: { prediction: Prediction; id: string | null }) {
+function Selected({
+  prediction,
+  id,
+  onCorrect,
+}: {
+  prediction: Prediction;
+  id: string | null;
+  onCorrect: () => void;
+}) {
   if (!id) {
     return (
       <p className="dim" style={{ fontSize: 12.5, textAlign: "center" }}>
@@ -248,6 +266,9 @@ function Selected({ prediction, id }: { prediction: Prediction; id: string | nul
           ? "No arrows touch this shape."
           : `${edges.length} arrow${edges.length === 1 ? " touches" : "s touch"} this shape.`}
       </p>
+      <Button block onClick={onCorrect}>
+        {node.text ? "Fix this label" : "Say what is here"}
+      </Button>
     </Card>
   );
 }

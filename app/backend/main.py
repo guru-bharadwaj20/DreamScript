@@ -23,6 +23,7 @@ It never imports torch. The only thing it asks of the model server is `POST /pre
     GET  /code/{id}       just the code (?format=text for text/plain, which is what a share sheet
                           and a clipboard actually want)
     POST /run/{id}        execute that code in 11.2.9's sandbox and return what it printed (16.1.3)
+    POST /correct/{id}    fix a label, log it, and regenerate the code from it (16.2.8)
     POST /feedback        a correction against an id. Appended, never overwritten
 
 ## Why `/ir` and `/code` are reads of an id, not second uploads
@@ -86,6 +87,13 @@ workers give a client twice the budget, and `X-RateLimit-Scope: process:60s` say
 response. `X-Forwarded-For` is not trusted unless `DREAMSCRIPT_TRUSTED_PROXY_HOPS` says how many
 proxies are in front, because a limiter keyed on a header the client sets is a limiter with a bypass.
 
+## Correcting a label (16.2.8)
+
+`POST /correct/{id}` logs the tap, applies it to the stored IR when the kind allows, and re-emits
+the code - in this process, in milliseconds, because 12.1.6's emitter is a template and importing it
+pulls in no torch. The record is rewritten under the **same id**: a correction that minted a new one
+would break every link already shared, and the corrected reading is the same page.
+
 ## Scope
 
 Every 16.1 row is in. The caps here are the request-rate and body-size limits, `MAX_UPLOAD_BYTES` as
@@ -109,6 +117,7 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 
+from app.backend.correct import APPLIED_KINDS, apply_correction, regenerate
 from app.backend.limits import Limits, install, trusted_proxy_hops
 from app.backend.runner import KIND_BUSY, MAX_TIMEOUT_S, MIN_TIMEOUT_S, run_stored
 from app.backend.store import Store
@@ -392,6 +401,95 @@ def build_app(
         record["corrections"] = state.corrections(record_id)
         state.update(record)
         return {"stored": event, "corrections": len(record["corrections"])}
+
+    @app.post(
+        "/correct/{record_id}",
+        summary="Fix a label, log it, and regenerate the code from the corrected IR (16.2.8).",
+    )
+    def correct(record_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """One tap's worth of round trip.
+
+        Three things happen and all three are reported, because a person who retypes a label is
+        entitled to know which of them took effect:
+
+            logged        always. The tap is training data whether or not it changed anything,
+                          and `feedback.jsonl` outlives the prediction it refers to
+            applied       only for the kinds `correct.APPLIED_KINDS` allows. Everything else is
+                          recorded and `applied: false` says so rather than silently doing nothing
+            regenerated   the emitter, re-run over the corrected IR. Milliseconds, in this process,
+                          because the emitter is a template and not a model
+
+        The record is rewritten in place under the same id. A correction that minted a new id would
+        break every link a person has already shared, and the corrected reading is the *same* page.
+        """
+        record = _require(state, record_id)
+        kind = str(payload.get("kind") or "other")
+        if kind not in FEEDBACK_KINDS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"unknown correction kind {kind!r}; expected one of "
+                f"{', '.join(FEEDBACK_KINDS)}",
+            )
+
+        result = record["result"]
+        node_id = payload.get("node")
+        # `was` comes from the record, **always**, and a `was` in the request is ignored.
+        #
+        # The first version only filled it in when the client left it out, which is a bypass rather
+        # than a rule: what the recogniser actually said is the half of a correction that makes it
+        # training data, the store is the only thing that knows it, and a client sending the wrong
+        # one would poison the log with a correction of something that was never said.
+        was = None
+        for node in (result.get("ir") or {}).get("nodes") or []:
+            if node.get("id") == node_id:
+                was = node.get("text")
+                break
+
+        event = state.feedback(
+            record_id,
+            {
+                "kind": kind,
+                "node": node_id,
+                "edge": payload.get("edge"),
+                "was": was,
+                "now": payload.get("now"),
+                "note": payload.get("note"),
+                "diagram_type": result.get("diagram_type"),
+                "degraded": bool(result.get("degraded")),
+            },
+        )
+
+        corrected, changed = apply_correction(result.get("ir"), {**payload, "kind": kind})
+        regenerated = False
+        detail = ""
+        if changed:
+            result["ir"] = corrected
+            code, language, degraded, reason = regenerate(
+                corrected, result.get("traversal") or [], str(result.get("diagram_type") or "")
+            )
+            detail = reason
+            if code is not None:
+                result["code"] = code
+                result["language"] = language
+                # 13.4 holds after an edit too: if the emitter answered where a model would have,
+                # the answer is still degraded and the response still says so.
+                result["degraded"] = bool(result.get("degraded")) or degraded
+                regenerated = True
+
+        record["corrections"] = state.corrections(record_id)
+        state.update(record)
+        return {
+            **_public(record),
+            "correction": {
+                "logged": event,
+                "applied": changed,
+                "regenerated": regenerated,
+                "detail": detail,
+                # Named, so a client can explain a logged-but-unapplied correction rather than
+                # having to guess why the code did not move.
+                "applies_kinds": list(APPLIED_KINDS),
+            },
+        }
 
     @app.get("/feedback/{record_id}", summary="Every correction against one id.")
     def feedback_for(record_id: str) -> dict[str, Any]:
