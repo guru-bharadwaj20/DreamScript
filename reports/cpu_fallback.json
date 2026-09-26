@@ -1,0 +1,511 @@
+{
+  "row": "16.1.5",
+  "generated": "2026-09-26T10:35:49",
+  "budget_s": 10.0,
+  "pages": [
+    "flowchart.png",
+    "state_machine.png",
+    "er_diagram.png",
+    "wireframe.png",
+    "circuit.png"
+  ],
+  "repeats": 3,
+  "cache_enabled": false,
+  "arms": {
+    "gpu": {
+      "arm": "gpu",
+      "ok": true,
+      "wall_seconds": 19.03,
+      "device": {
+        "python": "3.11.15",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+        "cpu_count": 32,
+        "cuda_visible_devices": "<unset>",
+        "torch": "2.5.1+cu124",
+        "cuda_available": true,
+        "device_count": 1,
+        "torch_threads": 1,
+        "device_name": "NVIDIA RTX 4500 Ada Generation"
+      },
+      "cache_enabled": false,
+      "cold_seconds": 11.539,
+      "cold_page": "flowchart.png",
+      "warmup_pass_seconds": 15.411,
+      "warm": {
+        "n": 10,
+        "median": 0.254,
+        "min": 0.127,
+        "max": 0.441
+      },
+      "within_budget": true,
+      "worst_within_budget": true,
+      "stages": {
+        "detect": {
+          "median": 0.007,
+          "min": 0.006,
+          "max": 0.011,
+          "n": 10
+        },
+        "classify": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "assemble": {
+          "median": 0.244,
+          "min": 0.119,
+          "max": 0.433,
+          "n": 10
+        },
+        "traverse": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "serialise": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "generate": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "verify": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        }
+      },
+      "pages": [
+        {
+          "page": "flowchart.png",
+          "seconds": 11.539,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 3.097,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 0.426,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 0.133,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 0.216,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "flowchart.png",
+          "seconds": 0.314,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 0.248,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 0.441,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 0.131,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 0.202,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "flowchart.png",
+          "seconds": 0.297,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 0.26,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 0.419,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 0.127,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 0.237,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        }
+      ]
+    },
+    "cpu": {
+      "arm": "cpu",
+      "ok": true,
+      "wall_seconds": 134.87,
+      "device": {
+        "python": "3.11.15",
+        "platform": "Windows-10-10.0.26200-SP0",
+        "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+        "cpu_count": 32,
+        "cuda_visible_devices": "-1",
+        "torch": "2.5.1+cu124",
+        "cuda_available": false,
+        "device_count": 0,
+        "torch_threads": 8,
+        "device_name": "error: RuntimeError: No CUDA GPUs are available"
+      },
+      "cache_enabled": false,
+      "cold_seconds": 18.815,
+      "cold_page": "flowchart.png",
+      "warmup_pass_seconds": 54.209,
+      "warm": {
+        "n": 10,
+        "median": 7.748,
+        "min": 1.924,
+        "max": 18.571
+      },
+      "within_budget": true,
+      "worst_within_budget": false,
+      "stages": {
+        "detect": {
+          "median": 0.038,
+          "min": 0.033,
+          "max": 0.054,
+          "n": 10
+        },
+        "classify": {
+          "median": 0.001,
+          "min": 0.0,
+          "max": 0.001,
+          "n": 10
+        },
+        "assemble": {
+          "median": 7.707,
+          "min": 1.89,
+          "max": 18.532,
+          "n": 10
+        },
+        "traverse": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "serialise": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "generate": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        },
+        "verify": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 10
+        }
+      },
+      "pages": [
+        {
+          "page": "flowchart.png",
+          "seconds": 18.815,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 9.582,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 19.764,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 2.395,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 3.653,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": true,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "flowchart.png",
+          "seconds": 10.952,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 7.705,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 18.571,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 2.305,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 3.636,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "flowchart.png",
+          "seconds": 10.635,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "state_machine.png",
+          "seconds": 7.792,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "er_diagram.png",
+          "seconds": 13.237,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "wireframe.png",
+          "seconds": 1.924,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        },
+        {
+          "page": "circuit.png",
+          "seconds": 2.937,
+          "ok": true,
+          "stopped_at": null,
+          "degraded": false,
+          "warmup": false,
+          "reasons": {
+            "generate": "no model configured; 12.1.6's emitter is the whole chain"
+          }
+        }
+      ]
+    }
+  },
+  "comparison": {
+    "available": true,
+    "end_to_end": 30.5,
+    "per_stage": {
+      "detect": 5.43,
+      "classify": null,
+      "assemble": 31.59,
+      "traverse": null,
+      "serialise": null,
+      "generate": null,
+      "verify": null
+    },
+    "cpu_within_budget": true,
+    "budget_s": 10.0
+  }
+}

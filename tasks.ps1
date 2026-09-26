@@ -100,6 +100,8 @@ $Tasks = [ordered]@{
                                        @("-m", "src.eval", "compute"), @("-m", "src.eval", "humanbaseline"),
                                        @("-m", "src.eval", "master"));
                              Help = "Phase 14 - the master table and everything it reads" }
+    "profile"           = @{ Cmd = @("-m", "src.serve", "profile");
+                             Help = "Phase 16.1.5 - GPU and CPU latency for the served pipeline" }
     "serve"             = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");
                              Help = "Phase 15.11 - run the inference service" }
     "backend"           = @{ Cmd = @("-m", "uvicorn", "app.backend.main:app", "--host", "127.0.0.1", "--port", "3000");

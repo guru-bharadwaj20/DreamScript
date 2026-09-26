@@ -26,7 +26,7 @@ OVERRIDES ?=
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
 .PHONY: app backend clean clean-experiments dag data detect determinism dummy-run env eval features \
-        finetune format help hooks lint ocr parse preprocess push repro rl serve stages store test test-fast typecheck \
+        finetune format help hooks lint ocr parse preprocess profile push repro rl serve stages store test test-fast typecheck \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
@@ -161,6 +161,9 @@ app: backend  ## alias for `make backend` — Phase 16's app, whose server side 
 
 backend:  ## Phase 16.1 - run the app backend (proxies the model server, holds no model)
 	$(PY) -m uvicorn app.backend.main:app --host 127.0.0.1 --port 3000
+
+profile:  ## Phase 16.1.5 - GPU and CPU latency for the served pipeline, into reports/
+	$(PY) -m src.serve profile
 
 serve:  ## Phase 15.11 - run the inference service (what the Dockerfile and CI run)
 	$(PY) -m uvicorn src.serve.api:app --host 127.0.0.1 --port 8000
