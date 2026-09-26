@@ -104,11 +104,20 @@ def trusted_proxy_hops() -> int:
 def classify(method: str, path: str) -> str:
     """Which budget a request draws on.
 
-    By what it costs, not by its verb. `POST /feedback` is a write and cheap; `POST /predict` is
-    seconds of GPU. Keying on the method alone would put them in the same bucket.
+    By what it costs, which is a function of **both** the path and the method - and the first version
+    of this used the path alone for `/predict`, which was wrong in a way only a real client found.
+
+    `POST /predict` is seconds of GPU and megabytes of upload. `GET /predict/{id}` is a file read of
+    a record that already exists, and it is the request the result screen makes *every time it
+    opens*. Bucketing it with the upload gave it a budget of six per minute, and six page loads in a
+    row - which is what a screenshot pass across three devices and two themes is - answered 429.
+    Nothing was being protected: the expensive thing had already happened.
+
+    So the rule is the honest one. A `GET` under `/predict` is a read; only a body-carrying request
+    to it costs what the `predict` budget exists to limit.
     """
     if path.startswith("/predict"):
-        return "predict"
+        return "predict" if method in ("POST", "PUT", "PATCH") else "read"
     if path.startswith("/run"):
         return "run"
     if method in ("POST", "PUT", "PATCH", "DELETE"):
@@ -216,7 +225,12 @@ def install(app: Any, limits: Limits | None = None) -> Limits:
     Returned rather than hidden: `/health` reports how many windows are live, and a test needs to
     drive the clock. A limiter nothing can see is a limiter nobody can diagnose.
     """
-    from starlette.responses import JSONResponse
+    # From `fastapi.responses`, not `starlette.responses`. It is the same class - fastapi
+    # re-exports it - but importing it from starlette makes starlette a *declared* dependency of
+    # this module, and it is declared in no requirements file: it arrives transitively through
+    # fastapi. `tests/test_requirements_declare_every_import.py` caught it, which is the second
+    # time that test has found exactly this on this phase (the first was anyio, in 16.1.2).
+    from fastapi.responses import JSONResponse
 
     state = limits if limits is not None else Limits()
     app.state.limits = state

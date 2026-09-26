@@ -100,6 +100,7 @@ $Tasks = [ordered]@{
                                        @("-m", "src.eval", "compute"), @("-m", "src.eval", "humanbaseline"),
                                        @("-m", "src.eval", "master"));
                              Help = "Phase 14 - the master table and everything it reads" }
+    "frontend"          = @{ Npm = "app/frontend";      Help = "Phase 16.2 - run the client (Vite, port 5173)" }
     "profile"           = @{ Cmd = @("-m", "src.serve", "profile");
                              Help = "Phase 16.1.5 - GPU and CPU latency for the served pipeline" }
     "serve"             = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");
@@ -179,6 +180,13 @@ if ($spec.CleanRuns) {
         Write-Host "> remove $($run.FullName)" -ForegroundColor DarkGray
         if (-not $DryRun) { Remove-Item -Recurse -Force $run.FullName }
     }
+    exit 0
+}
+
+if ($spec.Npm) {
+    # The client is a node project; `$Py` has nothing to do with it. `npm run dev` in its directory.
+    Write-Host "> npm run dev  ($($spec.Npm))" -ForegroundColor DarkGray
+    if (-not $DryRun) { Push-Location $spec.Npm; try { & npm run dev } finally { Pop-Location } }
     exit 0
 }
 

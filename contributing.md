@@ -41,7 +41,7 @@ satisfied and the artifact exists in the repository (code + test + logged experi
 | 13 | End-to-End Pipeline Orchestration | Integration | — |
 | 14 | Evaluation, Ablations & Error Analysis | Science | All |
 | 15 | MLOps — Tracking, Versioning, Drift, CI/CD | MLOps | Unit 4 |
-| 16 | Android Application & Live Camera Capture | Product | — |
+| 16 | Mobile Application & Live Camera Capture | Product | — |
 | 17 | Documentation, Report & Demo Choreography | Delivery | — |
 
 ---
@@ -592,7 +592,7 @@ becomes the code structure.
 
 ---
 
-# Phase 16 — Android Application & Live Camera Capture
+# Phase 16 — Mobile Application & Live Camera Capture
 
 **Decided 2026-09-20: Android, not a web app, and distributed as a signed APK on GitHub
 Releases rather than through Google Play.** Two reasons, both about this project rather than
@@ -614,6 +614,39 @@ and displays; the existing Python pipeline answers over HTTP unchanged. This als
 adds no second implementation of any model - a served `POST /predict` over `src.pipeline.core`
 is the whole backend contract.
 
+**Amended 2026-09-26: the client is an installable web app, not an APK. The rest of the decision
+above stands.** The Android argument had two halves and only one of them was about Android. *The
+gesture* - a phone held over a whiteboard - is the reason this is a phone client at all, and it is
+unchanged; `getUserMedia({facingMode: "environment"})` is the same rear camera, and an installed
+progressive web app launches full-screen from the home screen with no browser chrome. *The
+distribution* - not the Play Store, because S5 sits at median GED 14.5 against a target of 3 and a
+store review is permanent - is also unchanged, and is in fact stronger: there is no store.
+
+What changed is what can be **built and shown**. Three reasons, in the order they actually decided
+it.
+
+*It has to run on iOS too.* A Kotlin + Compose app is Android only, and a hand-drawn diagram is
+photographed on whichever phone the person is holding. One codebase that is installable on both is
+worth more here than a platform-native one on half of them.
+
+*Nothing on this machine can compile an APK.* There is no JDK, no Gradle and no Android SDK -
+checked, not assumed. Row 16.2.1's Definition of Done was "builds a debug APK", and writing Kotlin
+that is never compiled, never run and never photographed would make it **the first ✅ in this plan
+resting on no evidence at all**. Every other row in seventeen phases was flipped against something
+observed. That is not a precedent worth setting for a screenshot.
+
+*And the honest costs, stated rather than discovered later.* No background work and no share-target
+intent. On iOS, Safari gives a PWA no install prompt - the user has to choose "Add to Home Screen"
+themselves - and `getUserMedia` needs a secure origin, so the camera works over HTTPS or localhost
+and nowhere else. `docs/privacy.md` (16.3.4) has to say the same things it would have said for an
+APK, because the image still leaves the device.
+
+The rows below are rewritten for that stack. **16.3 changed shape rather than wording**: a keystore
+and `signingConfigs` protect a binary nobody can now produce, so 16.3.1 is the installable build -
+manifest, service worker, offline shell - and 16.3.2 attaches that bundle to a tagged release
+instead of an APK. Integrity moves from a signature to a hash published beside the artefact, which
+is weaker and is said so.
+
 ### 16.1 Inference service
 
 | # | Task | Detail | Definition of Done | Status |
@@ -628,10 +661,10 @@ is the whole backend contract.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 16.2.1 | Project skeleton | Kotlin + Jetpack Compose, min SDK 26, single-activity | Builds a debug APK | ❌ |
-| 16.2.2 | **Live camera capture** | CameraX preview, hold the phone over paper, capture | Works on a physical device | ❌ |
+| 16.2.1 | Project skeleton | Vite + React + TypeScript, mobile-first, one design system, installable | `app/frontend/` (Vite 6 + React 18.3.1 + TypeScript 5.7, 18 files) + `tests/test_app_frontend.py` (35 tests) + `make frontend`: builds clean at **163.7 kB JS / 52.7 kB gzipped** and renders on a phone. **The stack changed and Phase 16's preamble records why** - it has to run on iOS as well as Android, and nothing on this machine can compile an APK (no JDK, no Gradle, no Android SDK - checked), so a Kotlin 16.2.1 would have been **the first ✅ in seventeen phases resting on no evidence**. The gesture and the no-app-store decision are unchanged. **The design system is one file of tokens and it carries one argument**: gold is the brand and nothing else, and four contrast colours carry the only thing this app knows that a photograph does not - whether to trust the answer. Emerald *read cleanly*, orange *degraded*, rose *stopped at X*, violet *needs a type*, each mapped in a single `TrustPill` in **priority order** so no screen can call a degraded answer done. **Orange rather than amber, deliberately**: amber sits at gold's hue and a degraded pill beside a gold button would read as brand. Each of the four wears a dot as well as a colour and **only those four do**, so the dot means trust - a test parses the stylesheet and asserts exactly `{ok, degraded, stopped, confirm}` carry one. **Light mode is not dark inverted**: the ground is warm off-white because the subject is paper, and gold needs a *second* value for it - `#e8c36a` on white is about 1.9:1 - so `--gold-text` is `#7a5f12` at about 6.4:1 while the bright gold stays for fills and hairlines. **Three theme states, not two**, because a toggle that only flips light/dark has overridden a choice the person already made for every app on their phone; `system` *removes* the attribute rather than setting it, since an attribute would satisfy the `:not([data-theme="light"])` guard and pin the page to dark. **Verified by screenshot across 18 combinations** - three viewports (iPhone SE 375px, iPhone 15 Pro, Pixel 8) x two themes x three routes - measuring what a screenshot cannot show: **no console errors, no horizontal overflow, and no tap target under 44px**. **That pass found three real defects.** The segmented control was **34px**, then 40px on a second attempt that reasoned about the *track* rather than the thing that receives the tap; it is 44px now. `GET /predict/{id}` was drawing on 16.1.4's **six-per-minute upload budget** - the result screen issues it on every open, six opens answered **429**, and nothing was being protected because the expensive thing had already happened; `classify` now keys on method as well as path and the test that asserted the old behaviour is corrected. And `@types/node` arrived with a **caret**, which the pinning test caught. Four *more* were found by the repo's own gates: `starlette` imported directly for a class fastapi re-exports (the second time that test has caught this on this phase), `CUDA_VISIBLE_DEVICES` read in `src/` and accounted for in neither list, and two tests that matched **their own explanatory comments** - a test a well-documented file cannot pass is a test that punishes documentation. **The client makes no claim the backend cannot keep**: a test extracts every path `api.ts` fetches and compares it against the routes `build_app` actually registers, and another compares the correction kinds against `FEEDBACK_KINDS` - two descriptions of one contract drift, so they are joined. **Same-origin by construction**: Vite proxies the named routes to port 3000 in development and the backend serves the bundle in production, so there is no CORS middleware anywhere and no `VITE_API_URL` to be wrong in one of three environments. `#/r/<id>` is a real address, which is 16.1.1's store paying off on the client side - a result survives a reload and a shared link - in 40 lines of hash routing rather than 12 kB of router. React is pinned to **18.3.1 because that is what 12.3.2 renders generated JSX against**, and a test joins the two. No web font, because 16.3.1's offline shell must not be missing one | ✅ |
+| 16.2.2 | **Live camera capture** | `getUserMedia({facingMode: "environment"})` preview, hold the phone over paper, capture | Works on a physical device | ❌ |
 | 16.2.3 | **Perspective dewarp** | OpenCV contour + perspective transform before upload — **mandatory, not optional**: every model in this repo is trained on flat scans, and a phone photo adds skew, shadow and glare the pipeline has never seen | Dewarped crop measured against the raw photo on the same pages | ❌ |
-| 16.2.4 | Gallery import | Pick an existing photo instead of shooting one | Works | ❌ |
+| 16.2.4 | Gallery import | `<input type="file" accept="image/*">` - pick an existing photo instead of shooting one | Works | ❌ |
 | 16.2.5 | Detection overlay | Draw detected boxes / edges / labels over the captured image | Overlay renders | ❌ |
 | 16.2.6 | IR graph view | Rendered graph from the returned IR | Renders | ❌ |
 | 16.2.7 | Code panel | Syntax-highlighted output, copy, and share/save | Works | ❌ |
@@ -644,9 +677,9 @@ is the whole backend contract.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 16.3.1 | Release signing | Upload keystore kept out of git, `signingConfigs` wired | Signed release APK produced | ❌ |
-| 16.3.2 | **APK on GitHub Releases** | Tagged release with the signed APK and install instructions | Downloadable and installs on a clean device | ❌ |
-| 16.3.3 | CI build | GitHub Actions assembles the release APK and attaches it to the tag | Green on a tag | ❌ |
+| 16.3.1 | **Installable build** | Web app manifest, service worker, offline shell; a production bundle with hashed assets | Installs to a home screen and opens full-screen | ❌ |
+| 16.3.2 | **Bundle on GitHub Releases** | Tagged release with the built bundle, its SHA-256 and install instructions | Downloadable, and serves from the backend on a clean machine | ❌ |
+| 16.3.3 | CI build | GitHub Actions builds the bundle and attaches it to the tag | Green on a tag | ❌ |
 | 16.3.4 | Privacy note | State plainly that images are uploaded to a server, and what is retained | `docs/privacy.md` linked from the app | ❌ |
 
 ---
@@ -756,6 +789,6 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 13 — Orchestration | 10 | 10 | ✅ |
 | 14 — Evaluation | 11 | 11 | ✅ |
 | 15 — MLOps | 12 | 12 | ✅ |
-| 16 — Android App & Capture | 20 | 5 | ❌ |
+| 16 — Mobile App & Capture | 20 | 6 | ❌ |
 | 17 — Documentation | 10 | 0 | ❌ |
-| **Total** | **308** | **281** | ❌ |
+| **Total** | **308** | **282** | ❌ |

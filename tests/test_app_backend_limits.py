@@ -80,7 +80,9 @@ def wired(tmp_path):
     [
         ("POST", "/predict", "predict"),
         ("POST", "/predict/stream", "predict"),
-        ("GET", "/predict/abc", "predict"),
+        # A read of a stored prediction, not an upload. This line said "predict" until the client
+        # was built and six page loads in a row answered 429 - the test had encoded the bug.
+        ("GET", "/predict/abc", "read"),
         ("POST", "/run/abc", "run"),
         ("POST", "/feedback", "write"),
         ("GET", "/ir/abc", "read"),
@@ -92,6 +94,16 @@ def test_a_request_is_classified_by_what_it_costs_not_by_its_verb(method, path, 
     """`POST /feedback` is a write and cheap; `POST /predict` is seconds of GPU. Keying on the
     method alone would put them in one bucket."""
     assert classify(method, path) == expected
+
+
+def test_reopening_a_result_does_not_spend_the_upload_budget():
+    """The defect the client found. A result screen issues `GET /predict/{id}` on every open, and
+    six opens in a minute is ordinary use - a person comparing two captures does it without
+    noticing. Charging that to the six-per-minute GPU budget protected nothing, because the
+    expensive thing had already happened."""
+    limits = Limits(budgets={"predict": 6, "read": 120})
+    for _ in range(20):
+        assert limits.check("c", classify("GET", "/predict/abc"), now=0.0)["allowed"]
 
 
 def test_the_expensive_routes_get_the_smallest_budgets():

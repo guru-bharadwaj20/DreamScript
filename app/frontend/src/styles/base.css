@@ -1,0 +1,179 @@
+/*
+ * Phase 16.2.1 - the reset, and the eight lines of it that are specifically about phones.
+ *
+ * Most of this file is unremarkable. These are the parts that are not, each of which is a real
+ * behaviour on a real device rather than a preference:
+ *
+ *   100dvh                  `100vh` on iOS Safari is the viewport *without* the address bar, so a
+ *                           full-height layout is taller than the screen and the bottom control is
+ *                           under the browser chrome until the user scrolls. `dvh` is the visible
+ *                           height and it changes as the bar collapses
+ *   env(safe-area-inset-*)  the notch and the home indicator. Without these a shutter button sits
+ *                           under the home bar on every recent iPhone and is unreachable
+ *   overscroll-behavior     kills pull-to-refresh. On a camera screen a downward drag is a framing
+ *                           adjustment, and reloading the page mid-capture loses the photograph
+ *   -webkit-tap-highlight   removes the grey flash Safari paints over a tapped element, which looks
+ *                           like a rendering fault on a dark surface
+ *   touch-action            `manipulation` disables the 300 ms double-tap-to-zoom delay, which is
+ *                           the difference between a button that feels native and one that does not
+ *   user-select: none       on chrome only. A long press on a label must not start a text selection
+ *                           - but the code panel is explicitly selectable, because copying it is
+ *                           the point of the app
+ *   -webkit-fill-available  the height fallback for iOS versions without `dvh`
+ *
+ * `prefers-reduced-motion` turns off every transition and animation. A stage list that fills in is
+ * the nicest thing in this app and it is also exactly the kind of motion that makes some people ill.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: var(--tap);
+}
+
+/* Chrome is not selectable; content is. A long press on a button must not offer to copy its label. */
+button,
+label,
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.selectable,
+code,
+pre {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: var(--gold-text);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+/* One focus ring, gold, on keyboard focus only - so a thumb tap does not leave an outline behind. */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection {
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+/* A scrollbar that is not the platform default on desktop, and invisible on a phone anyway. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: var(--r-full);
+}
+
+.safe-top {
+  padding-top: max(var(--sp-3), env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+}
+
+.safe-x {
+  padding-left: max(var(--sp-4), env(safe-area-inset-left));
+  padding-right: max(var(--sp-4), env(safe-area-inset-right));
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

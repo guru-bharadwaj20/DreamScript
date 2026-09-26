@@ -1,0 +1,293 @@
+/*
+ * Phase 16.2.1 - the shell and the hero.
+ *
+ * The hero is the first thing anyone sees and it has one job: make the gesture obvious before a word
+ * is read. So it is a **frame** - four gold brackets around empty space, the shape of a phone held
+ * over a sheet of paper - and not an illustration of one. The brackets are the same brackets the
+ * camera view (16.2.2) draws over the live preview, so the landing screen and the working screen are
+ * visibly the same object.
+ */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: var(--sp-6) var(--sp-4) var(--sp-5);
+  text-align: center;
+}
+
+/* A single gold radial bloom behind the frame. Very low alpha: the point is that the eye lands in
+   the middle of the screen, not that there is a glow. */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  translate: -50% 0;
+  width: min(520px, 130%);
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 40%, var(--gold-soft) 0%, transparent 62%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.hero h1 {
+  font-family: var(--serif);
+  font-size: clamp(28px, 8.5vw, 40px);
+  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  max-width: 19ch;
+  text-wrap: balance;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: var(--gold-text);
+}
+
+.hero p {
+  /* 30ch rather than 34: at 34 the third line broke two words early on a 375px screen and the
+     paragraph ragged badly. Narrower measure, evener rag. */
+  max-width: 30ch;
+  color: var(--ink-2);
+  font-size: 15px;
+  text-wrap: pretty;
+}
+
+/* == the frame: four gold brackets around nothing ============================================ */
+
+.frame {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
+    linear-gradient(140deg, var(--gold-line), transparent 45%, transparent 55%, var(--gold-line))
+      border-box;
+  border: 1px solid transparent;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* The brackets themselves, as one element with four corner borders. Cheaper than four elements and
+   it scales with the frame. */
+.frame-brackets {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+}
+
+.frame-brackets span {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--gold);
+  opacity: 0.85;
+}
+
+.frame-brackets span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: var(--r-sm) 0 0 0;
+}
+
+.frame-brackets span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0 var(--r-sm) 0 0;
+}
+
+.frame-brackets span:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0 0 0 var(--r-sm);
+}
+
+.frame-brackets span:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 0 0 var(--r-sm) 0;
+}
+
+/* The sketch inside the frame: a flowchart, drawn in CSS, deliberately crooked. A perfect diagram
+   would advertise the wrong input - the corpus this was trained on is photographs of bad
+   handwriting, and the frame should promise that rather than a tidy vector drawing. */
+.frame-sketch {
+  width: 62%;
+  color: var(--ink-3);
+  opacity: 0.9;
+}
+
+.frame-caption {
+  position: absolute;
+  bottom: var(--sp-3);
+  left: 50%;
+  translate: -50% 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* == the status strip ======================================================================== */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--ink-3);
+}
+
+.status-dot[data-state="up"] {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+
+.status-dot[data-state="down"] {
+  background: var(--stopped);
+  box-shadow: 0 0 0 3px var(--stopped-soft);
+}
+
+.status-dot[data-state="checking"] {
+  background: var(--gold);
+  animation: pulse 1.4s var(--ease) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* == the three affordances ==================================================================== */
+
+.actions {
+  display: grid;
+  gap: var(--sp-3);
+  width: 100%;
+  max-width: 340px;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  text-align: left;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.action:active {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) {
+  .action:hover {
+    border-color: var(--gold-line);
+  }
+}
+
+.action-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: var(--r);
+  color: var(--gold-text);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
+}
+
+.action strong {
+  display: block;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.action small {
+  display: block;
+  color: var(--ink-2);
+  font-size: 12.5px;
+}
+
+/* == the about screen's swatches ============================================================== */
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: var(--sp-2);
+}
+
+.swatch {
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  font-size: 10.5px;
+  text-align: center;
+}
+
+.swatch i {
+  display: block;
+  height: 34px;
+}
+
+.swatch span {
+  display: block;
+  padding: 3px 2px;
+  color: var(--ink-2);
+  background: var(--surface);
+}
+
+.theme-choice {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+.theme-choice button {
+  flex-direction: column;
+  gap: 4px;
+  min-height: 68px;
+  font-size: 12.5px;
+  border-radius: var(--r);
+}
+
+.theme-choice button[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+  color: var(--gold-text);
+}

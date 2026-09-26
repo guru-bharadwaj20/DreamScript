@@ -10,7 +10,7 @@ Two processes and one rule. **No model lives here.** The recogniser is `trocr-ba
 | Path | Row | What |
 | :--- | :--- | :--- |
 | `app/backend/` | 16.1 | the app backend — one upload, cheap reads against its id, the correction log |
-| `app/frontend/` | 16.2 | the client. **Not built yet** |
+| `app/frontend/` | 16.2 | the client — Vite + React + TypeScript, mobile-first, installable |
 
 ### `app/backend/` — 16.1
 
@@ -113,6 +113,35 @@ real — a limiter keyed on a header the client sets is a limiter with a bypass.
 State lives under `runs/app/` (gitignored, derived): one JSON file per prediction, oldest-first
 eviction at 500, plus `feedback.jsonl`, which is never evicted because it is training data.
 `DREAMSCRIPT_APP_STATE` moves it.
+
+### `app/frontend/` — 16.2
+
+```
+npm ci && npm run dev      # or: make frontend — http://localhost:5173
+npm run build              # tsc --noEmit, then a hashed production bundle into dist/
+```
+
+**A web app, not an APK.** Phase 16's preamble records the amendment and its reasons: it has to run
+on iOS as well as Android, nothing on this machine can compile an APK, and writing Kotlin that is
+never built would make 16.2.1 the first row in the plan flipped on no evidence. The gesture — a
+phone held over paper — is unchanged, and so is the decision not to use an app store.
+
+Same-origin by construction. The client calls `/predict`, `/ir/:id` and so on with no base URL: Vite
+proxies those paths to port 3000 in development, and the backend serves the bundle in production. So
+there is no CORS middleware anywhere and no `VITE_API_URL` to be wrong in one of three environments.
+
+**The design system is `src/styles/tokens.css`,** and it carries one argument. Gold is the brand and
+nothing else; four contrast colours carry the only thing this app knows that a photograph does not —
+whether to trust the answer. Emerald read cleanly, orange degraded, rose stopped, violet asking. Each
+wears a dot as well as a colour, and *only* those four do, so the dot means "this is about trust".
+Orange rather than amber on purpose: amber sits at gold's hue and a degraded pill beside a gold
+button would read as brand.
+
+Light mode is not dark inverted. The ground is warm off-white because the subject is paper, and gold
+has a second, darker value for it — `#e8c36a` on white is about 1.9:1 and unreadable.
+
+Three theme states, not two: system is the default, because a person choosing light or dark on their
+phone already made that choice once.
 
 ## The model server, which is not here
 

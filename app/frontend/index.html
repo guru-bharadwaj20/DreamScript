@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      Phase 16.2.1 - the document, and the four lines of it that are specifically about phones.
+
+      viewport      `viewport-fit=cover` is what makes `env(safe-area-inset-*)` return anything at
+                    all on a notched iPhone. Without it the page is letterboxed inside the safe area
+                    and every inset is 0, so the CSS that avoids the home bar does nothing.
+                    `maximum-scale` is deliberately absent: pinch-zoom is an accessibility feature and
+                    disabling it to make an app "feel native" takes it away from people who need it.
+      theme-color   a starting value only. `lib/theme.ts` rewrites it whenever the theme changes, so
+                    the status bar matches the page instead of the page it was two taps ago.
+      apple-*       iOS reads these and not the manifest for standalone launch and status-bar style.
+                    16.3.1 adds the manifest; these have to be here as well, not instead.
+      no-referrer   nothing here should announce itself to anything, and the image is the user's.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#08080a" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="DreamScript" />
+
+    <title>DreamScript — sketch to code</title>
+    <meta
+      name="description"
+      content="Photograph a hand-drawn diagram and get the program it describes. Flowcharts, state machines, ER diagrams, wireframes and circuits."
+    />
+
+    <!-- An inline SVG favicon, so there is no second request and no binary in the tree. -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2308080a'/%3E%3Cpath d='M9 9h8a7 7 0 0 1 0 14H9z' fill='none' stroke='%23e8c36a' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      A no-JavaScript message, because this app is not a document and cannot degrade into one: it
+      needs a camera, a canvas and a fetch. Saying so is better than a blank gold-on-black page.
+    -->
+    <noscript>
+      <div style="padding: 32px; font: 15px/1.5 system-ui, sans-serif">
+        <strong>DreamScript needs JavaScript.</strong> It reads a photograph from your camera,
+        straightens it in the browser and sends it to a server that runs the models — none of which
+        can be done without it.
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

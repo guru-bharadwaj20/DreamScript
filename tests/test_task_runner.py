@@ -62,10 +62,11 @@ def test_task_dispatches(task: str):
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    # Three tasks are the venv rather than a command inside it: `env` builds it with `uv`,
-    # `clean` and `clean-experiments` remove directories. They still have to print what they
-    # would do, which is what -DryRun is for.
-    if task in {"env", "clean", "clean-experiments"}:
+    # Four tasks do not run a Python inside the venv: `env` builds the venv with `uv`, `clean` and
+    # `clean-experiments` remove directories, and `frontend` (16.2) runs `npm` in a node project -
+    # the interpreter has nothing to do with it. They still have to print what they would do, which
+    # is what -DryRun is for.
+    if task in {"env", "clean", "clean-experiments", "frontend"}:
         assert result.stdout.strip(), f"{task} -DryRun printed nothing"
     else:
         assert "python.exe" in result.stdout

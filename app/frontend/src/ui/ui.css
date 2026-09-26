@@ -1,0 +1,406 @@
+/*
+ * Phase 16.2.1 - the primitives. Six of them, and no more until a screen needs a seventh.
+ *
+ * Every one of these exists because two screens need it. A component library written before the
+ * screens is a component library that gets half used and half worked around.
+ */
+
+/* == the wordmark ============================================================================ */
+
+.mark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.mark b {
+  font-weight: 600;
+  color: var(--gold-text);
+}
+
+/* A hairline of gold under the wordmark. One gradient, and the only ornament in the app. */
+.mark::after {
+  content: "";
+}
+
+/* == bars ==================================================================================== */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-bar);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 52px;
+  background: var(--scrim);
+  /* Frosted rather than opaque, so the photograph underneath is still felt. `saturate` is what
+     keeps a backdrop-blurred dark surface from going grey. */
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border-bottom: 1px solid var(--line);
+}
+
+.bar-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* == buttons ================================================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: 0 var(--sp-5);
+  border-radius: var(--r-full);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition:
+    transform var(--t-fast) var(--ease),
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    opacity var(--t-fast) var(--ease);
+}
+
+/* :active rather than :hover as the primary feedback. A phone has no hover, and a 0.97 scale on
+   press is the cheapest thing that makes a web button feel like a native one. */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    border-color: var(--gold-line);
+  }
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: #100d04;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+  border-color: transparent;
+  box-shadow: var(--shadow);
+}
+
+/* The one place a dark ink is hardcoded: gold is gold in both themes, so text on top of it does not
+   flip. A token would imply it changes with the theme, and it must not. */
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+}
+
+.btn-quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+  padding: 0 var(--sp-3);
+}
+
+.btn-quiet:active:not(:disabled) {
+  background: var(--line-2);
+}
+
+.btn-icon {
+  width: var(--tap);
+  min-width: var(--tap);
+  padding: 0;
+  border-radius: var(--r-full);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-danger {
+  color: var(--stopped);
+  border-color: color-mix(in srgb, var(--stopped) 30%, transparent);
+  background: var(--stopped-soft);
+}
+
+/* == pills: the trust vocabulary ============================================================= */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* Symmetric. The left inset was 8px to make room for a dot, which left every dotless pill looking
+     a couple of pixels off-centre; the four that have a dot pay for it with their own `gap`. */
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* A dot as well as a colour, on the four trust tones only. Colour alone is not a signal for roughly
+   one man in twelve, and these four pills are the app's only channel for whether to trust the
+   answer - so the dot is what marks a pill as carrying that, and a purely informational label
+   (a diagram type, a version, a language) must not wear one. The rule is: a dot means trust. */
+.pill-ok::before,
+.pill-degraded::before,
+.pill-stopped::before,
+.pill-confirm::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.pill-ok {
+  color: var(--ok);
+  background: var(--ok-soft);
+  border-color: color-mix(in srgb, var(--ok) 26%, transparent);
+}
+
+.pill-degraded {
+  color: var(--degraded);
+  background: var(--degraded-soft);
+  border-color: color-mix(in srgb, var(--degraded) 26%, transparent);
+}
+
+.pill-stopped {
+  color: var(--stopped);
+  background: var(--stopped-soft);
+  border-color: color-mix(in srgb, var(--stopped) 26%, transparent);
+}
+
+.pill-confirm {
+  color: var(--confirm);
+  background: var(--confirm-soft);
+  border-color: color-mix(in srgb, var(--confirm) 26%, transparent);
+}
+
+/* Informational, and dotless by the rule above. `plain` and `neutral` are the same surface; they are
+   separate names so a future change to one does not silently change the other. */
+.pill-plain {
+  color: var(--ink-2);
+  background: var(--line-2);
+  border-color: var(--line);
+}
+
+.pill-neutral {
+  color: var(--ink-2);
+  background: var(--line-2);
+  border-color: var(--line);
+}
+
+.pill-gold {
+  color: var(--gold-text);
+  background: var(--gold-soft);
+  border-color: var(--gold-line);
+}
+
+/* == surfaces ================================================================================ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.card-gold {
+  border-color: var(--gold-line);
+}
+
+.eyebrow {
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-text);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+.dim {
+  color: var(--ink-3);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-ligatures: none;
+  /* Tabular figures so a column of timings lines up instead of shimmering as it updates. */
+  font-variant-numeric: tabular-nums;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* == the sheet =============================================================================== */
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: fade var(--t) var(--ease) both;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-sheet);
+  /* Never taller than the visible viewport, and it scrolls inside itself. A sheet that grows past
+     the screen on a small phone is a sheet whose primary action cannot be reached. */
+  max-height: min(88dvh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-top: 1px solid var(--gold-line);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--shadow-lift);
+  padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+  animation: rise var(--t-slow) var(--ease-out) both;
+}
+
+.sheet-grip {
+  width: 38px;
+  height: 4px;
+  border-radius: var(--r-full);
+  background: var(--line);
+  margin: var(--sp-3) auto var(--sp-2);
+  flex: none;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--sp-5) var(--sp-4);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* == the segmented control =================================================================== */
+
+.seg {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--ground-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+}
+
+/* 44px on the *button*, not on the track around it.
+   It was 34px, then 40px - the second attempt reasoned that 40 inside a 3px-padded track makes a
+   46px control, which is true of the track and irrelevant to the thumb: the thing that receives the
+   tap is the button. A screenshot pass that measures every tappable element caught both. The floor
+   applies to whatever is clickable. */
+.seg button {
+  flex: 1;
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-full);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition:
+    background var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.seg button[aria-selected="true"] {
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* == layout helpers ========================================================================== */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+/* A page's own content column. Capped, so the app is usable on a tablet or a desktop window rather
+   than a 15px line of text stretched across 1600px. */
+.page {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--sp-5) max(var(--sp-4), env(safe-area-inset-left)) var(--sp-10)
+    max(var(--sp-4), env(safe-area-inset-right));
+}
+
+.stack > * + * {
+  margin-top: var(--sp-4);
+}
+
+.stack-sm > * + * {
+  margin-top: var(--sp-2);
+}

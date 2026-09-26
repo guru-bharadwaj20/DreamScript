@@ -61,6 +61,16 @@ NOT_IN_KEY = {
     # Training-time augmentation. What it changes is the checkpoint, and the checkpoint's
     # identity is `S3_CHECKPOINT`, which *is* keyed.
     "S3_AUGMENT",
+    # *Which device* answers, read by 16.1.5's profiler. Deliberately not keyed, and this is the
+    # one exemption that is a load-bearing claim rather than a convenience: a GPU and a CPU must
+    # produce the same answer, so the device cannot be part of a stage's identity.
+    #
+    # The consequence is recorded where it bites. Because this is not in the key, a warm cache
+    # would hand the CPU arm of that profile the GPU arm's stored outputs and the CPU arm would
+    # come back instantaneous - so `src/serve/profile.py` runs both arms with the cache disabled,
+    # and `tests/test_serve_profile.py` asserts `ENV_KEYS` still has no CUDA entry. If that ever
+    # changes, both places are wrong together and both say so.
+    "CUDA_VISIBLE_DEVICES",
 }
 
 

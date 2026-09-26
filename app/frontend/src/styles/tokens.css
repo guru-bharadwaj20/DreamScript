@@ -1,0 +1,175 @@
+/*
+ * Phase 16.2.1 - the design system, as tokens.
+ *
+ * ## The palette, and why each colour is here
+ *
+ * Gold, black, white and silver, with four contrast colours that are not decoration - they carry
+ * the one thing this app knows and a screenshot of a diagram does not: **whether to trust the
+ * answer**. 13.4, 13.7 and 13.8 spent three phases making the pipeline say when it fell back, where
+ * it stopped and how sure it was, and 16.1's backend passes all of it through unflattened. A client
+ * that rendered `code` in one colour would throw that away at the last hop.
+ *
+ *   gold      brand, primary action, hairlines. Nothing else. One accent, used sparingly, is what
+ *             separates a considered interface from a colourful one
+ *   silver     secondary text and inactive states
+ *   emerald    ok - the page reached code and no stage fell back
+ *   orange     degraded - a stage answered from a rung below its first choice
+ *   rose       stopped - the pipeline could not finish, and where
+ *   violet     needs confirmation - routing was below its floor, so it is asking
+ *
+ * **Orange rather than amber, deliberately.** Amber is the obvious "caution" colour and it sits at
+ * roughly the same hue as gold (43 deg); a degraded pill in amber beside a gold button reads as
+ * brand, not as a warning. Orange at 27 deg is far enough away to be a different message at a
+ * glance, which is the only test that matters on a phone in one hand.
+ *
+ * ## Light mode is not dark mode inverted
+ *
+ * The input to this app is **paper**, so the light ground is warm off-white rather than pure white,
+ * and it is a deliberate echo of the thing being photographed. Gold also cannot survive inversion:
+ * `#E8C36A` on white is about 1.9:1, unreadable. So light mode has a *second* gold - `#7A5F12`,
+ * about 6.4:1 on the light surface - for text and icons, while the bright gold stays for fills and
+ * hairlines where contrast is not a legibility question. Two golds, one brand.
+ *
+ * ## No web fonts
+ *
+ * 16.3.1 makes this installable and offline-capable, and a font that arrives over the network is a
+ * font that is missing on the one occasion the offline shell exists for. The UI is the platform
+ * stack; the wordmark is a serif from the same stack, which is the whole of the "premium" signal and
+ * costs nothing.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* -- brand ------------------------------------------------------------------------------- */
+  --gold: #e8c36a;
+  --gold-deep: #c9a227;
+  --gold-text: #7a5f12;
+  --gold-soft: rgba(232, 195, 106, 0.14);
+  --gold-line: rgba(232, 195, 106, 0.32);
+
+  /* -- the trust vocabulary (13.4 / 13.7 / 13.8) ------------------------------------------ */
+  --ok: #0c7a56;
+  --ok-soft: rgba(12, 122, 86, 0.1);
+  --degraded: #b4510a;
+  --degraded-soft: rgba(180, 81, 10, 0.1);
+  --stopped: #b4143c;
+  --stopped-soft: rgba(180, 20, 60, 0.09);
+  --confirm: #5b3fc4;
+  --confirm-soft: rgba(91, 63, 196, 0.1);
+
+  /* -- light ground: warm, because the subject is paper ----------------------------------- */
+  --ground: #f7f6f2;
+  --ground-2: #efeee8;
+  --surface: #ffffff;
+  --surface-2: #faf9f5;
+  --ink: #16161a;
+  --ink-2: #5a5c64;
+  --ink-3: #8b8d95;
+  --line: rgba(22, 22, 26, 0.1);
+  --line-2: rgba(22, 22, 26, 0.06);
+  --shadow: 0 1px 2px rgba(22, 22, 26, 0.05), 0 8px 24px -12px rgba(22, 22, 26, 0.18);
+  --shadow-lift: 0 2px 4px rgba(22, 22, 26, 0.06), 0 24px 48px -20px rgba(22, 22, 26, 0.28);
+  --scrim: rgba(247, 246, 242, 0.82);
+
+  /* -- geometry ---------------------------------------------------------------------------- */
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --r-full: 999px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* 44px is the smallest target a thumb hits reliably; it is the floor for every control. */
+  --tap: 44px;
+
+  --sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, ui-serif, serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+
+  --t-fast: 140ms;
+  --t: 220ms;
+  --t-slow: 420ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Above a bottom sheet, below a toast. Named so a z-index is never guessed. */
+  --z-sheet: 40;
+  --z-bar: 30;
+  --z-toast: 60;
+}
+
+/*
+ * Dark is the mode this app was designed in, and the one the capture screen assumes: a camera
+ * preview is a bright rectangle, and a dark chrome around it keeps the eye on the paper.
+ *
+ * Declared for both the explicit choice and the system preference, in that order of specificity,
+ * so a person who has chosen light on a dark-mode phone gets light.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --gold-text: #e8c36a;
+    --gold-soft: rgba(232, 195, 106, 0.1);
+    --gold-line: rgba(232, 195, 106, 0.26);
+
+    --ok: #34d399;
+    --ok-soft: rgba(52, 211, 153, 0.12);
+    --degraded: #fb923c;
+    --degraded-soft: rgba(251, 146, 60, 0.13);
+    --stopped: #fb7185;
+    --stopped-soft: rgba(251, 113, 133, 0.13);
+    --confirm: #a78bfa;
+    --confirm-soft: rgba(167, 139, 250, 0.14);
+
+    --ground: #08080a;
+    --ground-2: #0d0d11;
+    --surface: #121217;
+    --surface-2: #17171d;
+    --ink: #f4f4f7;
+    --ink-2: #a7a9b3;
+    --ink-3: #70737d;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-2: rgba(255, 255, 255, 0.05);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.55), 0 24px 48px -16px rgba(0, 0, 0, 0.8);
+    --scrim: rgba(8, 8, 10, 0.78);
+  }
+}
+
+:root[data-theme="dark"] {
+  --gold-text: #e8c36a;
+  --gold-soft: rgba(232, 195, 106, 0.1);
+  --gold-line: rgba(232, 195, 106, 0.26);
+
+  --ok: #34d399;
+  --ok-soft: rgba(52, 211, 153, 0.12);
+  --degraded: #fb923c;
+  --degraded-soft: rgba(251, 146, 60, 0.13);
+  --stopped: #fb7185;
+  --stopped-soft: rgba(251, 113, 133, 0.13);
+  --confirm: #a78bfa;
+  --confirm-soft: rgba(167, 139, 250, 0.14);
+
+  --ground: #08080a;
+  --ground-2: #0d0d11;
+  --surface: #121217;
+  --surface-2: #17171d;
+  --ink: #f4f4f7;
+  --ink-2: #a7a9b3;
+  --ink-3: #70737d;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.05);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.55), 0 24px 48px -16px rgba(0, 0, 0, 0.8);
+  --scrim: rgba(8, 8, 10, 0.78);
+}
