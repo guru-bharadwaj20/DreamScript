@@ -34,8 +34,24 @@ import "./App.css";
 export default function App() {
   const [route, setRoute] = useState<Route>(() => parse(window.location.hash));
   const [theme, setTheme] = useState<Theme>(readTheme);
+  /**
+   * A photograph chosen from the library (16.2.4) or an example (16.2.11), on its way to the
+   * pipeline.
+   *
+   * Held here rather than in the address bar because a `File` cannot be one. That is a real
+   * limitation and it is accepted rather than worked around: reloading `#/camera` with a staged
+   * file loses the staging and opens the camera, which is the correct thing to do with a reload -
+   * the alternative is stashing megabytes in IndexedDB to survive a gesture nobody made.
+   */
+  const [staged, setStaged] = useState<Blob | null>(null);
 
   useEffect(() => watch(setRoute), []);
+
+  useEffect(() => {
+    // Cleared on the way out. Without this, tapping the camera later re-sends the photograph that
+    // was chosen ten minutes ago instead of opening the viewfinder.
+    if (route.view !== "camera") setStaged(null);
+  }, [route.view]);
 
   useEffect(() => {
     applyTheme(theme);
@@ -81,11 +97,13 @@ export default function App() {
         {route.view === "result" ? (
           <Result id={route.id} />
         ) : route.view === "camera" ? (
-          <Camera />
+          // `key` on the staging, so choosing a second photograph remounts rather than reusing a
+          // component whose effects have already run for the first one.
+          <Camera key={staged ? "staged" : "live"} initial={staged} />
         ) : route.view === "about" ? (
           <About theme={theme} onTheme={setTheme} />
         ) : (
-          <Capture />
+          <Capture onStaged={setStaged} />
         )}
       </main>
     </>

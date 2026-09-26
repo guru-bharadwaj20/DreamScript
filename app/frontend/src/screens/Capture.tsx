@@ -17,10 +17,12 @@
  * greyed out.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Glyph } from "../App";
 import { type Health, ApiError, api } from "../lib/api";
+import { type PickError, accept, explainPick, isPicked } from "../lib/pick";
+import { go } from "../lib/route";
 import { Card, Pill } from "../ui";
 
 type Probe =
@@ -28,8 +30,29 @@ type Probe =
   | { state: "up"; health: Health }
   | { state: "down"; detail: string };
 
-export function Capture() {
+export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void }) {
   const [probe, setProbe] = useState<Probe>({ state: "checking" });
+  const [rejected, setRejected] = useState<PickError | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
+
+  const choose = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      // Reset the input before anything else: without it, choosing the *same* file twice fires no
+      // change event the second time and the app looks frozen.
+      event.target.value = "";
+      if (!file) return;
+      setRejected(null);
+      const checked = await accept(file);
+      if (!isPicked(checked)) {
+        setRejected(checked);
+        return;
+      }
+      onStaged(checked.file);
+      go({ view: "camera" });
+    },
+    [onStaged],
+  );
 
   useEffect(() => {
     let live = true;
@@ -101,7 +124,7 @@ export function Capture() {
             <Glyph d="m9 6 6 6-6 6" />
           </a>
 
-          <button className="action" disabled>
+          <button className="action" onClick={() => picker.current?.click()}>
             <span className="action-icon">
               <Glyph d="M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16m-2-2 1.6-1.6a2 2 0 0 1 2.8 0L20 14M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
             </span>
@@ -109,8 +132,21 @@ export function Capture() {
               <strong>Choose a photo</strong>
               <small>One you have already taken</small>
             </span>
-            <Pill tone="plain">soon</Pill>
+            <Glyph d="m9 6 6 6-6 6" />
           </button>
+          {/*
+            No `capture` attribute, deliberately. `capture="environment"` replaces the library
+            picker with the system camera, so the one control labelled "choose a photo" would not
+            offer any photo the person already has. The camera is the other button.
+          */}
+          <input
+            ref={picker}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={choose}
+            aria-label="Choose a photograph"
+          />
 
           <button className="action" disabled>
             <span className="action-icon">
@@ -123,6 +159,8 @@ export function Capture() {
             <Pill tone="plain">soon</Pill>
           </button>
         </div>
+
+        {rejected ? <Rejected error={rejected} onDismiss={() => setRejected(null)} /> : null}
 
         <p className="dim" style={{ fontSize: 12.5, textAlign: "center" }}>
           Your photograph is uploaded to the server that runs the models.{" "}
@@ -195,6 +233,38 @@ function ServerStatus({ probe }: { probe: Probe }) {
         </span>
       </span>
     </div>
+  );
+}
+
+/**
+ * Why a chosen file was not accepted.
+ *
+ * One sentence and the thing the person can do about it. The HEIC case is the one that earns this
+ * component: every photograph on a recent iPhone is HEIC, no browser decodes it, and "that image
+ * could not be opened" sends someone looking for a corrupt file that is not corrupt.
+ */
+function Rejected({ error, onDismiss }: { error: PickError; onDismiss: () => void }) {
+  const { title, detail } = explainPick(error);
+  return (
+    <Card
+      style={{
+        padding: "var(--sp-4)",
+        borderColor: "color-mix(in srgb, var(--degraded) 32%, transparent)",
+      }}
+      className="stack-sm"
+    >
+      <div className="row">
+        <span className="eyebrow grow" style={{ color: "var(--degraded)" }}>
+          {title}
+        </span>
+        <button className="btn btn-quiet" onClick={onDismiss} aria-label="Dismiss">
+          <Glyph d="M6 6l12 12M18 6 6 18" size={16} />
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: 13.5 }}>
+        {detail}
+      </p>
+    </Card>
   );
 }
 
