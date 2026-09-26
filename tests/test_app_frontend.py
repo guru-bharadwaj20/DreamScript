@@ -277,6 +277,55 @@ def test_the_correction_kinds_match_the_backends_closed_set():
     assert declared == set(FEEDBACK_KINDS), declared ^ set(FEEDBACK_KINDS)
 
 
+# == the client has its own suite, and CI runs it =============================================
+
+
+def test_the_client_has_unit_tests_for_the_two_things_text_cannot_check():
+    """A grep can assert `camera.ts` mentions `NotAllowedError`. It cannot assert the SSE reader
+    survives a chunk boundary, which is the defect that only appears against a real socket."""
+    assert (FRONTEND / "src" / "lib" / "stream.test.ts").is_file()
+    assert (FRONTEND / "src" / "lib" / "camera.test.ts").is_file()
+    assert package()["scripts"]["test"] == "vitest run"
+
+
+def test_the_sse_reader_is_tested_against_chunk_boundaries():
+    """The one test in that file that earns its keep: a parser that assumes each chunk holds whole
+    lines passes every hand-written case and loses one frame per read in production."""
+    suite = read("src/lib/stream.test.ts")
+    assert "however the bytes are split" in suite
+    assert "TextEncoder" in suite, "the fixture has to be bytes, not a string"
+
+
+def test_ci_runs_the_client_suite():
+    """A test suite nothing runs is indistinguishable from no test suite."""
+    import yaml
+
+    workflow = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    client = workflow["jobs"].get("client")
+    assert client, "no `client` job in CI"
+    runs = [step.get("run") for step in client["steps"] if step.get("run")]
+    assert "npm ci" in runs, "`npm install` would ignore the lockfile the repo commits"
+    assert "npm test" in runs
+    assert "npm run build" in runs
+
+
+def test_the_camera_asks_for_the_rear_lens_as_ideal_rather_than_exact():
+    """`exact: "environment"` fails outright on every laptop, which is where this is developed."""
+    camera = without_comments(read("src/lib/camera.ts"))
+    assert 'facingMode: { ideal: "environment" }' in camera
+    assert 'exact: "environment"' not in camera
+
+
+def test_the_stream_is_read_from_fetch_rather_than_eventsource():
+    """`EventSource` only issues GET. The stream begins by uploading a photograph."""
+    stream = without_comments(read("src/lib/stream.ts"))
+    assert "EventSource" not in stream
+    assert "getReader()" in stream
+    assert "AbortSignal" in stream or "signal" in stream
+
+
 def test_the_client_talks_to_the_same_origin_so_there_is_no_cors_to_get_wrong():
     """The backend has no CORS middleware and needs none: Vite proxies in development and the
     backend serves the bundle in production. A `VITE_API_URL` would reintroduce both."""

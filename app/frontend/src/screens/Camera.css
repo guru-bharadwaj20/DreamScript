@@ -1,0 +1,259 @@
+/*
+ * Phase 16.2.2 - the viewfinder and the stage list.
+ *
+ * The viewfinder is the one screen in the app that is not on the app's ground: it is the camera's
+ * picture, edge to edge, with the chrome floating over it. Everything here serves that.
+ */
+
+.viewfinder {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+}
+
+.viewfinder video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* `cover`, not `contain`. A 4:3 sensor on a 19.5:9 screen letterboxes under `contain`, which shows
+     the person black bars where they expect paper; cropping is right because the brackets already
+     mark the region being framed. */
+  object-fit: cover;
+}
+
+/* The same four brackets as the landing frame, at the same proportions, so the two screens read as
+   one object. Inset further here because a viewfinder is the whole screen. */
+.viewfinder-brackets {
+  position: absolute;
+  inset: 12% 8%;
+  pointer-events: none;
+}
+
+.viewfinder-brackets span {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid var(--gold);
+  /* A drop shadow rather than an opacity: gold at 85% over a white sheet of paper is invisible, and
+     paper is the expected subject. A dark halo keeps the bracket readable on any background. */
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.55));
+}
+
+.viewfinder-brackets span:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 6px 0 0 0;
+}
+
+.viewfinder-brackets span:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-left: 0;
+  border-bottom: 0;
+  border-radius: 0 6px 0 0;
+}
+
+.viewfinder-brackets span:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-radius: 0 0 0 6px;
+}
+
+.viewfinder-brackets span:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+  border-radius: 0 0 6px 0;
+}
+
+.viewfinder-hint {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  top: max(var(--sp-4), calc(env(safe-area-inset-top) + var(--sp-2)));
+  padding: 6px 14px;
+  border-radius: var(--r-full);
+  font-size: 13px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.viewfinder-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-5) max(var(--sp-5), env(safe-area-inset-left));
+  /* A gradient rather than a bar: the controls need contrast against whatever is behind them and a
+     solid bar would crop the preview. */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+}
+
+.viewfinder-controls .btn-quiet {
+  color: #fff;
+}
+
+/* The shutter: a gold ring around a gold disc, which is the shape every camera app uses because it
+   is unmistakable at a glance and under a thumb. 72px, well over the 44px floor - this is the one
+   control on the screen and it should be impossible to miss. */
+.shutter {
+  width: 72px;
+  height: 72px;
+  min-height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.shutter span {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+  transition: transform var(--t-fast) var(--ease);
+}
+
+.shutter:active:not(:disabled) span {
+  transform: scale(0.86);
+}
+
+.shutter:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shutter:disabled span {
+  background: var(--ink-3);
+}
+
+/* == the captured page, while it is being read ============================================== */
+
+.capture-preview {
+  position: relative;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--gold-line);
+  background: var(--surface-2);
+  /* Capped, so a portrait photograph does not push the stage list - the thing the person is
+     actually waiting on - off the bottom of a small screen. */
+  max-height: 34dvh;
+}
+
+.capture-preview img {
+  width: 100%;
+  max-height: 34dvh;
+  object-fit: contain;
+}
+
+/* A gold line sweeping down the photograph while the pipeline reads it. Decoration, and it is
+   honest decoration: it says "working", and the stage list beside it says what is actually
+   happening. It is not a progress bar and does not pretend to track anything. */
+.capture-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  box-shadow: 0 0 12px var(--gold);
+  animation: scan 2.4s var(--ease) infinite;
+}
+
+@keyframes scan {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* == the stage list ========================================================================== */
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  min-height: 34px;
+  font-size: 14px;
+  transition: opacity var(--t) var(--ease);
+}
+
+.stage-row[data-state="waiting"] {
+  opacity: 0.38;
+}
+
+.stage-mark {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-3);
+  transition:
+    background var(--t) var(--ease),
+    border-color var(--t) var(--ease);
+}
+
+.stage-row[data-state="active"] .stage-mark {
+  border-color: var(--gold);
+  background: var(--gold);
+  animation: pulse 1.1s var(--ease) infinite;
+}
+
+.stage-row[data-state="done"] .stage-mark {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+.stage-row[data-state="failed"] .stage-mark {
+  border-color: var(--stopped);
+  background: var(--stopped);
+}
+
+.stage-name {
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-row[data-state="active"] .stage-name {
+  color: var(--gold-text);
+  font-weight: 600;
+}
+
+.stage-note {
+  font-size: 12px;
+  min-width: 52px;
+  text-align: right;
+}
+
+.stage-reason {
+  flex-basis: 100%;
+  padding-left: calc(9px + var(--sp-3));
+  font-size: 12.5px;
+  color: var(--stopped);
+}

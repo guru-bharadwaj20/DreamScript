@@ -12,9 +12,9 @@
  * orchestrator's liveness check would not fail because a *different* container was cold - and a
  * client that wants to draw "server offline" is the caller it was made opt-in *for*.
  *
- * The camera itself is 16.2.2, the gallery 16.2.4 and the examples 16.2.11. Their affordances are
- * here and disabled, with the reason on each one, because a landing screen that hides what the app
- * does until a later commit is a worse skeleton than one that shows it greyed out.
+ * The gallery is 16.2.4 and the examples 16.2.11; their affordances are here and marked, because a
+ * landing screen that hides what the app does until a later commit is worse than one that shows it
+ * greyed out.
  */
 
 import { useEffect, useState } from "react";
@@ -90,7 +90,7 @@ export function Capture() {
         <ServerStatus probe={probe} />
 
         <div className="actions">
-          <button className="action" disabled aria-describedby="camera-note">
+          <a href="#/camera" className="action" aria-describedby="camera-note">
             <span className="action-icon">
               <Glyph d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2ZM15 13a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </span>
@@ -98,8 +98,8 @@ export function Capture() {
               <strong>Use the camera</strong>
               <small id="camera-note">Live preview, with the page corners found for you</small>
             </span>
-            <Pill tone="gold">next</Pill>
-          </button>
+            <Glyph d="m9 6 6 6-6 6" />
+          </a>
 
           <button className="action" disabled>
             <span className="action-icon">

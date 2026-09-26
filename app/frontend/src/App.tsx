@@ -23,6 +23,7 @@ import {
   watchSystemTheme,
 } from "./lib/theme";
 import { About } from "./screens/About";
+import { Camera } from "./screens/Camera";
 import { Capture } from "./screens/Capture";
 import { Result } from "./screens/Result";
 import { Button, Mark } from "./ui";
@@ -49,8 +50,13 @@ export default function App() {
 
   const cycleTheme = useCallback(() => setTheme((current) => nextTheme(current)), []);
 
+  // The viewfinder is full-bleed and draws its own chrome over the preview. A sticky app bar above
+  // it would take 52px off the picture and put a wordmark where the paper is.
+  const bare = route.view === "camera";
+
   return (
     <>
+      {bare ? null : (
       <header className="bar safe-top safe-x">
         <a href="#/" className="row" style={{ textDecoration: "none", gap: "var(--sp-2)" }}>
           <Mark />
@@ -69,10 +75,13 @@ export default function App() {
           <Glyph d="M12 17v-6m0-4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </a>
       </header>
+      )}
 
       <main className="screen">
         {route.view === "result" ? (
           <Result id={route.id} />
+        ) : route.view === "camera" ? (
+          <Camera />
         ) : route.view === "about" ? (
           <About theme={theme} onTheme={setTheme} />
         ) : (

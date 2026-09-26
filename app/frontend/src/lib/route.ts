@@ -18,6 +18,7 @@
 
 export type Route =
   | { view: "capture" }
+  | { view: "camera" }
   | { view: "progress" }
   | { view: "result"; id: string }
   | { view: "gallery" }
@@ -27,6 +28,7 @@ const ID = /^[0-9a-f]{1,64}$/;
 
 export function parse(hash: string): Route {
   const path = hash.replace(/^#\/?/, "").split("?")[0];
+  if (path === "camera") return { view: "camera" };
   if (path === "progress") return { view: "progress" };
   if (path === "gallery") return { view: "gallery" };
   if (path === "about") return { view: "about" };
@@ -39,6 +41,8 @@ export function parse(hash: string): Route {
 
 export function href(route: Route): string {
   switch (route.view) {
+    case "camera":
+      return "#/camera";
     case "progress":
       return "#/progress";
     case "gallery":

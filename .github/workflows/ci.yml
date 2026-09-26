@@ -86,6 +86,30 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
+  client:
+    name: client (typecheck, unit tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      # `npm ci`, not `npm install`: it installs exactly the committed lockfile and fails if the
+      # lockfile and the manifest disagree, which is the whole reason the lockfile is in git.
+      - run: npm ci
+        working-directory: app/frontend
+      # `npm run build` is `tsc --noEmit && vite build`. The typecheck is the half that matters
+      # here: esbuild strips types without reading them, so `vite build` alone ships type errors.
+      - run: npm run build
+        working-directory: app/frontend
+      # 33 tests, and the one that earns this job is the SSE reader's chunk-boundary sweep: a
+      # parser that assumes each network chunk holds whole lines passes every hand-written test
+      # and loses one frame per read against a real socket, silently.
+      - run: npm test
+        working-directory: app/frontend
+
   tests:
     name: tests (no DVC payload)
     runs-on: ubuntu-latest

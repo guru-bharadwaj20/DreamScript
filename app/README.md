@@ -119,6 +119,7 @@ eviction at 500, plus `feedback.jsonl`, which is never evicted because it is tra
 ```
 npm ci && npm run dev      # or: make frontend — http://localhost:5173
 npm run build              # tsc --noEmit, then a hashed production bundle into dist/
+npm test                   # 33 unit tests (vitest). CI runs all three.
 ```
 
 **A web app, not an APK.** Phase 16's preamble records the amendment and its reasons: it has to run
@@ -142,6 +143,23 @@ has a second, darker value for it — `#e8c36a` on white is about 1.9:1 and unre
 
 Three theme states, not two: system is the default, because a person choosing light or dark on their
 phone already made that choice once.
+
+**The camera (16.2.2)** is `getUserMedia({facingMode: {ideal: "environment"}})` — `ideal`, not
+`exact`, because `exact` fails outright on every laptop, which is where this is developed. The
+viewfinder is full-bleed video under the same four gold brackets the landing frame draws, and the
+shutter stays disabled until the track reports a frame worth sending: Chrome's fake device sits at
+**2×2 for over a second**, a real phone does the same thing more briefly, and a 2×2 upload is a
+wasted round trip plus a confusing "the detector found nothing".
+
+`getUserMedia` has five refusals and each gets its own sentence, because each has a different fix
+that only the person holding the phone can apply — an insecure origin, a remembered "no", no camera,
+a camera another app is holding, and everything else with its name kept.
+
+The progress stream is read from `fetch` and not `EventSource`, which only issues GET requests and
+cannot carry a photograph. The reader keeps the remainder after the last newline in every chunk,
+because a chunk boundary lands mid-line far more often than not — a parser that assumed whole lines
+would lose exactly one frame per read, silently. `stream.test.ts` slices one transcript at nine
+different chunk sizes, down to one byte, and requires identical frames from all of them.
 
 ## The model server, which is not here
 
