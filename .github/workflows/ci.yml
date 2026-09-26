@@ -45,9 +45,9 @@ jobs:
         # Not the full stack: these need none of torch, CUDA or OpenCV, and
         # installing 3 GB of wheels to check formatting is how a lint job comes to take 8 minutes.
         run: pip install ruff==0.8.4 black==24.10.0 isort==5.13.2 mypy==2.3.1
-      - run: ruff check src tests scripts
-      - run: black --check src tests scripts
-      - run: isort --check src tests scripts
+      - run: ruff check src tests scripts app
+      - run: black --check src tests scripts app
+      - run: isort --check src tests scripts app
       - name: mypy, against its recorded baseline
         # mypy was installed on the development machine, reported 661 errors across 193 files,
         # and was in no gate at all. A pass/fail gate would make main red on day one and keep it
@@ -111,6 +111,7 @@ jobs:
           pip install -r requirements/classical.txt
           pip install -r requirements/cv.txt
           pip install -r requirements/serve.txt
+          pip install -r requirements/app.txt
           pip install -r requirements/genai.txt
           pip install -r requirements/test.txt
       # genai and serve are installed because their tests need no corpus, only their declared

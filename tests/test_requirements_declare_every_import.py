@@ -36,6 +36,11 @@ CI_LAYERS = (
     "classical.txt",
     "cv.txt",
     "serve.txt",
+    # Phase 16.1's app backend. Its tests run on a runner and its one dependency beyond
+    # `serve.txt` is httpx, which arrives transitively from starlette's TestClient on a
+    # development machine and would therefore be invisible here - precisely the shape of
+    # defect the docstring above describes.
+    "app.txt",
     "genai.txt",
     "torch.txt",
     # What the suite needs and the product does not. Split out of `base.txt`, which the
@@ -93,9 +98,14 @@ def _declared(files: tuple[str, ...]) -> set[str]:
 
 
 def _imports() -> dict[str, set[str]]:
-    """Top-level module name -> the files that import it, across src/, tests/ and scripts/."""
+    """Top-level module name -> the files that import it, across src/, tests/, scripts/, app/.
+
+    `app/` joined the list in 16.1. Until Phase 16 it held one README, so scanning it would
+    have been noise; the moment it holds a service that imports httpx, leaving it out makes
+    this file's own argument false for a whole tree.
+    """
     found: dict[str, set[str]] = {}
-    for base in ("src", "tests", "scripts"):
+    for base in ("src", "tests", "scripts", "app"):
         for path in (ROOT / base).rglob("*.py"):
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))

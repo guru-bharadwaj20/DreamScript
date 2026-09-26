@@ -1,0 +1,9 @@
+# Phase 16.1 — the app backend. Its own layer for the reason serve.txt is its own layer, one hop
+# further out: this process holds no model, imports no torch, and installing the CUDA toolchain to
+# proxy a multipart POST would be absurd. It is `serve.txt` plus a client.
+-r serve.txt
+
+# The client for the one upstream route this backend calls. Already present transitively - starlette
+# ships `TestClient` on top of it - and pinned here because a runtime dependency that happens to be
+# installed by a test helper is a runtime dependency waiting to disappear.
+httpx==0.28.1

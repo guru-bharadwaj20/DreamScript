@@ -25,7 +25,7 @@ OVERRIDES ?=
 # apart in both directions: `verify-classical` was declared with no rule behind it (so
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
-.PHONY: app clean clean-experiments dag data detect determinism dummy-run env eval features \
+.PHONY: app backend clean clean-experiments dag data detect determinism dummy-run env eval features \
         finetune format help hooks lint ocr parse preprocess push repro rl serve stages store test test-fast typecheck \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
@@ -46,7 +46,8 @@ env:  ## create the venv and install every requirements layer
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/torch.txt \
 		--index-url https://download.pytorch.org/whl/cu124
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/classical.txt \
-		-r requirements/cv.txt -r requirements/serve.txt -r requirements/genai.txt \
+		-r requirements/cv.txt -r requirements/serve.txt \
+		-r requirements/app.txt -r requirements/genai.txt \
 		-r requirements/test.txt
 	VIRTUAL_ENV=$(PWD)/.venv uv pip install -r requirements/dev.txt
 	# The hooks are configured in .pre-commit-config.yaml and had never been installed in
@@ -84,9 +85,12 @@ test-fast:  ## skip anything marked slow
 	$(PY) -m pytest -m "not slow"
 
 lint:  ## ruff + black --check + isort --check + mypy against its baseline
-	$(PY) -m ruff check src tests scripts
-	$(PY) -m black --check src tests scripts
-	$(PY) -m isort --check-only src tests scripts
+	# `app` joined this list in 16.1. It is a fourth tree of Python and every gate that named
+	# three would have let it through unformatted and unchecked - which is how a tree ends up
+	# with its own house style.
+	$(PY) -m ruff check src tests scripts app
+	$(PY) -m black --check src tests scripts app
+	$(PY) -m isort --check-only src tests scripts app
 	$(PY) scripts/typecheck.py
 
 hooks:  ## install the pre-commit hooks into .git/hooks (run once per clone)
@@ -96,9 +100,9 @@ typecheck:  ## mypy, held to reports/mypy_baseline.json - the count may fall, no
 	$(PY) scripts/typecheck.py
 
 format:  ## apply black + isort + ruff --fix
-	$(PY) -m isort src tests scripts
-	$(PY) -m black src tests scripts
-	$(PY) -m ruff check --fix src tests scripts
+	$(PY) -m isort src tests scripts app
+	$(PY) -m black src tests scripts app
+	$(PY) -m ruff check --fix src tests scripts app
 
 ## -- pipeline ----------------------------------------------------------------
 #
@@ -153,7 +157,10 @@ eval:  ## Phase 14 - the master table and every artefact it reads
 	$(PY) -m src.eval humanbaseline
 	$(PY) -m src.eval master
 
-app: serve  ## alias for `make serve`
+app: backend  ## alias for `make backend` — Phase 16's app, whose server side is the backend
+
+backend:  ## Phase 16.1 - run the app backend (proxies the model server, holds no model)
+	$(PY) -m uvicorn app.backend.main:app --host 127.0.0.1 --port 3000
 
 serve:  ## Phase 15.11 - run the inference service (what the Dockerfile and CI run)
 	$(PY) -m uvicorn src.serve.api:app --host 127.0.0.1 --port 8000

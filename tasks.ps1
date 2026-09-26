@@ -52,17 +52,17 @@ $Tasks = [ordered]@{
     # All three, because CI runs all three: a lint task that passes here and fails on the
     # runner is worse than no lint task.
     "lint"              = @{ Steps = @(
-                                @("-m", "ruff", "check", "src", "tests", "scripts"),
-                                @("-m", "black", "--check", "src", "tests", "scripts"),
-                                @("-m", "isort", "--check-only", "src", "tests", "scripts"),
+                                @("-m", "ruff", "check", "src", "tests", "scripts", "app"),
+                                @("-m", "black", "--check", "src", "tests", "scripts", "app"),
+                                @("-m", "isort", "--check-only", "src", "tests", "scripts", "app"),
                                 @("scripts/typecheck.py"));
                              Help = "ruff + black --check + isort --check + mypy baseline" }
     "typecheck"         = @{ Cmd = @("scripts/typecheck.py"); Help = "mypy, held to its recorded baseline" }
     "hooks"             = @{ Cmd = @("-m", "pre_commit", "install"); Help = "install the pre-commit hooks (once per clone)" }
     "format"            = @{ Steps = @(
-                                @("-m", "isort", "src", "tests", "scripts"),
-                                @("-m", "black", "src", "tests", "scripts"),
-                                @("-m", "ruff", "check", "--fix", "src", "tests", "scripts"));
+                                @("-m", "isort", "src", "tests", "scripts", "app"),
+                                @("-m", "black", "src", "tests", "scripts", "app"),
+                                @("-m", "ruff", "check", "--fix", "src", "tests", "scripts", "app"));
                              Help = "apply isort + black + ruff --fix" }
     # PrependPath is the whole point: without the venv's Scripts directory in front, `dvc repro`
     # spawns `python`, Windows resolves it to the Store stub and every stage exits 9009. The
@@ -102,8 +102,10 @@ $Tasks = [ordered]@{
                              Help = "Phase 14 - the master table and everything it reads" }
     "serve"             = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");
                              Help = "Phase 15.11 - run the inference service" }
-    "app"               = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");
-                             Help = "alias for serve" }
+    "backend"           = @{ Cmd = @("-m", "uvicorn", "app.backend.main:app", "--host", "127.0.0.1", "--port", "3000");
+                             Help = "Phase 16.1 - run the app backend (holds no model)" }
+    "app"               = @{ Cmd = @("-m", "uvicorn", "app.backend.main:app", "--host", "127.0.0.1", "--port", "3000");
+                             Help = "alias for backend - Phase 16's app, server side" }
     "stages"            = @{ Stages = $true;            Help = "list every command each pipeline package can run" }
 
     # housekeeping
@@ -131,8 +133,8 @@ if (-not $Tasks.Contains($Task)) {
 $spec = $Tasks[$Task]
 
 if ($spec.Env) {
-    $layers = @("base.txt", "torch.txt", "classical.txt", "cv.txt", "serve.txt", "genai.txt",
-                "test.txt", "dev.txt")
+    $layers = @("base.txt", "torch.txt", "classical.txt", "cv.txt", "serve.txt", "app.txt",
+                "genai.txt", "test.txt", "dev.txt")
     Write-Host "> uv venv --python 3.11 .venv" -ForegroundColor DarkGray
     if (-not $DryRun) { & uv venv --python 3.11 .venv }
         Write-Host "> install the pre-commit hooks" -ForegroundColor DarkGray

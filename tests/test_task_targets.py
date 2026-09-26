@@ -114,13 +114,40 @@ def _compose() -> dict:
     return yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
 
 
-def test_app_is_a_readme_not_two_invisible_placeholders():
-    """`app/backend/.gitkeep` and `app/frontend/.gitkeep` said nothing about what was missing."""
-    assert not (ROOT / "app" / "backend").exists()
-    assert not (ROOT / "app" / "frontend").exists()
+def test_the_app_readme_describes_the_tree_that_is_actually_there():
+    """This test used to assert `app/backend` and `app/frontend` did *not* exist.
+
+    That was right while they held one `.gitkeep` each and the README said "there is no code here
+    yet" - the point being that an empty placeholder is a claim the repo cannot support. 16.1 built
+    the backend, so the same principle now points the other way: the README is checked against what
+    the tree holds, in both directions, so it cannot go stale as Phase 16 fills in.
+    """
     text = (ROOT / "app" / "README.md").read_text(encoding="utf-8")
-    assert "There is no code here yet" in text
+    assert "There is no code here yet" not in text, "16.1 exists; the README still denies it"
+    assert (ROOT / "app" / "backend" / "main.py").is_file()
+    # The model server is a separate process by design, and the README is where that is explained.
     assert "uvicorn src.serve.api:app" in text
+    assert "uvicorn app.backend.main:app" in text
+
+    # Every directory under `app/` is described, and nothing described is missing. The frontend
+    # arrives in 16.2; until it does, the README must not promise it in the present tense.
+    for child in sorted(p.name for p in (ROOT / "app").iterdir() if p.is_dir()):
+        if child == "__pycache__":
+            continue
+        assert f"app/{child}" in text, f"app/{child} exists and the README does not mention it"
+
+
+def test_the_backend_holds_no_model():
+    """The architecture claim, checked as text rather than trusted.
+
+    Phase 16's preamble says the phone captures and the existing pipeline answers unchanged, and
+    the backend's whole justification for being a second process is that it is a proxy. An `import
+    torch` in this tree would make that false while every test still passed.
+    """
+    for path in sorted((ROOT / "app").rglob("*.py")):
+        source = path.read_text(encoding="utf-8")
+        for banned in ("import torch", "from torch", "ultralytics", "transformers"):
+            assert banned not in source, f"{path.relative_to(ROOT)} imports {banned}"
 
 
 def test_a_service_depended_on_for_health_declares_a_healthcheck():
