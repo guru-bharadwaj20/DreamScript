@@ -251,6 +251,31 @@ def test_every_route_the_client_calls_is_one_the_backend_registers():
     assert not missing, f"the client calls routes the backend does not serve: {sorted(missing)}"
 
 
+def test_the_clients_reason_table_matches_the_only_place_reasons_are_produced():
+    """`doubts.ts` turns the tracer's reason codes into sentences, which makes it a second copy of
+    a vocabulary defined in `src/ir/model.py`.
+
+    The first version was written from memory and had three names no payload contains
+    (`source-open`, `target-open`, `ambiguous-target`), so a real `no-source` fell through to the
+    fallback text - correct behaviour concealing an incorrect table, which is the kind of thing only
+    a comparison catches.
+    """
+    model = (ROOT / "src" / "ir" / "model.py").read_text(encoding="utf-8")
+    block = model.split("def record_unresolved", 1)[1].split("def sync_unresolved", 1)[0]
+    produced = set(re.findall(r'reason = "([a-z-]+)"', block))
+    produced |= set(re.findall(r'"reason", "([a-z-]+)"', block))
+
+    client = read("src/lib/doubts.ts")
+    table = client.split("const REASONS", 1)[1].split("};", 1)[0]
+    explained = set(re.findall(r'"([a-z-]+)":', table))
+
+    assert produced, "no reason codes found in record_unresolved"
+    missing = produced - explained
+    assert not missing, f"the client has no words for {sorted(missing)}"
+    invented = explained - produced
+    assert not invented, f"the client explains reasons nothing emits: {sorted(invented)}"
+
+
 def test_every_route_the_client_calls_is_in_the_dev_proxy():
     """The third description of the same contract, and the one with no compiler behind it.
 

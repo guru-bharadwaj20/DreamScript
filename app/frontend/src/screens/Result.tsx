@@ -18,8 +18,10 @@ import { heldFor } from "../lib/held";
 import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
 import { Code } from "../ui/Code";
 import { Correct } from "../ui/Correct";
+import { Doubts } from "../ui/Doubts";
 import { Graph } from "../ui/Graph";
-import { LOW_CONFIDENCE, Overlay } from "../ui/Overlay";
+import { Overlay } from "../ui/Overlay";
+import { LOW_CONFIDENCE } from "../lib/doubts";
 
 type Tab = "overlay" | "graph" | "code";
 
@@ -189,6 +191,16 @@ export function Result({ id }: { id: string }) {
         ) : (
           <Code prediction={p} />
         )}
+
+        <Doubts
+          prediction={p}
+          onSelect={(node) => {
+            // Jumping to the picture is the point: a list that named a problem and left a person
+            // to find it would be a worse version of the flag it replaced.
+            setSelected(node);
+            setTab(photograph ? "overlay" : "graph");
+          }}
+        />
 
         <StageTable prediction={p} />
       </div>

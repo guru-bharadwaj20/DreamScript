@@ -30,7 +30,7 @@ import { useMemo } from "react";
 
 import type { Diagram } from "../lib/api";
 import { type Placed, layout } from "../lib/layout";
-import { LOW_CONFIDENCE } from "./Overlay";
+import { LOW_CONFIDENCE } from "../lib/doubts";
 import "./Graph.css";
 
 export function Graph({
@@ -155,7 +155,7 @@ function GraphNode({
   onSelect?: (id: string | null) => void;
 }) {
   const { node, x, y, width, height, step } = placed;
-  const low = (node.confidence ?? 1) < LOW_CONFIDENCE;
+  const low = node.corrected !== true && (node.confidence ?? 1) < LOW_CONFIDENCE;
   const text = String(node.text ?? "").trim();
 
   return (

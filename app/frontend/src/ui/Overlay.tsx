@@ -32,6 +32,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Diagram, Node } from "../lib/api";
+import { LOW_CONFIDENCE } from "../lib/doubts";
 import "./Overlay.css";
 
 export interface OverlayProps {
@@ -46,8 +47,10 @@ export interface OverlayProps {
   flagLowConfidence?: boolean;
 }
 
-/** Below this a detection is worth looking at rather than trusting. 16.2.9 makes it visible. */
-export const LOW_CONFIDENCE = 0.5;
+// The threshold lives in `lib/doubts.ts` and is re-exported here for the screens that were reading
+// it from this module. One number, so the dashed orange box on the picture and the row in the
+// "where to look" list are the same claim rather than two thresholds that happen to agree.
+export { LOW_CONFIDENCE } from "../lib/doubts";
 
 interface Layout {
   /** Image pixels to canvas pixels. */
@@ -145,7 +148,8 @@ export function Overlay({
       const bbox = node.bbox as number[] | undefined;
       if (!bbox || bbox.length !== 4) continue;
       const [x, y, w, h] = bbox.map((v) => v * scale);
-      const low = flagLowConfidence && (node.confidence ?? 1) < LOW_CONFIDENCE;
+      const low =
+        flagLowConfidence && node.corrected !== true && (node.confidence ?? 1) < LOW_CONFIDENCE;
       const isSelected = node.id === selected;
 
       context.lineWidth = isSelected ? 3 : 2;
