@@ -25,12 +25,34 @@
   object-fit: cover;
 }
 
+/* 16.2.3's detected page, drawn over the preview. Pointer-events off: it is information, not a
+   control, and a tap must reach the shutter underneath. */
+.viewfinder-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* The brackets fade once the page itself is outlined. Two gold quadrilaterals on one screen is one
+   too many, and the outline is the more specific of the two. */
+.viewfinder-brackets[data-found="true"] {
+  opacity: 0.25;
+}
+
+.viewfinder-hint[data-found="true"] {
+  color: #100d04;
+  background: var(--gold);
+}
+
 /* The same four brackets as the landing frame, at the same proportions, so the two screens read as
    one object. Inset further here because a viewfinder is the whole screen. */
 .viewfinder-brackets {
   position: absolute;
   inset: 12% 8%;
   pointer-events: none;
+  transition: opacity var(--t) var(--ease);
 }
 
 .viewfinder-brackets span {

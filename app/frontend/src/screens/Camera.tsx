@@ -35,13 +35,15 @@ import { Glyph } from "../App";
 import { ApiError, type Prediction, type Stage } from "../lib/api";
 import {
   type CameraState,
-  capture,
   captureName,
+  captureStraightened,
   close,
+  detectInPreview,
   explain,
   open,
   ready,
 } from "../lib/camera";
+import type { Detection } from "../lib/dewarp";
 import { replace } from "../lib/route";
 import { predictStream } from "../lib/stream";
 import { Button, Card, Pill } from "../ui";
@@ -65,35 +67,72 @@ export function Camera({ initial }: { initial?: Blob | null }) {
   const video = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const abort = useRef<AbortController | null>(null);
+  //: The single in-flight `getUserMedia`, shared across effect invocations - see the effect below.
+  const opening = useRef<Promise<CameraState> | null>(null);
+  //: A deferred release, cancelled if the effect runs again. Also see the effect below.
+  const release = useRef<number | null>(null);
 
   const [camera, setCamera] = useState<CameraState>({ kind: "idle" });
   const [phase, setPhase] = useState<Phase>({ kind: "viewfinder" });
   const [progress, setProgress] = useState<Progress>(EMPTY);
   // The shutter waits for a frame worth sending. See `MIN_USABLE_WIDTH`.
   const [framing, setFraming] = useState(false);
+  // 16.2.3's live page detection, for the overlay. `null` means no page found, which the viewfinder
+  // shows rather than hides - it is what the shutter will act on.
+  const [page, setPage] = useState<Detection | null>(null);
+  const [dewarped, setDewarped] = useState<boolean | null>(null);
+  const overlay = useRef<HTMLCanvasElement>(null);
 
   // -- the device ---------------------------------------------------------------------------
 
+  /**
+   * Open the camera once, and close it only on a teardown that is really a teardown.
+   *
+   * The obvious version of this effect - open on mount, `close()` in the cleanup - **ends the
+   * stream it just opened**, and the browser test caught it: the track came back `ended` with the
+   * element stuck at the fake device's 2x2 placeholder.
+   *
+   * The cause is `StrictMode` double-invoking effects in development, which it does precisely to
+   * surface this class of bug. Run, cleanup, run again: the naive version calls `getUserMedia`
+   * twice, and Chrome can hand back a stream **sharing the same underlying track**. Closing the
+   * first one stops the track the second one is using, so the surviving stream is a live object
+   * wrapping a dead track - which is why the symptom was a frozen placeholder rather than an error.
+   *
+   * Two things fix it, and both are also right in production. The in-flight promise is held in a
+   * ref, so a second invocation **joins** the first open instead of starting another one; and the
+   * close is deferred by a tick and cancelled if the effect runs again, so a StrictMode remount
+   * keeps the stream while a real unmount still releases it.
+   */
   useEffect(() => {
     // Not opened when an image was handed in (16.2.4's gallery import): asking for a camera the
     // person is not about to use is a permission prompt for nothing.
     if (initial) return;
+
+    // A re-run means this is a remount, not a teardown. Call off the pending release.
+    if (release.current !== null) {
+      window.clearTimeout(release.current);
+      release.current = null;
+    }
+
     let cancelled = false;
-    setCamera({ kind: "opening" });
-    open().then((state) => {
-      if (cancelled) {
-        // The effect was torn down while `getUserMedia` was in flight - which is exactly what
-        // StrictMode's double invocation does - and the stream that arrived belongs to nobody.
-        if (state.kind === "live") close(state.stream);
-        return;
-      }
+    if (!opening.current) {
+      setCamera({ kind: "opening" });
+      opening.current = open();
+    }
+    void opening.current.then((state) => {
+      if (cancelled) return;
       if (state.kind === "live") streamRef.current = state.stream;
       setCamera(state);
     });
+
     return () => {
       cancelled = true;
-      close(streamRef.current);
-      streamRef.current = null;
+      release.current = window.setTimeout(() => {
+        close(streamRef.current);
+        streamRef.current = null;
+        opening.current = null;
+        release.current = null;
+      }, 0);
     };
   }, [initial]);
 
@@ -118,6 +157,60 @@ export function Camera({ initial }: { initial?: Blob | null }) {
     return () => window.clearInterval(timer);
   }, [camera]);
 
+  // 16.2.3: look for the page about three times a second while the viewfinder is up.
+  //
+  // Not every frame. The detection is a few milliseconds on a 320px copy, but `getImageData` plus a
+  // `drawImage` at 60 Hz is the thing that warms a phone up, and a page on a desk does not move at
+  // 60 Hz.
+  useEffect(() => {
+    if (camera.kind !== "live" || !framing || phase.kind !== "viewfinder") return;
+    const element = video.current;
+    if (!element) return;
+    const tick = () => setPage(detectInPreview(element));
+    tick();
+    const timer = window.setInterval(tick, 330);
+    return () => window.clearInterval(timer);
+  }, [camera, framing, phase.kind]);
+
+  // Draw the quad over the preview, in the element's coordinates.
+  useEffect(() => {
+    const canvas = overlay.current;
+    const element = video.current;
+    if (!canvas || !element) return;
+    const rect = element.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    context.clearRect(0, 0, rect.width, rect.height);
+    if (!page) return;
+
+    // `object-fit: cover` scales by the larger ratio and centres the overflow. The overlay has to
+    // undo exactly that, or the quad sits somewhere near the page rather than on it.
+    const scale = Math.max(rect.width / element.videoWidth, rect.height / element.videoHeight);
+    const offsetX = (rect.width - element.videoWidth * scale) / 2;
+    const offsetY = (rect.height - element.videoHeight * scale) / 2;
+
+    context.beginPath();
+    page.quad.forEach((p, i) => {
+      const x = offsetX + p.x * scale;
+      const y = offsetY + p.y * scale;
+      if (i === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.closePath();
+    context.fillStyle = "rgba(232, 195, 106, 0.12)";
+    context.fill();
+    context.strokeStyle = "#e8c36a";
+    context.lineWidth = 2.5;
+    context.lineJoin = "round";
+    context.shadowColor = "rgba(0,0,0,0.6)";
+    context.shadowBlur = 4;
+    context.stroke();
+  }, [page]);
+
   // -- the run ------------------------------------------------------------------------------
 
   const send = useCallback(async (image: Blob, filename: string) => {
@@ -125,9 +218,11 @@ export function Camera({ initial }: { initial?: Blob | null }) {
     setPhase({ kind: "running", preview });
     setProgress({ ...EMPTY, bytes: image.size });
     // The camera is released the moment a frame is taken. Holding it through a ten-second pipeline
-    // run keeps the indicator light on and the sensor warm for no reason.
+    // run keeps the indicator light on and the sensor warm for no reason. The shared open promise
+    // goes with it - otherwise a retry would join a promise whose stream has already been stopped.
     close(streamRef.current);
     streamRef.current = null;
+    opening.current = null;
 
     const controller = new AbortController();
     abort.current = controller;
@@ -179,8 +274,9 @@ export function Camera({ initial }: { initial?: Blob | null }) {
   const shutter = useCallback(async () => {
     if (!video.current) return;
     try {
-      const frame = await capture(video.current);
-      void send(frame, captureName());
+      const shot = await captureStraightened(video.current);
+      setDewarped(shot.dewarped);
+      void send(shot.blob, captureName());
     } catch (error) {
       setPhase({
         kind: "failed",
@@ -195,7 +291,14 @@ export function Camera({ initial }: { initial?: Blob | null }) {
   // -- render -------------------------------------------------------------------------------
 
   if (phase.kind === "running") {
-    return <Running preview={phase.preview} progress={progress} onCancel={() => abort.current?.abort()} />;
+    return (
+      <Running
+        preview={phase.preview}
+        progress={progress}
+        dewarped={dewarped}
+        onCancel={() => abort.current?.abort()}
+      />
+    );
   }
 
   if (phase.kind === "failed") {
@@ -203,20 +306,40 @@ export function Camera({ initial }: { initial?: Blob | null }) {
   }
 
   if (camera.kind !== "live") {
-    return <Unavailable state={camera} onRetry={() => open().then(setCamera)} />;
+    return (
+      <Unavailable
+        state={camera}
+        onRetry={() => {
+          // Cleared first: the ref holds the promise that *failed*, and joining it again would
+          // replay the refusal instead of asking the browser a second time.
+          opening.current = null;
+          setCamera({ kind: "opening" });
+          opening.current = open();
+          void opening.current.then((next) => {
+            if (next.kind === "live") streamRef.current = next.stream;
+            setCamera(next);
+          });
+        }}
+      />
+    );
   }
 
   return (
     <div className="viewfinder">
       <video ref={video} playsInline muted autoPlay aria-label="Camera preview" />
-      <div className="viewfinder-brackets" aria-hidden="true">
+      <canvas ref={overlay} className="viewfinder-overlay" aria-hidden="true" />
+      <div className="viewfinder-brackets" data-found={!!page} aria-hidden="true">
         <span />
         <span />
         <span />
         <span />
       </div>
-      <p className="viewfinder-hint">
-        {framing ? "Fill the frame with the paper. Hold steady." : "Focusing…"}
+      <p className="viewfinder-hint" data-found={!!page}>
+        {!framing
+          ? "Focusing\u2026"
+          : page
+            ? "Page found \u2014 it will be straightened"
+            : "Fill the frame with the paper. Hold steady."}
       </p>
       <div className="viewfinder-controls safe-bottom">
         <a href="#/" className="btn btn-quiet" aria-label="Back">
@@ -248,10 +371,12 @@ export function Camera({ initial }: { initial?: Blob | null }) {
 function Running({
   preview,
   progress,
+  dewarped,
   onCancel,
 }: {
   preview: string;
   progress: Progress;
+  dewarped: boolean | null;
   onCancel: () => void;
 }) {
   const finished = Object.keys(progress.done).length;
@@ -266,6 +391,21 @@ function Running({
             <span className="capture-scan" aria-hidden="true" />
           </div>
         ) : null}
+
+        {dewarped === null ? null : (
+          <div className="row" style={{ gap: "var(--sp-2)" }}>
+            {dewarped ? (
+              <Pill tone="gold">straightened</Pill>
+            ) : (
+              <Pill tone="plain">sent as photographed</Pill>
+            )}
+            <span className="dim" style={{ fontSize: 12.5 }}>
+              {dewarped
+                ? "The page corners were found and the perspective removed."
+                : "No page outline was found, so the photograph was not cropped."}
+            </span>
+          </div>
+        )}
 
         <div className="row">
           <span className="eyebrow grow">Reading the page</span>

@@ -22,6 +22,8 @@
  * app works on a phone the way it should and still works where it is developed.
  */
 
+import { type Detection, detect, straighten } from "./dewarp";
+
 export type CameraState =
   | { kind: "idle" }
   | { kind: "opening" }
@@ -144,6 +146,80 @@ export async function capture(video: HTMLVideoElement): Promise<Blob> {
       CAPTURE_QUALITY,
     );
   });
+}
+
+/**
+ * One frame, straightened if a page can be found in it (16.2.3).
+ *
+ * The refusal is the important half. When `detect` cannot find a page the **raw frame is uploaded
+ * unchanged** and `dewarped` is false - a dewarp that straightens the wrong quadrilateral crops the
+ * diagram, and nothing downstream can tell that it did. Losing the correction is recoverable;
+ * losing a corner of the drawing is not.
+ */
+export async function captureStraightened(
+  video: HTMLVideoElement,
+): Promise<{ blob: Blob; dewarped: boolean; detection: Detection | null }> {
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+  if (width < MIN_USABLE_WIDTH || !height) {
+    throw new Error(`the camera is still warming up (${width}x${height})`);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) throw new Error("this browser gave no 2d canvas context");
+  context.drawImage(video, 0, 0, width, height);
+
+  const frame = context.getImageData(0, 0, width, height);
+  const straightened = straighten(frame);
+  if (straightened) {
+    canvas.width = straightened.image.width;
+    canvas.height = straightened.image.height;
+    context.putImageData(straightened.image, 0, 0);
+  }
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("the frame could not be encoded"))),
+      CAPTURE_TYPE,
+      CAPTURE_QUALITY,
+    );
+  });
+  return { blob, dewarped: !!straightened, detection: straightened?.detection ?? null };
+}
+
+/**
+ * Detect the page in whatever the viewfinder is showing, for the live overlay.
+ *
+ * Deliberately runs on a **small** copy. The detection already downscales to 480 internally, but
+ * `getImageData` on a 1920x1440 frame copies 11 MB every time it is called, and at three calls a
+ * second on a phone that is the thing that heats the device rather than the arithmetic.
+ */
+export function detectInPreview(video: HTMLVideoElement, edge = 320): Detection | null {
+  const width = video.videoWidth;
+  const height = video.videoHeight;
+  if (width < MIN_USABLE_WIDTH || !height) return null;
+
+  const scale = Math.max(width, height) / edge;
+  const w = Math.max(1, Math.round(width / scale));
+  const h = Math.max(1, Math.round(height / scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  context.drawImage(video, 0, 0, w, h);
+
+  const found = detect(context.getImageData(0, 0, w, h));
+  if (!found) return null;
+  // Reported in the *video's* coordinates, so the overlay can map them to the element without
+  // knowing what size the preview was sampled at.
+  return {
+    ...found,
+    quad: found.quad.map((p) => ({ x: p.x * scale, y: p.y * scale })) as Detection["quad"],
+  };
 }
 
 /** A filename the backend will accept, with the time in it so a share sheet offers something sane. */

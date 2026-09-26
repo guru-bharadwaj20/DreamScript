@@ -155,6 +155,20 @@ wasted round trip plus a confusing "the detector found nothing".
 that only the person holding the phone can apply — an insecure origin, a remembered "no", no camera,
 a camera another app is holding, and everything else with its name kept.
 
+**The dewarp (16.2.3)** is `src/lib/dewarp.ts` — about three hundred lines and no dependency, where
+the plan said OpenCV. OpenCV.js is 8–10 MB of wasm and this app has an offline shell; the subset
+needed is a threshold, one connected component, four corners, one homography and a bilinear
+resample. What is given up is real: `findContours` with `approxPolyDP` is more robust on a cluttered
+background. The mitigation is **refusing** — when the detection does not look like a page, the raw
+frame is uploaded unchanged, because a dewarp that straightens the wrong quadrilateral crops the
+diagram and nothing downstream can tell.
+
+The viewfinder outlines the page it has found, three times a second, and the shutter straightens
+before uploading. `reports/dewarp.md` measures whether that helps: against the page's own flat
+reading, node F1 goes from **0.00 photographed to 0.75 dewarped** and normalised GED from 1.00 to
+0.549 — and it also costs one page of fifteen, which is in that report's headline rather than in a
+table cell.
+
 The progress stream is read from `fetch` and not `EventSource`, which only issues GET requests and
 cannot carry a photograph. The reader keeps the remainder after the last newline in every chunk,
 because a chunk boundary lands mid-line far more often than not — a parser that assumed whole lines

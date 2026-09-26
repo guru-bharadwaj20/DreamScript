@@ -1,0 +1,1458 @@
+{
+  "row": "16.2.3",
+  "generated": "2026-09-26T22:55:46",
+  "match": "geometric",
+  "synthetic_skew": true,
+  "cache_enabled": false,
+  "summary": {
+    "arms": [
+      "source",
+      "flat",
+      "photo",
+      "dewarped"
+    ],
+    "pages": 15,
+    "detected": 15,
+    "corner_error_px_median": 2.02,
+    "reached_code": {
+      "source": 15,
+      "flat": 15,
+      "photo": 15,
+      "dewarped": 14
+    },
+    "photo_vs_flat": {
+      "n": 15,
+      "node_f1_median": 0.0,
+      "edge_f1_median": 0.0,
+      "ged_normalised_median": 1.0
+    },
+    "dewarped_vs_flat": {
+      "n": 14,
+      "node_f1_median": 0.75,
+      "edge_f1_median": 0.2,
+      "ged_normalised_median": 0.549
+    }
+  },
+  "rows": [
+    {
+      "page": "flowchart.png",
+      "tilt": "mild",
+      "detected": true,
+      "corner_error_px": 2.3021728866442475,
+      "coverage": 0.433656968353778,
+      "skew": 1.8576605407619127,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 638,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 11.531
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 141,
+          "nodes": 4,
+          "edges": 1,
+          "seconds": 0.4
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 146,
+          "nodes": 4,
+          "edges": 1,
+          "seconds": 0.311
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 119,
+          "nodes": 3,
+          "edges": 2,
+          "seconds": 0.292
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 11.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 4,
+          "true_nodes": 3,
+          "predicted_edges": 1,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.6667,
+        "node_precision": 0.6667,
+        "node_recall": 0.6667,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 8.0,
+        "ged_normalised": 0.7273,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 3,
+          "predicted_edges": 2,
+          "true_edges": 3,
+          "matched_nodes": 2,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 2,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "flowchart.png",
+      "tilt": "moderate",
+      "detected": true,
+      "corner_error_px": 1.860107523773824,
+      "coverage": 0.348878337284816,
+      "skew": 3.5074666993489956,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 638,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.275
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 145,
+          "nodes": 4,
+          "edges": 1,
+          "seconds": 0.313
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 170,
+          "nodes": 5,
+          "edges": 1,
+          "seconds": 0.421
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 124,
+          "nodes": 3,
+          "edges": 1,
+          "seconds": 0.281
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 12.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 5,
+          "true_nodes": 3,
+          "predicted_edges": 1,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.6667,
+        "node_precision": 0.6667,
+        "node_recall": 0.6667,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 8.0,
+        "ged_normalised": 0.8,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 3,
+          "predicted_edges": 1,
+          "true_edges": 3,
+          "matched_nodes": 2,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 2,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "flowchart.png",
+      "tilt": "severe",
+      "detected": true,
+      "corner_error_px": 2.0248456731316646,
+      "coverage": 0.24719745387073497,
+      "skew": 6.893207966260434,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 638,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.299
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 143,
+          "nodes": 4,
+          "edges": 1,
+          "seconds": 0.31
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 134,
+          "nodes": 4,
+          "edges": 1,
+          "seconds": 0.319
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 118,
+          "nodes": 3,
+          "edges": 2,
+          "seconds": 0.238
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 11.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 4,
+          "true_nodes": 3,
+          "predicted_edges": 1,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.6667,
+        "node_precision": 0.6667,
+        "node_recall": 0.6667,
+        "edge_f1": 0.4,
+        "edge_precision": 0.5,
+        "edge_recall": 0.3333,
+        "ged": 7.0,
+        "ged_normalised": 0.6364,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 3,
+          "predicted_edges": 2,
+          "true_edges": 3,
+          "matched_nodes": 2,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 2,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "state_machine.png",
+      "tilt": "mild",
+      "detected": true,
+      "corner_error_px": 2.3021728866442475,
+      "coverage": 0.433656968353778,
+      "skew": 1.8576605407619127,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 754,
+          "nodes": 4,
+          "edges": 3,
+          "seconds": 3.084
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 830,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.236
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 1412,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.217
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 1012,
+          "nodes": 3,
+          "edges": 2,
+          "seconds": 0.231
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 13.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 4,
+          "predicted_edges": 3,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 3,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.8571,
+        "node_precision": 1.0,
+        "node_recall": 0.75,
+        "edge_f1": 0.8,
+        "edge_precision": 1.0,
+        "edge_recall": 0.6667,
+        "ged": 3.0,
+        "ged_normalised": 0.25,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 4,
+          "predicted_edges": 2,
+          "true_edges": 3,
+          "matched_nodes": 3,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "state_machine.png",
+      "tilt": "moderate",
+      "detected": true,
+      "corner_error_px": 1.860107523773824,
+      "coverage": 0.348878337284816,
+      "skew": 3.5074666993489956,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 754,
+          "nodes": 4,
+          "edges": 3,
+          "seconds": 0.24
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 834,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.251
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 761,
+          "nodes": 4,
+          "edges": 3,
+          "seconds": 0.332
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 914,
+          "nodes": 3,
+          "edges": 4,
+          "seconds": 0.22
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 14.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 4,
+          "true_nodes": 4,
+          "predicted_edges": 3,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 3,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.8571,
+        "node_precision": 1.0,
+        "node_recall": 0.75,
+        "edge_f1": 0.8571,
+        "edge_precision": 0.75,
+        "edge_recall": 1.0,
+        "ged": 3.0,
+        "ged_normalised": 0.2143,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 4,
+          "predicted_edges": 4,
+          "true_edges": 3,
+          "matched_nodes": 3,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "state_machine.png",
+      "tilt": "severe",
+      "detected": true,
+      "corner_error_px": 2.0248456731316646,
+      "coverage": 0.24719745387073497,
+      "skew": 6.893207966260434,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 754,
+          "nodes": 4,
+          "edges": 3,
+          "seconds": 0.251
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 832,
+          "nodes": 3,
+          "edges": 3,
+          "seconds": 0.255
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 989,
+          "nodes": 3,
+          "edges": 2,
+          "seconds": 0.215
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "state_machine",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 998,
+          "nodes": 4,
+          "edges": 2,
+          "seconds": 0.27
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 12.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 4,
+          "predicted_edges": 2,
+          "true_edges": 3,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 2,
+          "true_edges_at_unmatched_nodes": 3,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 1.0,
+        "node_precision": 1.0,
+        "node_recall": 1.0,
+        "edge_f1": 0.4,
+        "edge_precision": 0.5,
+        "edge_recall": 0.3333,
+        "ged": 6.0,
+        "ged_normalised": 0.4615,
+        "counts": {
+          "predicted_nodes": 4,
+          "true_nodes": 4,
+          "predicted_edges": 2,
+          "true_edges": 3,
+          "matched_nodes": 4,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "er_diagram.png",
+      "tilt": "mild",
+      "detected": true,
+      "corner_error_px": 2.3021728866442475,
+      "coverage": 0.433656968353778,
+      "skew": 1.8576605407619127,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 1033,
+          "nodes": 5,
+          "edges": 1,
+          "seconds": 0.416
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 206,
+          "nodes": 6,
+          "edges": 1,
+          "seconds": 0.437
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 180,
+          "nodes": 5,
+          "edges": 0,
+          "seconds": 0.432
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 124,
+          "nodes": 3,
+          "edges": 0,
+          "seconds": 0.234
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 11.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 5,
+          "true_nodes": 5,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.75,
+        "node_precision": 1.0,
+        "node_recall": 0.6,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 4.0,
+        "ged_normalised": 0.4444,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 5,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 3,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "er_diagram.png",
+      "tilt": "moderate",
+      "detected": true,
+      "corner_error_px": 1.860107523773824,
+      "coverage": 0.348878337284816,
+      "skew": 3.5074666993489956,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 1033,
+          "nodes": 5,
+          "edges": 1,
+          "seconds": 0.407
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 210,
+          "nodes": 6,
+          "edges": 1,
+          "seconds": 0.432
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 202,
+          "nodes": 6,
+          "edges": 1,
+          "seconds": 0.429
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 146,
+          "nodes": 3,
+          "edges": 1,
+          "seconds": 0.252
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 13.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 6,
+          "true_nodes": 5,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.75,
+        "node_precision": 1.0,
+        "node_recall": 0.6,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 7.0,
+        "ged_normalised": 0.7,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 5,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 3,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "er_diagram.png",
+      "tilt": "severe",
+      "detected": true,
+      "corner_error_px": 2.0248456731316646,
+      "coverage": 0.24719745387073497,
+      "skew": 6.893207966260434,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 1033,
+          "nodes": 5,
+          "edges": 1,
+          "seconds": 0.424
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 208,
+          "nodes": 6,
+          "edges": 1,
+          "seconds": 0.445
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 249,
+          "nodes": 6,
+          "edges": 1,
+          "seconds": 0.503
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 488,
+          "nodes": 2,
+          "edges": 1,
+          "seconds": 0.201
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 13.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 6,
+          "true_nodes": 5,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.5714,
+        "node_precision": 1.0,
+        "node_recall": 0.4,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 7.0,
+        "ged_normalised": 0.7778,
+        "counts": {
+          "predicted_nodes": 2,
+          "true_nodes": 5,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 2,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "wireframe.png",
+      "tilt": "mild",
+      "detected": true,
+      "corner_error_px": 54.638631022381965,
+      "coverage": 0.26544299556746725,
+      "skew": 1.525308545159902,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 484,
+          "nodes": 2,
+          "edges": 1,
+          "seconds": 0.132
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 176,
+          "nodes": 5,
+          "edges": 0,
+          "seconds": 0.394
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 145,
+          "nodes": 4,
+          "edges": 0,
+          "seconds": 0.276
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 84,
+          "nodes": 1,
+          "edges": 0,
+          "seconds": 0.17
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 7.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 4,
+          "true_nodes": 2,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 4.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 1,
+          "true_nodes": 2,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "wireframe.png",
+      "tilt": "moderate",
+      "detected": true,
+      "corner_error_px": 49.13511982279069,
+      "coverage": 0.2131481290588599,
+      "skew": 3.695748844554842,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 484,
+          "nodes": 2,
+          "edges": 1,
+          "seconds": 0.135
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 180,
+          "nodes": 5,
+          "edges": 0,
+          "seconds": 0.392
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 174,
+          "nodes": 5,
+          "edges": 0,
+          "seconds": 0.381
+        },
+        "dewarped": {
+          "ok": false,
+          "stopped_at": "assemble",
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": null,
+          "code_bytes": 0,
+          "nodes": 0,
+          "edges": 0,
+          "seconds": 0.017
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 8.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 5,
+          "true_nodes": 2,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": null
+    },
+    {
+      "page": "wireframe.png",
+      "tilt": "severe",
+      "detected": true,
+      "corner_error_px": 41.31464631338384,
+      "coverage": 0.1517304917018864,
+      "skew": 6.849119386035909,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 484,
+          "nodes": 2,
+          "edges": 1,
+          "seconds": 0.129
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 178,
+          "nodes": 5,
+          "edges": 0,
+          "seconds": 0.387
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 201,
+          "nodes": 6,
+          "edges": 0,
+          "seconds": 0.499
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 304,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.137
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 9.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 6,
+          "true_nodes": 2,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 5.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 1,
+          "true_nodes": 2,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 1,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "circuit.png",
+      "tilt": "mild",
+      "detected": true,
+      "corner_error_px": 2.3021728866442475,
+      "coverage": 0.433656968353778,
+      "skew": 1.8576605407619127,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 304,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.193
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 672,
+          "nodes": 3,
+          "edges": 1,
+          "seconds": 0.333
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 154,
+          "nodes": 3,
+          "edges": 0,
+          "seconds": 0.312
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 309,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.157
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 5.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 1,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 1.0,
+        "node_precision": 1.0,
+        "node_recall": 1.0,
+        "edge_f1": 1.0,
+        "edge_precision": 1.0,
+        "edge_recall": 1.0,
+        "ged": 1.0,
+        "ged_normalised": 0.25,
+        "counts": {
+          "predicted_nodes": 1,
+          "true_nodes": 1,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 1,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "circuit.png",
+      "tilt": "moderate",
+      "detected": true,
+      "corner_error_px": 1.860107523773824,
+      "coverage": 0.348878337284816,
+      "skew": 3.5074666993489956,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 304,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.187
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 676,
+          "nodes": 3,
+          "edges": 1,
+          "seconds": 0.335
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 98,
+          "nodes": 2,
+          "edges": 0,
+          "seconds": 0.209
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 311,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.144
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 4.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 2,
+          "true_nodes": 1,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 1.0,
+        "node_precision": 1.0,
+        "node_recall": 1.0,
+        "edge_f1": 1.0,
+        "edge_precision": 1.0,
+        "edge_recall": 1.0,
+        "ged": 1.0,
+        "ged_normalised": 0.25,
+        "counts": {
+          "predicted_nodes": 1,
+          "true_nodes": 1,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 1,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    },
+    {
+      "page": "circuit.png",
+      "tilt": "severe",
+      "detected": true,
+      "corner_error_px": 2.0248456731316646,
+      "coverage": 0.24719745387073497,
+      "skew": 6.893207966260434,
+      "runs": {
+        "source": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 304,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.196
+        },
+        "flat": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 674,
+          "nodes": 3,
+          "edges": 1,
+          "seconds": 0.324
+        },
+        "photo": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 136,
+          "nodes": 3,
+          "edges": 0,
+          "seconds": 0.215
+        },
+        "dewarped": {
+          "ok": true,
+          "stopped_at": null,
+          "diagram_type": "flowchart",
+          "needs_confirmation": false,
+          "language": "python",
+          "code_bytes": 302,
+          "nodes": 1,
+          "edges": 1,
+          "seconds": 0.143
+        }
+      },
+      "photo_vs_flat": {
+        "match": "geometric",
+        "node_f1": 0.0,
+        "node_precision": 0.0,
+        "node_recall": 0.0,
+        "edge_f1": 0.0,
+        "edge_precision": 0.0,
+        "edge_recall": 0.0,
+        "ged": 5.0,
+        "ged_normalised": 1.0,
+        "counts": {
+          "predicted_nodes": 3,
+          "true_nodes": 1,
+          "predicted_edges": 0,
+          "true_edges": 1,
+          "matched_nodes": 0,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 1,
+          "dangling_edges": 0
+        }
+      },
+      "dewarped_vs_flat": {
+        "match": "geometric",
+        "node_f1": 1.0,
+        "node_precision": 1.0,
+        "node_recall": 1.0,
+        "edge_f1": 1.0,
+        "edge_precision": 1.0,
+        "edge_recall": 1.0,
+        "ged": 1.0,
+        "ged_normalised": 0.25,
+        "counts": {
+          "predicted_nodes": 1,
+          "true_nodes": 1,
+          "predicted_edges": 1,
+          "true_edges": 1,
+          "matched_nodes": 1,
+          "edges_lost_to_unmatched_nodes": 0,
+          "true_edges_at_unmatched_nodes": 0,
+          "dangling_edges": 0
+        }
+      }
+    }
+  ]
+}
