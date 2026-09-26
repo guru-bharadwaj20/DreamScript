@@ -12,9 +12,8 @@
  * orchestrator's liveness check would not fail because a *different* container was cold - and a
  * client that wants to draw "server offline" is the caller it was made opt-in *for*.
  *
- * The gallery is 16.2.4 and the examples 16.2.11; their affordances are here and marked, because a
- * landing screen that hides what the app does until a later commit is worse than one that shows it
- * greyed out.
+ * All three affordances are live: the camera (16.2.2), the library picker (16.2.4) and the bundled
+ * examples (16.2.11).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -148,7 +147,7 @@ export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void })
             aria-label="Choose a photograph"
           />
 
-          <button className="action" disabled>
+          <a href="#/gallery" className="action">
             <span className="action-icon">
               <Glyph d="M4 6h16M4 12h16M4 18h10" />
             </span>
@@ -156,8 +155,8 @@ export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void })
               <strong>Try an example</strong>
               <small>Five bundled sketches — no paper needed</small>
             </span>
-            <Pill tone="plain">soon</Pill>
-          </button>
+            <Glyph d="m9 6 6 6-6 6" />
+          </a>
         </div>
 
         {rejected ? <Rejected error={rejected} onDismiss={() => setRejected(null)} /> : null}

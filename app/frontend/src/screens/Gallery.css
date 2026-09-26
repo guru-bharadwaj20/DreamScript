@@ -1,0 +1,74 @@
+/* Phase 16.2.11 - the example gallery. */
+
+.gallery {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.example {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-3);
+  text-align: left;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition:
+    transform var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+
+.example:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+@media (hover: hover) {
+  .example:hover:not(:disabled) {
+    border-color: var(--gold-line);
+  }
+}
+
+.example:disabled {
+  opacity: 0.55;
+}
+
+.example img {
+  width: 92px;
+  height: 69px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  /* The fixtures are near-white line art. On the dark ground they float as a bright rectangle, so
+     the border gives them an edge rather than letting them bleed into the card. */
+  background: #fff;
+}
+
+.example-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.example-meta strong {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.example-meta small {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.example-go {
+  flex: none;
+  color: var(--ink-3);
+  display: grid;
+  place-items: center;
+  width: 24px;
+}

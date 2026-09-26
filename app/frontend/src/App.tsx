@@ -25,6 +25,7 @@ import {
 import { About } from "./screens/About";
 import { Camera } from "./screens/Camera";
 import { Capture } from "./screens/Capture";
+import { Gallery } from "./screens/Gallery";
 import { Result } from "./screens/Result";
 import { Button, Mark } from "./ui";
 import "./styles/tokens.css";
@@ -50,7 +51,7 @@ export default function App() {
   useEffect(() => {
     // Cleared on the way out. Without this, tapping the camera later re-sends the photograph that
     // was chosen ten minutes ago instead of opening the viewfinder.
-    if (route.view !== "camera") setStaged(null);
+    if (route.view !== "camera" && route.view !== "gallery") setStaged(null);
   }, [route.view]);
 
   useEffect(() => {
@@ -100,6 +101,8 @@ export default function App() {
           // `key` on the staging, so choosing a second photograph remounts rather than reusing a
           // component whose effects have already run for the first one.
           <Camera key={staged ? "staged" : "live"} initial={staged} />
+        ) : route.view === "gallery" ? (
+          <Gallery onStaged={setStaged} />
         ) : route.view === "about" ? (
           <About theme={theme} onTheme={setTheme} />
         ) : (
