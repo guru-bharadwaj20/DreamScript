@@ -1,0 +1,139 @@
+/* Phase 16.2.7 - the code panel. */
+
+.code-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--line-2);
+  background: var(--surface);
+}
+
+.code-body {
+  margin: 0;
+  padding: var(--sp-3) 0;
+  background: var(--ground-2);
+  /* Sideways inside its own box. Indentation is structure in three of the four languages, and
+     wrapping a long line destroys the only cue that says which branch a statement is in. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-size: 12.5px;
+  line-height: 1.65;
+  tab-size: 4;
+}
+
+.code-line {
+  display: flex;
+  align-items: flex-start;
+  min-width: max-content;
+}
+
+/* The gutter does not scroll away with the code, because a line number that has slid off the left
+   edge is a line number nobody can use. */
+.code-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  flex: none;
+  width: 34px;
+  padding-right: var(--sp-3);
+  text-align: right;
+  color: var(--ink-3);
+  background: var(--ground-2);
+  user-select: none;
+  -webkit-user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.code-text {
+  white-space: pre;
+  padding-right: var(--sp-4);
+}
+
+/* The five colours. Gold is the brand and is deliberately *not* one of them: a whole panel of gold
+   keywords would make the brand mean "keyword", and the accent would stop signalling anything. */
+.t-keyword {
+  color: #c084fc;
+  font-weight: 600;
+}
+
+.t-string {
+  color: #34d399;
+}
+
+.t-comment {
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+.t-number {
+  color: #7dd3fc;
+}
+
+.t-function {
+  color: #fbbf24;
+}
+
+.t-punct {
+  color: var(--ink-2);
+}
+
+/* Light mode needs darker inks: #c084fc on white is about 2.4:1. */
+:root[data-theme="light"] .t-keyword,
+:root:not([data-theme="dark"]) .t-keyword {
+  color: #7c3aed;
+}
+
+:root[data-theme="light"] .t-string,
+:root:not([data-theme="dark"]) .t-string {
+  color: #047857;
+}
+
+:root[data-theme="light"] .t-number,
+:root:not([data-theme="dark"]) .t-number {
+  color: #0369a1;
+}
+
+:root[data-theme="light"] .t-function,
+:root:not([data-theme="dark"]) .t-function {
+  color: #a16207;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t-keyword {
+    color: #c084fc;
+  }
+  :root:not([data-theme="light"]) .t-string {
+    color: #34d399;
+  }
+  :root:not([data-theme="light"]) .t-number {
+    color: #7dd3fc;
+  }
+  :root:not([data-theme="light"]) .t-function {
+    color: #fbbf24;
+  }
+}
+
+/* -- what the sandbox printed --------------------------------------------------------------- */
+
+.run-output {
+  margin: 0;
+  padding: var(--sp-3);
+  border-radius: var(--r);
+  background: var(--ground-2);
+  border: 1px solid var(--line-2);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 40dvh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.run-stderr {
+  color: var(--stopped);
+  border-color: color-mix(in srgb, var(--stopped) 26%, transparent);
+  background: var(--stopped-soft);
+}

@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 
 import { type Prediction, ApiError, api } from "../lib/api";
 import { heldFor } from "../lib/held";
-import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
+import { Card, Pill, Segmented, TrustPill } from "../ui";
+import { Code } from "../ui/Code";
 import { Graph } from "../ui/Graph";
 import { LOW_CONFIDENCE, Overlay } from "../ui/Overlay";
 
@@ -184,7 +185,7 @@ export function Result({ id }: { id: string }) {
             <Selected prediction={p} id={selected} />
           </div>
         ) : (
-          <CodePreview prediction={p} />
+          <Code prediction={p} />
         )}
 
         <StageTable prediction={p} />
@@ -247,65 +248,6 @@ function Selected({ prediction, id }: { prediction: Prediction; id: string | nul
           ? "No arrows touch this shape."
           : `${edges.length} arrow${edges.length === 1 ? " touches" : "s touch"} this shape.`}
       </p>
-    </Card>
-  );
-}
-
-/**
- * The code, plain, with copy.
- *
- * `pre` is horizontally scrollable in its own box rather than wrapped: a generated program's
- * indentation is structure, and re-wrapping a long line destroys the one visual cue that says which
- * branch a statement is in. 16.2.7 adds highlighting, running and sharing.
- */
-function CodePreview({ prediction }: { prediction: Prediction }) {
-  const [copied, setCopied] = useState(false);
-
-  if (!prediction.code) {
-    return (
-      <Card style={{ padding: "var(--sp-5)" }}>
-        <p className="muted" style={{ fontSize: 14 }}>
-          This page produced no code
-          {prediction.stopped_at ? `; it stopped at ${prediction.stopped_at}.` : "."}
-        </p>
-      </Card>
-    );
-  }
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(prediction.code ?? "");
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Clipboard access can be refused outright - an insecure origin, or a browser that requires a
-      // user gesture this call has lost. The text is on screen and selectable either way.
-      setCopied(false);
-    }
-  };
-
-  return (
-    <Card className="stack-sm" style={{ padding: "var(--sp-4)", overflow: "hidden" }}>
-      <div className="row">
-        <span className="eyebrow grow">{prediction.language}</span>
-        <Button variant="quiet" onClick={copy}>
-          {copied ? "Copied" : "Copy"}
-        </Button>
-      </div>
-      <pre
-        className="mono selectable"
-        style={{
-          margin: 0,
-          padding: "var(--sp-3)",
-          borderRadius: "var(--r)",
-          background: "var(--ground-2)",
-          border: "1px solid var(--line-2)",
-          overflowX: "auto",
-          lineHeight: 1.55,
-        }}
-      >
-        {prediction.code}
-      </pre>
     </Card>
   );
 }
