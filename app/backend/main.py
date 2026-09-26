@@ -72,12 +72,25 @@ reasoning, including the probe that checked whether a hostile diagram label can 
 code (it cannot) and why the tightenings exist anyway (when a model answers the generate stage, the
 program is a language model's output and a label is prompt content).
 
+## Rate and size limits (16.1.4)
+
+`app/backend/limits.py` installs one middleware. Four budgets rather than one, because a page is
+seconds of GPU and an id lookup is a file read, and a single bucket set by the expensive route would
+throttle the cheap one a phone calls three times per capture. `Content-Length` far over the cap is
+refused before a byte of body is read; `_accept` still refuses on the overflow byte, because a client
+can lie about the header. `/health` is exempt - a 429 to a liveness probe gets the container
+restarted, which is 15.11's lesson arriving a third time.
+
+The limiter's ceiling is stated rather than implied: the counters are a dict in this process, so two
+workers give a client twice the budget, and `X-RateLimit-Scope: process:60s` says so on every
+response. `X-Forwarded-For` is not trusted unless `DREAMSCRIPT_TRUSTED_PROXY_HOPS` says how many
+proxies are in front, because a limiter keyed on a header the client sets is a limiter with a bypass.
+
 ## Scope
 
-Rate and size limits (16.1.4) are the next row and are not here yet. The caps present are
-`MAX_UPLOAD_BYTES`, which is self-defence against a malformed multipart body rather than abuse
-protection - the same exception 15.11 makes, for the same reason - and the runner's own concurrency
-gate, which is about *processes* rather than requests.
+Every 16.1 row is in. The caps here are the request-rate and body-size limits, `MAX_UPLOAD_BYTES` as
+self-defence against a malformed multipart body, and the runner's own concurrency gate - which is
+about *processes* rather than requests and is therefore a different limit, not a duplicate one.
 """
 
 from __future__ import annotations
@@ -96,6 +109,7 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 
+from app.backend.limits import Limits, install, trusted_proxy_hops
 from app.backend.runner import KIND_BUSY, MAX_TIMEOUT_S, MIN_TIMEOUT_S, run_stored
 from app.backend.store import Store
 from app.backend.stream import Reader, comment, frame
@@ -139,12 +153,17 @@ def _content_type(filename: str, declared: str | None) -> str:
     return {"jpg": "image/jpeg", "tif": "image/tiff"}.get(suffix, f"image/{suffix or 'png'}")
 
 
-def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -> FastAPI:
+def build_app(
+    *,
+    store: Store | None = None,
+    upstream: Upstream | None = None,
+    limits: Limits | None = None,
+) -> FastAPI:
     """The FastAPI application.
 
-    A factory taking both collaborators, so a test drives a temporary state root and a fake model
-    server without monkeypatching module globals - and so `--check` can exercise every route that
-    does not need a model.
+    A factory taking its collaborators, so a test drives a temporary state root, a fake model server
+    and its own rate-limit counters without monkeypatching module globals - and so `--check` can
+    exercise every route that does not need a model.
     """
     app = FastAPI(
         title="DreamScript app backend",
@@ -160,6 +179,9 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
     model = upstream if upstream is not None else Upstream()
     app.state.store = state
     app.state.upstream = model
+    # 16.1.4. Installed here rather than at import so a test can pass its own counters and drive the
+    # clock, and so `--check` exercises the middleware rather than an app without it.
+    guard = install(app, limits)
 
     # -- health -------------------------------------------------------------------------
 
@@ -178,6 +200,17 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
             "version": VERSION,
             "model_url": model.url,
             "stored": len(state.ids()),
+            # 16.1.4's counters, reported rather than hidden. `scope` says `process` because that is
+            # what the limit holds within, and a client reading `X-RateLimit-Limit` deserves to know
+            # it is not a deployment-wide number.
+            "limits": {
+                "budgets": guard.budgets,
+                "window_s": guard.window_s,
+                "max_body_bytes": guard.max_body_bytes,
+                "tracked_clients": guard.tracked,
+                "scope": "process",
+                "trusted_proxy_hops": trusted_proxy_hops(),
+            },
         }
         if upstream_probe:
             body["model_server"] = model.health()

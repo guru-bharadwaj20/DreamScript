@@ -89,6 +89,27 @@ content.
 > boundary. It caps memory, kills a process tree and refuses names; it does not stop a program
 > reading a file the service user can read.
 
+**Four rate budgets, not one.** A page is seconds of GPU; an id lookup is a file read, and a phone
+makes three of those per capture. One bucket would be set by the expensive route and would throttle
+the cheap one.
+
+| Class | Per minute | Why |
+| :--- | :---: | :--- |
+| `predict` | 6 | seconds of GPU and megabytes of upload |
+| `run` | 10 | a program is a process; the runner already caps four at once |
+| `write` | 30 | corrections — cheap, and the thing we most want people to do |
+| `read` | 120 | an id lookup; a client polls these |
+
+Every response carries `X-RateLimit-Limit`, `-Remaining` and `-Reset`, so a client can pace itself
+instead of discovering the limit by hitting it. A `Content-Length` over 25 MB is refused before a byte
+of body is read. `/health` is exempt — a 429 to a liveness probe gets the container restarted.
+
+Two things the limiter is not, both stated on the wire rather than only in a comment.
+`X-RateLimit-Scope: process:60s`, because the counters are a dict in this process: two workers give a
+client twice the budget, which is why the numbers are conservative and why there is no Redis here.
+And `X-Forwarded-For` is ignored unless `DREAMSCRIPT_TRUSTED_PROXY_HOPS` says how many proxies are
+real — a limiter keyed on a header the client sets is a limiter with a bypass.
+
 State lives under `runs/app/` (gitignored, derived): one JSON file per prediction, oldest-first
 eviction at 500, plus `feedback.jsonl`, which is never evicted because it is training data.
 `DREAMSCRIPT_APP_STATE` moves it.
