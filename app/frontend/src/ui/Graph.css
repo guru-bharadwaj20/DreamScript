@@ -1,0 +1,127 @@
+/* Phase 16.2.6 - the graph view. */
+
+.graph {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: var(--sp-3);
+  /* A wide diagram scrolls sideways inside its own box rather than making the page scroll. */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.graph svg {
+  /* `min-width` in ch so a three-rank diagram does not stretch two boxes across a tablet, and the
+     container's overflow handles anything wider than the screen. */
+  min-width: 280px;
+  height: auto;
+  display: block;
+}
+
+.graph-note {
+  margin-top: var(--sp-2);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* -- nodes ---------------------------------------------------------------------------------- */
+
+.graph-node {
+  cursor: pointer;
+}
+
+.graph-shape {
+  fill: var(--ground-2);
+  stroke: var(--ok);
+  stroke-width: 1.6;
+  transition:
+    fill var(--t-fast) var(--ease),
+    stroke var(--t-fast) var(--ease);
+}
+
+.graph-node.is-low .graph-shape {
+  stroke: var(--degraded);
+  stroke-dasharray: 5 4;
+}
+
+.graph-node.is-selected .graph-shape {
+  fill: var(--gold-soft);
+  stroke: var(--gold);
+  stroke-width: 2.4;
+}
+
+@media (hover: hover) {
+  .graph-node:hover .graph-shape {
+    fill: var(--gold-soft);
+  }
+}
+
+.graph-node:focus-visible .graph-shape {
+  stroke: var(--gold);
+  stroke-width: 2.4;
+}
+
+.graph-node:focus {
+  outline: none;
+}
+
+.graph-text {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--sans);
+  pointer-events: none;
+}
+
+.graph-step {
+  fill: var(--gold);
+}
+
+.graph-step-text {
+  fill: #100d04;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--sans);
+  pointer-events: none;
+}
+
+/* -- edges ---------------------------------------------------------------------------------- */
+
+.graph-edge {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.graph-self {
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.graph-label {
+  fill: var(--ink-2);
+  font-size: 10.5px;
+  font-family: var(--sans);
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+
+.graph-empty {
+  padding: var(--sp-6) var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--line);
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.graph-empty p {
+  margin: 0 auto;
+  max-width: 40ch;
+  font-size: 13.5px;
+}
+
+.graph-empty p + p {
+  margin-top: var(--sp-2);
+}

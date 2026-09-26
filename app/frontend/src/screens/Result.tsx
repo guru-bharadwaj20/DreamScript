@@ -13,10 +13,10 @@
 
 import { useEffect, useState } from "react";
 
-import { Glyph } from "../App";
 import { type Prediction, ApiError, api } from "../lib/api";
 import { heldFor } from "../lib/held";
 import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
+import { Graph } from "../ui/Graph";
 import { LOW_CONFIDENCE, Overlay } from "../ui/Overlay";
 
 type Tab = "overlay" | "graph" | "code";
@@ -178,10 +178,13 @@ export function Result({ id }: { id: string }) {
               </>
             ) : null}
           </div>
-        ) : tab === "code" ? (
-          <CodePreview prediction={p} />
+        ) : tab === "graph" ? (
+          <div className="stack-sm">
+            <Graph ir={p.ir} traversal={p.traversal} selected={selected} onSelect={setSelected} />
+            <Selected prediction={p} id={selected} />
+          </div>
         ) : (
-          <Pending tab={tab} />
+          <CodePreview prediction={p} />
         )}
 
         <StageTable prediction={p} />
@@ -243,19 +246,6 @@ function Selected({ prediction, id }: { prediction: Prediction; id: string | nul
         {edges.length === 0
           ? "No arrows touch this shape."
           : `${edges.length} arrow${edges.length === 1 ? " touches" : "s touch"} this shape.`}
-      </p>
-    </Card>
-  );
-}
-
-function Pending({ tab }: { tab: Tab }) {
-  return (
-    <Card style={{ padding: "var(--sp-6)", textAlign: "center" }} className="stack-sm">
-      <span className="dim">
-        <Glyph d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" size={22} />
-      </span>
-      <p className="dim" style={{ fontSize: 13.5 }}>
-        The {tab === "overlay" ? "detection overlay" : "graph view"} is not built yet.
       </p>
     </Card>
   );
