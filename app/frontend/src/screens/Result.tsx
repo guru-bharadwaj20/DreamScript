@@ -15,7 +15,9 @@ import { useEffect, useState } from "react";
 
 import { Glyph } from "../App";
 import { type Prediction, ApiError, api } from "../lib/api";
+import { heldFor } from "../lib/held";
 import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
+import { LOW_CONFIDENCE, Overlay } from "../ui/Overlay";
 
 type Tab = "overlay" | "graph" | "code";
 
@@ -27,13 +29,21 @@ type Load =
 export function Result({ id }: { id: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [tab, setTab] = useState<Tab>("code");
+  const [selected, setSelected] = useState<string | null>(null);
+  const photograph = heldFor(id);
 
   useEffect(() => {
     let live = true;
     setLoad({ state: "loading" });
     api
       .prediction(id)
-      .then((prediction) => live && setLoad({ state: "ready", prediction }))
+      .then((prediction) => {
+        if (!live) return;
+        setLoad({ state: "ready", prediction });
+        // The photograph is the most legible answer to "did it read my page", so it leads when
+        // this session still has it. On a reload there is nothing to draw on and the code does.
+        if (heldFor(id)) setTab("overlay");
+      })
       .catch((error: unknown) => {
         if (!live) return;
         const detail =
@@ -138,7 +148,41 @@ export function Result({ id }: { id: string }) {
           ]}
         />
 
-        {tab === "code" ? <CodePreview prediction={p} /> : <Pending tab={tab} />}
+        {tab === "overlay" ? (
+          <div className="stack-sm">
+            <Overlay
+              src={photograph}
+              ir={p.ir}
+              traversal={p.traversal}
+              selected={selected}
+              onSelect={setSelected}
+              flagLowConfidence
+            />
+            {photograph ? (
+              <>
+                <div className="overlay-key">
+                  <span className="k-node">
+                    <i /> shape found
+                  </span>
+                  <span className="k-edge">
+                    <i /> arrow
+                  </span>
+                  <span className="k-low">
+                    <i /> below {LOW_CONFIDENCE} confidence
+                  </span>
+                  <span className="k-order">
+                    <i /> reading order
+                  </span>
+                </div>
+                <Selected prediction={p} id={selected} />
+              </>
+            ) : null}
+          </div>
+        ) : tab === "code" ? (
+          <CodePreview prediction={p} />
+        ) : (
+          <Pending tab={tab} />
+        )}
 
         <StageTable prediction={p} />
       </div>
@@ -150,6 +194,58 @@ export function Result({ id }: { id: string }) {
 function reasonFor(prediction: Prediction): string | null {
   const withReason = [...prediction.stages].reverse().find((stage) => stage.reason);
   return withReason?.reason ?? null;
+}
+
+/**
+ * What was tapped, under the picture.
+ *
+ * The overlay can show a label but not its confidence, its shape class or its edges - a canvas has
+ * nowhere to put four facts about one box without covering the handwriting they are about. So the
+ * detail sits below, and 16.2.8's correction will attach to exactly this panel.
+ */
+function Selected({ prediction, id }: { prediction: Prediction; id: string | null }) {
+  if (!id) {
+    return (
+      <p className="dim" style={{ fontSize: 12.5, textAlign: "center" }}>
+        Tap a shape to see what was read there.
+      </p>
+    );
+  }
+  const node = (prediction.ir?.nodes ?? []).find((n) => n.id === id);
+  if (!node) return null;
+  const edges = (prediction.ir?.edges ?? []).filter((e) => e.src === id || e.dst === id);
+  const confidence = node.confidence ?? 1;
+  const step = prediction.traversal.indexOf(id);
+
+  return (
+    <Card style={{ padding: "var(--sp-4)" }} className="stack-sm">
+      <div className="row wrap" style={{ gap: "var(--sp-2)" }}>
+        <Pill tone="plain">{String(node.shape ?? "shape")}</Pill>
+        {step >= 0 ? <Pill tone="gold">step {step + 1}</Pill> : null}
+        {confidence < LOW_CONFIDENCE ? (
+          <Pill tone="degraded">confidence {confidence.toFixed(2)}</Pill>
+        ) : (
+          <Pill tone="plain">confidence {confidence.toFixed(2)}</Pill>
+        )}
+        <span className="grow" />
+        <span className="dim mono" style={{ fontSize: 11 }}>
+          {id}
+        </span>
+      </div>
+      <p style={{ fontSize: 15 }}>
+        {node.text ? (
+          <span className="selectable">{String(node.text)}</span>
+        ) : (
+          <span className="dim">no text was read here</span>
+        )}
+      </p>
+      <p className="dim" style={{ fontSize: 12.5 }}>
+        {edges.length === 0
+          ? "No arrows touch this shape."
+          : `${edges.length} arrow${edges.length === 1 ? " touches" : "s touch"} this shape.`}
+      </p>
+    </Card>
+  );
 }
 
 function Pending({ tab }: { tab: Tab }) {

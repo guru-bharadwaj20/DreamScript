@@ -45,6 +45,7 @@ import {
 } from "../lib/camera";
 import type { Detection } from "../lib/dewarp";
 import { replace } from "../lib/route";
+import { hold } from "../lib/held";
 import { predictStream } from "../lib/stream";
 import { Button, Card, Pill } from "../ui";
 import "./Camera.css";
@@ -242,6 +243,9 @@ export function Camera({ initial }: { initial?: Blob | null }) {
               done: { ...p.done, [row.stage]: row },
             })),
           onResult: (prediction: Prediction) => {
+            // Held against the id *before* navigating, so the result screen finds it on its first
+            // render rather than drawing an empty overlay and filling it in a tick later.
+            hold(prediction.id, image);
             URL.revokeObjectURL(preview);
             // `replace`, not a push: going "back" to a finished progress screen would show a dead
             // stage list with nothing running.

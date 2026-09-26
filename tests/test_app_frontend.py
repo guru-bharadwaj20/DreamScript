@@ -326,6 +326,44 @@ def test_the_stream_is_read_from_fetch_rather_than_eventsource():
     assert "AbortSignal" in stream or "signal" in stream
 
 
+def test_the_clients_ir_types_use_the_field_names_the_schemas_declare():
+    """The client's `Node` and `Edge` are a second description of `schemas/*.schema.json`.
+
+    TypeScript cannot catch a misspelling here: both interfaces carry an index signature, so
+    `edge.source` on an object that has `src` is a legal `unknown` rather than an error. The first
+    version of `api.ts` declared `source`/`target` and `type`, where the IR has `src`/`dst` and
+    `shape` - so the overlay found no edges for any node and reported "No arrows touch this shape"
+    on every page, with nothing failing anywhere.
+    """
+    api = without_comments(read("src/lib/api.ts"))
+
+    def declared(interface: str) -> set[str]:
+        body = api.split(f"export interface {interface} {{", 1)[1].split("\n}", 1)[0]
+        return set(re.findall(r"^\s{2}(\w+)[?]?:", body, re.M))
+
+    for interface, schema in (("Node", "node"), ("Edge", "edge")):
+        allowed = set(
+            json.loads((ROOT / "schemas" / f"{schema}.schema.json").read_text(encoding="utf-8"))[
+                "properties"
+            ]
+        )
+        used = declared(interface) - {"key"}
+        unknown = used - allowed
+        assert not unknown, f"{interface} declares fields the IR schema does not have: {unknown}"
+
+    # And the ones the overlay cannot work without are actually present.
+    assert {"id", "bbox", "text", "confidence", "shape"} <= declared("Node")
+    assert {"id", "src", "dst", "polyline", "confidence"} <= declared("Edge")
+
+
+def test_nothing_in_the_client_reads_an_edge_by_the_wrong_name():
+    """The regression for the defect above, at the use sites rather than the declaration."""
+    for path in ("src/ui/Overlay.tsx", "src/screens/Result.tsx"):
+        source = without_comments(read(path))
+        assert ".source ===" not in source, path
+        assert ".target ===" not in source, path
+
+
 def test_the_client_talks_to_the_same_origin_so_there_is_no_cors_to_get_wrong():
     """The backend has no CORS middleware and needs none: Vite proxies in development and the
     backend serves the bundle in production. A `VITE_API_URL` would reintroduce both."""

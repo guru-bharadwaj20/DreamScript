@@ -1,0 +1,80 @@
+/* Phase 16.2.5 - the overlay's frame. */
+
+.overlay {
+  position: relative;
+  width: 100%;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  border: 1px solid var(--gold-line);
+  background: var(--ground-2);
+  line-height: 0;
+}
+
+.overlay canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* The canvas is the control: a tap selects a node. `manipulation` keeps the 300 ms double-tap
+     delay off it, and pinch-zoom still works because the browser handles that itself. */
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.overlay-absent {
+  padding: var(--sp-6) var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--line);
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.overlay-absent p {
+  margin: 0 auto;
+  max-width: 44ch;
+  font-size: 13.5px;
+}
+
+.overlay-absent p + p {
+  margin-top: var(--sp-2);
+}
+
+/* The legend under the overlay: what each colour on the picture means. */
+.overlay-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.overlay-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.overlay-key i {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.overlay-key .k-node {
+  color: var(--ok);
+}
+
+.overlay-key .k-edge {
+  color: var(--gold-text);
+}
+
+.overlay-key .k-low {
+  color: var(--degraded);
+}
+
+.overlay-key .k-order i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+}

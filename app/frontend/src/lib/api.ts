@@ -44,26 +44,49 @@ export interface Prediction {
   corrections: Correction[];
 }
 
-/** 10.1's IR, as far as the client reads it. Extra keys are carried without being understood. */
+/**
+ * 10.1's IR, as far as the client reads it. Extra keys are carried without being understood.
+ *
+ * **The field names come from `schemas/*.schema.json`, not from memory**, and the first version of
+ * this file got them wrong: it declared `Edge.source` and `Edge.target` where the IR has `src` and
+ * `dst`, and `Node.type` where it has `shape`. TypeScript could not catch it - the index signature
+ * makes every misspelling a legal `unknown` - so the overlay silently found no edges for any node
+ * and the panel under it reported "No arrows touch this shape" on every page.
+ *
+ * `tests/test_app_frontend.py` compares these names against the schemas now, which is the only
+ * place the drift could have been noticed without reading a real payload.
+ */
 export interface Diagram {
   nodes: Node[];
   edges: Edge[];
+  diagram_type?: string;
+  ir_version?: string;
+  unresolved_edges?: unknown[];
+  crossed_out?: unknown[];
+  low_conf_text?: unknown[];
   [key: string]: unknown;
 }
 
 export interface Node {
   id: string;
+  /** `rectangle`, `diamond`, `ellipse`, ... - `schemas/shape.schema.json` has the list. */
+  shape?: string;
   text?: string;
-  type?: string;
+  /** `[x, y, width, height]` in the pixels of the image that was uploaded. */
   bbox?: [number, number, number, number];
+  semantic_role?: string;
   confidence?: number;
   [key: string]: unknown;
 }
 
 export interface Edge {
-  source: string;
-  target: string;
-  text?: string;
+  id: string;
+  src: string | null;
+  dst: string | null;
+  directed?: boolean;
+  label?: string;
+  /** `[[x, y], ...]` in the same pixel space as a node's bbox. */
+  polyline?: number[][];
   confidence?: number;
   [key: string]: unknown;
 }
