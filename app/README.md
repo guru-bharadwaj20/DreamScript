@@ -28,6 +28,7 @@ python -m app.backend.main --openapi                      # the published contra
 | `GET /predict/{id}` | the whole stored record again |
 | `GET /ir/{id}` | just the IR and the traversal |
 | `GET /code/{id}` | just the code. `?format=text` for a clipboard or a share sheet |
+| `POST /run/{id}` | execute that code in 11.2.9's sandbox and return what it printed |
 | `POST /feedback` | one correction against an id. Appended, never overwritten |
 | `GET /feedback/{id}` | every correction against one id |
 
@@ -68,6 +69,25 @@ data: {"event":"stage_started","stage":"assemble","index":3}
 event: result
 data: {"id":"9e3462fe95214bf2","ok":true,"code":"...","stages":[...]}
 ```
+
+**`POST /run/{id}` takes an id, and there is no parameter a program could arrive in.** That is the
+difference between a sandbox runner and arbitrary-code-execution as a service. Python goes to
+11.2.9's job-object sandbox, tightened for a socket rather than an evaluator: memory capped at
+128 MB, two processes (the interpreter's own floor — see `runner.py`, the constant records why 1 does
+not work), 43 modules refused by a pre-scan, the timeout clamped to 1–15 s, output capped at 64 KiB,
+and at most four programs running at once. SQL, React and SPICE go to 12.3.2's own checkers; a host
+with no node or no ngspice answers `*.unavailable`, which is carried through rather than folded into
+a failure.
+
+`runner.py` records the probe behind all of it: every emitter was fed labels engineered to break out
+of the generated code, and none of them did — labels become identifiers in Python and SQL and
+JSON-escaped string literals in JSX. The tightenings exist for the *other* rung: when
+`DREAMSCRIPT_MODEL_URL` is set, the program is a fine-tuned model's output and a label is prompt
+content.
+
+> 11.2.9 says it about itself and it is repeated here: this is a **resource** sandbox, not a security
+> boundary. It caps memory, kills a process tree and refuses names; it does not stop a program
+> reading a file the service user can read.
 
 State lives under `runs/app/` (gitignored, derived): one JSON file per prediction, oldest-first
 eviction at 500, plus `feedback.jsonl`, which is never evicted because it is training data.

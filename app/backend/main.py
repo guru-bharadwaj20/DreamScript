@@ -22,6 +22,7 @@ It never imports torch. The only thing it asks of the model server is `POST /pre
     GET  /ir/{id}         just the IR, and the boxes the overlay draws
     GET  /code/{id}       just the code (?format=text for text/plain, which is what a share sheet
                           and a clipboard actually want)
+    POST /run/{id}        execute that code in 11.2.9's sandbox and return what it printed (16.1.3)
     POST /feedback        a correction against an id. Appended, never overwritten
 
 ## Why `/ir` and `/code` are reads of an id, not second uploads
@@ -62,11 +63,21 @@ moves because seconds passed rather than because work finished. So 16.1.2 put th
 frame (its own fact - the photograph arrived), adds the `id` to the `result` frame (its own, from the
 store), and relays everything else, keep-alive comments included, unchanged.
 
+## Running the code (16.1.3)
+
+`POST /run/{id}` executes what the pipeline generated, in 11.2.9's sandbox. The id is the only input:
+there is no parameter through which a caller could supply a program, which is the difference between
+a sandbox runner and arbitrary-code-execution as a service. `app/backend/runner.py` carries the
+reasoning, including the probe that checked whether a hostile diagram label can reach the emitted
+code (it cannot) and why the tightenings exist anyway (when a model answers the generate stage, the
+program is a language model's output and a label is prompt content).
+
 ## Scope
 
-The sandbox runner (16.1.3) and rate and size limits (16.1.4) are the next two rows and are not here
-yet. The one cap present is `MAX_UPLOAD_BYTES`, which is self-defence against a malformed multipart
-body rather than abuse protection - the same exception 15.11 makes, for the same reason.
+Rate and size limits (16.1.4) are the next row and are not here yet. The caps present are
+`MAX_UPLOAD_BYTES`, which is self-defence against a malformed multipart body rather than abuse
+protection - the same exception 15.11 makes, for the same reason - and the runner's own concurrency
+gate, which is about *processes* rather than requests.
 """
 
 from __future__ import annotations
@@ -85,9 +96,14 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 
+from app.backend.runner import KIND_BUSY, MAX_TIMEOUT_S, MIN_TIMEOUT_S, run_stored
 from app.backend.store import Store
 from app.backend.stream import Reader, comment, frame
 from app.backend.upstream import Upstream
+
+#: Seconds a client should wait before retrying a run that was refused for saturation. Short,
+#: because a run is at most 15 s and the queue it is waiting behind is at most four deep.
+RETRY_AFTER = {"Retry-After": "5"}
 
 #: A phone photograph is a few megabytes and 25 is generous for one. Not abuse protection - that is
 #: 16.1.4 - but self-defence: without a ceiling a malformed multipart body is read into memory in
@@ -282,6 +298,34 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
             "degraded": bool(result.get("degraded")),
             "stopped_at": result.get("stopped_at"),
         }
+
+    # -- run (16.1.3) -------------------------------------------------------------------
+
+    @app.post(
+        "/run/{record_id}",
+        summary="Execute the code this page generated, in 11.2.9's sandbox.",
+    )
+    def run(
+        record_id: str,
+        timeout_s: float | None = Query(
+            None,
+            ge=MIN_TIMEOUT_S,
+            le=MAX_TIMEOUT_S,
+            description="Wall-clock budget. Clamped; a caller cannot ask for a minute.",
+        ),
+    ) -> dict[str, Any]:
+        # The id is the only input. There is deliberately no parameter through which a caller could
+        # supply a program: the runner executes what the pipeline generated for this page and
+        # nothing else, which is the whole difference between a sandbox runner and
+        # arbitrary-code-execution as a service.
+        record = _require(state, record_id)
+        verdict = run_stored(record, timeout_s=timeout_s)
+        if verdict["kind"] == KIND_BUSY:
+            # 503 with a Retry-After, not a 200 carrying a failure: nothing is wrong with the page
+            # or the program, the service is saturated, and the client should try the same request
+            # again rather than show the user an error about their diagram.
+            raise HTTPException(status_code=503, detail=verdict["detail"], headers=RETRY_AFTER)
+        return verdict
 
     # -- feedback -----------------------------------------------------------------------
 
