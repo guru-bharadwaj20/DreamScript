@@ -14,10 +14,34 @@ This is the **model server**: it holds the pipeline, and it answers one question
 what is the IR and the code. It is deliberately separate from the UI, which is the point of the
 row: a phone client, a notebook and a batch job all reach the same service.
 
-It is **not** Phase 16's app backend. Streaming stage-by-stage progress (16.1.2), the hardened
-sandbox runner (16.1.3), and rate and size limits (16.1.4) belong there and are not here. The one
-exception is `MAX_UPLOAD_BYTES`, which is not abuse protection but self-defence: without it a
-malformed multipart body is read into memory in full before anything can reject it.
+It is **not** Phase 16's app backend. The hardened sandbox runner (16.1.3) and rate and size limits
+(16.1.4) belong there and are not here. The one exception is `MAX_UPLOAD_BYTES`, which is not abuse
+protection but self-defence: without it a malformed multipart body is read into memory in full
+before anything can reject it.
+
+## `/predict/stream`, and why the streaming half of 16.1.2 is here
+
+The scope line above used to say streaming progress belonged in the app backend too, and that was
+wrong in a way worth recording rather than quietly fixing. **The app backend cannot see a stage it
+does not run.** It is a proxy: it holds no pipeline, and the only progress it could report on its
+own would be invented from the *expected* stage names on a timer - a progress bar that advances
+because time passed rather than because work finished. That is precisely the confident-wrong-answer
+failure this repository spends 13.4, 13.7 and 13.8 refusing to ship, moved into the UI.
+
+Progress can only be observed where the stages are, so `POST /predict/stream` is here, feeding off
+16.1.2's `run(..., observer=...)`, and the app backend relays it. The relay adds its own frames and
+the request id; it does not fabricate any.
+
+    curl -N -F "image=@page.png" http://localhost:8000/predict/stream
+
+    event: stage_started
+    data: {"event":"stage_started","stage":"assemble","index":3}
+
+The last frame is `event: result` with exactly the body `/predict` would have returned, so a client
+that streams and a client that waits get the same answer, and the one thing that differs between
+them is when they learn it. Measured on a cold GPU run of `tests/fixtures/flowchart.png`: 12.08 s
+end to end, of which `assemble` alone is **9.15 s**. That is the row's argument in one number - a
+person watching a spinner for nine seconds cannot tell a working request from a stalled one.
 
 ## Degradation is reported, never hidden
 
@@ -49,6 +73,7 @@ import json
 import sys
 import tempfile
 import time
+from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
 
@@ -58,7 +83,12 @@ from typing import Any
 # fails outright. fastapi is a declared dependency of this row, so the import costs nothing that
 # is not already required.
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+
+#: Seconds of silence on `/predict/stream` before a `: ping` comment goes out. Below the 30 s that
+#: is the usual proxy idle timeout and well below the 9.15 s `assemble` takes, so a long stage
+#: produces several pings rather than one gamble.
+HEARTBEAT_S = 5.0
 
 #: A page photograph is a few megabytes; 25 is generous for one and small enough that a malformed
 #: body cannot exhaust the process. Not abuse protection - that is 16.1.4 - but self-defence.
@@ -169,26 +199,7 @@ def build_app():
 
     @app.post("/predict", summary="One page photograph to IR and code.")
     async def predict(image: UploadFile = File(...)) -> JSONResponse:
-        suffix = Path(image.filename or "").suffix.lower()
-        if suffix not in ALLOWED_SUFFIXES:
-            raise HTTPException(
-                status_code=415,
-                detail=f"unsupported file type {suffix or '(none)'}; expected one of "
-                f"{', '.join(ALLOWED_SUFFIXES)}",
-            )
-        body = await image.read(MAX_UPLOAD_BYTES + 1)
-        if len(body) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail=f"image exceeds {MAX_UPLOAD_BYTES} bytes")
-        if not body:
-            raise HTTPException(status_code=400, detail="empty upload")
-        if not sniff(body):
-            # 415, like the suffix rejection, and for the same reason: the request is well formed
-            # and the payload is of a type this service does not read.
-            raise HTTPException(
-                status_code=415,
-                detail=f"{image.filename or 'upload'} is named {suffix} but its contents are "
-                f"not a {'/'.join(sorted({name for name, _, _ in MAGIC}))} image",
-            )
+        body, suffix = await accept(image)
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / f"upload{suffix}"
@@ -207,7 +218,137 @@ def build_app():
         # it is more useful to a client than a 4xx that says only "no".
         return JSONResponse(payload)
 
+    @app.post(
+        "/predict/stream",
+        summary="The same answer, streamed stage by stage as server-sent events (16.1.2).",
+        response_class=StreamingResponse,
+        responses={
+            200: {
+                "content": {"text/event-stream": {}},
+                "description": "`run_started`, then `stage_started`/`stage_finished` per stage, "
+                "then one `result` frame carrying exactly what `/predict` returns.",
+            }
+        },
+    )
+    async def predict_stream(image: UploadFile = File(...)) -> StreamingResponse:
+        # The upload is validated *before* the response starts, so a bad request is still a real
+        # 415 or 413. Everything after the first byte of the stream can only be a frame, because
+        # the status line has already gone out - which is why the checks happen out here.
+        body, suffix = await accept(image)
+        return StreamingResponse(
+            stage_events(body, suffix),
+            media_type="text/event-stream",
+            headers={
+                # Without this an nginx or a CDN in front of the service buffers the whole
+                # response and delivers seven frames at once at the end, which is a working
+                # implementation of the thing this row exists to avoid.
+                "X-Accel-Buffering": "no",
+                "Cache-Control": "no-cache",
+            },
+        )
+
     return app
+
+
+async def accept(image: UploadFile) -> tuple[bytes, str]:
+    """One upload, checked. Shared by `/predict` and `/predict/stream`.
+
+    Factored out when the second route arrived rather than copied into it. Four checks that must
+    give the same answer on both routes is exactly the code that drifts: the streaming route
+    forgetting the content sniff would be a hole in one endpoint and not the other, and nothing
+    about the symptom would point at the omission.
+    """
+    suffix = Path(image.filename or "").suffix.lower()
+    if suffix not in ALLOWED_SUFFIXES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"unsupported file type {suffix or '(none)'}; expected one of "
+            f"{', '.join(ALLOWED_SUFFIXES)}",
+        )
+    body = await image.read(MAX_UPLOAD_BYTES + 1)
+    if len(body) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"image exceeds {MAX_UPLOAD_BYTES} bytes")
+    if not body:
+        raise HTTPException(status_code=400, detail="empty upload")
+    if not sniff(body):
+        # 415, like the suffix rejection, and for the same reason: the request is well formed
+        # and the payload is of a type this service does not read.
+        raise HTTPException(
+            status_code=415,
+            detail=f"{image.filename or 'upload'} is named {suffix} but its contents are "
+            f"not a {'/'.join(sorted({name for name, _, _ in MAGIC}))} image",
+        )
+    return body, suffix
+
+
+def frame(name: str, payload: dict[str, Any]) -> str:
+    """One server-sent event. `\\n\\n` terminated, which is the entire framing rule."""
+    return f"event: {name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+async def stage_events(body: bytes, suffix: str) -> AsyncIterator[str]:
+    """Run one page and yield its progress as it happens.
+
+    ## Why a thread and a queue
+
+    `pipeline().run` is synchronous and holds the GIL only in the gaps between torch calls; it
+    cannot be awaited and must not run on the event loop, because a 9-second `assemble` on the loop
+    stops this process answering `/health`. So the run goes to a worker thread, its observer drops
+    events on a `queue.Queue`, and this generator drains the queue.
+
+    `to_thread.run_sync(q.get)` rather than polling: a poll loop either adds latency to every frame
+    or burns a core waiting, and a blocking `get` in a worker thread does neither. The `timeout` is
+    what makes the heartbeat possible.
+
+    ## The heartbeat is not decoration
+
+    `assemble` is 9.15 s on a cold GPU run and it emits nothing while it works. Nine seconds of
+    silence on an HTTP response is long enough for an idle-timeout proxy to close the connection
+    and for a mobile radio to drop to a low-power state, and the client cannot distinguish either
+    from a slow page. A `: ping` comment every few seconds is bytes on the wire that mean nothing to
+    the client and everything to the things between it and here.
+    """
+    import queue
+    import threading
+
+    from anyio import to_thread
+
+    events: queue.Queue[dict[str, Any] | None] = queue.Queue()
+
+    def work() -> None:
+        started = time.perf_counter()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / f"upload{suffix}"
+                path.write_bytes(body)
+                result = pipeline().run(path, observer=events.put)
+                payload = result_payload(result, time.perf_counter() - started)
+            events.put({"event": "result", **payload})
+        except Exception as error:  # noqa: BLE001 - 502's reason, as a frame rather than a status
+            # The status line left before the first stage started, so a pipeline crash cannot be
+            # the 502 that `/predict` answers with. It is a frame carrying the status it would have
+            # been, which is the most honest thing available once the headers are gone.
+            events.put(
+                {
+                    "event": "error",
+                    "status": 502,
+                    "detail": f"pipeline failed: {type(error).__name__}: {error}",
+                }
+            )
+        finally:
+            events.put(None)
+
+    threading.Thread(target=work, name="predict-stream", daemon=True).start()
+
+    while True:
+        try:
+            event = await to_thread.run_sync(lambda: events.get(timeout=HEARTBEAT_S))
+        except queue.Empty:
+            yield ": ping\n\n"
+            continue
+        if event is None:
+            return
+        yield frame(str(event.get("event", "stage")), event)
 
 
 _APP: Any = None

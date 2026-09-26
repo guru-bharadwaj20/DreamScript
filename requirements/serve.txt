@@ -4,3 +4,11 @@
 fastapi==0.115.6
 uvicorn==0.34.0
 python-multipart==0.0.20
+
+# 16.1.2's `/predict/stream` calls `anyio.to_thread.run_sync` directly, to wait on the worker
+# thread's queue without blocking the event loop. It was already installed here - starlette
+# depends on it - and declared nowhere, which `tests/test_requirements_declare_every_import.py`
+# caught on the commit that introduced the import. That test exists for exactly this: an import
+# that works on every machine where it arrived transitively and fails on a runner installing from
+# `requirements/`.
+anyio==4.15.1

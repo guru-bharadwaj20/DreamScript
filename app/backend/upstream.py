@@ -43,7 +43,9 @@ A page the pipeline honestly could not read is **not** in that table: 15.11 answ
 from __future__ import annotations
 
 import contextlib
+import json
 import os
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -61,6 +63,19 @@ PREDICT_TIMEOUT_S = 180.0
 #: `/health` upstream probes are a different question and get a different budget. A probe that
 #: blocks for three minutes is not a probe.
 PROBE_TIMEOUT_S = 2.0
+
+
+def _error_lines(status: int, detail: str) -> tuple[str, str, str]:
+    """A failure of the relay, in the wire format of the thing it was relaying.
+
+    Three *lines* rather than one frame string, because everything this generator yields is fed to
+    `stream.Reader` one line at a time - exactly as `httpx.aiter_lines()` delivers them, with no
+    trailing newlines - and a single blob containing `\\n` would arrive as one unparseable line.
+    The `status` field carries what the response code would have been had the failure happened
+    before the headers went out.
+    """
+    payload = {"event": "error", "status": status, "detail": detail}
+    return ("event: error", f"data: {json.dumps(payload, ensure_ascii=False)}", "")
 
 
 @dataclass(frozen=True)
@@ -94,6 +109,56 @@ class Upstream:
     def predict(self, body: bytes, filename: str, content_type: str) -> Reply:
         """One page to the model server. Never raises for anything the upstream does."""
         return self._post_image("/predict", body, filename, content_type)
+
+    async def stream(self, body: bytes, filename: str, content_type: str) -> AsyncIterator[str]:
+        """`POST /predict/stream` upstream, one line at a time (16.1.2).
+
+        Async, unlike `predict`, and not for symmetry's sake: a relay that blocks the event loop
+        while it waits on the model server serves one phone at a time. `predict` is synchronous
+        because FastAPI already runs a `def` route in a threadpool; a streaming response's generator
+        runs *on the loop*, so every await here has to be a real one.
+
+        Yields raw lines, including the blank separators and the `:` keep-alive comments. Framing is
+        `stream.Reader`'s job - this method's only responsibility is to not lose a byte and not
+        raise: a failure arrives as an `error` line in the same wire format, because by the time
+        this generator runs the status line has already been sent.
+        """
+        import httpx
+
+        files = {"image": (filename, body, content_type)}
+        try:
+            async with (
+                httpx.AsyncClient(timeout=self.timeout_s) as client,
+                client.stream("POST", f"{self.url}/predict/stream", files=files) as response,
+            ):
+                if response.status_code != 200:
+                    # The upstream refused before streaming anything - a 415 for a bad type, say.
+                    # Its body must be read explicitly on a streamed response.
+                    await response.aread()
+                    detail = ""
+                    with contextlib.suppress(ValueError):
+                        decoded = response.json()
+                        if isinstance(decoded, dict):
+                            detail = str(decoded.get("detail", ""))
+                    for line in _error_lines(
+                        response.status_code,
+                        detail or f"the model server answered {response.status_code}",
+                    ):
+                        yield line
+                    return
+                async for line in response.aiter_lines():
+                    yield line
+        except httpx.TimeoutException as error:
+            for line in _error_lines(
+                504, f"the model server at {self.url} stopped answering: {error}"
+            ):
+                yield line
+        except Exception as error:  # noqa: BLE001 - a frame, because the headers are already gone
+            for line in _error_lines(
+                503,
+                f"the model server at {self.url} is unreachable: {type(error).__name__}: {error}",
+            ):
+                yield line
 
     def health(self) -> dict[str, Any]:
         """Is the model server reachable, on a probe budget rather than a page budget.

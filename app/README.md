@@ -24,6 +24,7 @@ python -m app.backend.main --openapi                      # the published contra
 | :--- | :--- |
 | `GET /health` | this process. `?upstream=1` also probes the model server |
 | `POST /predict` | one page → the model server's answer, stored under a new id |
+| `POST /predict/stream` | the same, streamed stage by stage as server-sent events (16.1.2) |
 | `GET /predict/{id}` | the whole stored record again |
 | `GET /ir/{id}` | just the IR and the traversal |
 | `GET /code/{id}` | just the code. `?format=text` for a clipboard or a share sheet |
@@ -46,6 +47,27 @@ which was never the unhealthy one — forever.
 `ok`, `degraded`, `stopped_at`, `needs_confirmation` and per-stage table, verbatim. A phone showing
 someone their own whiteboard is the caller with the least context in the system and the most need
 for that distinction.
+
+**The progress stream is relayed, never invented.** A cold GPU run of a fixture page is 12.08 s, of
+which `assemble` alone is 9.15 s — a spinner held for nine seconds is indistinguishable from a
+stalled request, which is why `POST /predict/stream` exists. But this process holds no pipeline, so
+the only progress it could report on its own authority would be the expected stage names advanced on
+a timer: a bar that moves because seconds passed rather than because work finished. So the observer
+lives in `src/pipeline/core.py`, the SSE route on the model server, and this relays it — adding one
+`upload` frame (its own fact) and the `id` on the `result` frame (its own, from the store), and
+passing everything else through unchanged, keep-alive comments included.
+
+```
+curl -N -F "image=@page.jpg" http://localhost:3000/predict/stream
+
+event: upload
+data: {"event":"upload","filename":"page.jpg","bytes_in":2901}
+event: stage_started
+data: {"event":"stage_started","stage":"assemble","index":3}
+...
+event: result
+data: {"id":"9e3462fe95214bf2","ok":true,"code":"...","stages":[...]}
+```
 
 State lives under `runs/app/` (gitignored, derived): one JSON file per prediction, oldest-first
 eviction at 500, plus `feedback.jsonl`, which is never evicted because it is training data.

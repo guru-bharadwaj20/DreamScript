@@ -17,6 +17,7 @@ It never imports torch. The only thing it asks of the model server is `POST /pre
 
     GET  /health          this process. Add ?upstream=1 to probe the model server too
     POST /predict         one page -> the model server's answer, stored under a new id
+    POST /predict/stream  the same, streamed stage by stage as server-sent events (16.1.2)
     GET  /predict/{id}    the whole stored record again
     GET  /ir/{id}         just the IR, and the boxes the overlay draws
     GET  /code/{id}       just the code (?format=text for text/plain, which is what a share sheet
@@ -48,12 +49,24 @@ is the caller with the least context in the system and the most need for that di
 that helpfully reduces it to `{"code": ...}` is where an honest pipeline turns into a confident
 wrong answer.
 
+## Streaming, and what this backend does not invent
+
+`POST /predict/stream` makes the wait legible: a cold GPU run of a fixture page is 12.08 s, of
+which `assemble` alone is 9.15 s, and a spinner held for nine seconds is indistinguishable from a
+stalled request.
+
+The stages in that stream are **not this backend's**. It holds no pipeline, so the only progress it
+could report on its own authority would be the expected stage names advanced on a timer - a bar that
+moves because seconds passed rather than because work finished. So 16.1.2 put the observer in
+`src.pipeline.core` and the SSE route on the model server, and this relays it: it adds an `upload`
+frame (its own fact - the photograph arrived), adds the `id` to the `result` frame (its own, from the
+store), and relays everything else, keep-alive comments included, unchanged.
+
 ## Scope
 
-Streaming progress (16.1.2), the sandbox runner (16.1.3) and rate and size limits (16.1.4) are the
-next three rows and are not here yet. The one cap present is `MAX_UPLOAD_BYTES`, which is
-self-defence against a malformed multipart body rather than abuse protection - the same exception
-15.11 makes, for the same reason.
+The sandbox runner (16.1.3) and rate and size limits (16.1.4) are the next two rows and are not here
+yet. The one cap present is `MAX_UPLOAD_BYTES`, which is self-defence against a malformed multipart
+body rather than abuse protection - the same exception 15.11 makes, for the same reason.
 """
 
 from __future__ import annotations
@@ -62,6 +75,7 @@ import argparse
 import json
 import sys
 import time
+from collections.abc import AsyncIterator
 from typing import Any
 
 # At module level rather than inside the factory, for the reason 15.11 records: `from __future__
@@ -69,9 +83,10 @@ from typing import Any
 # against this module's globals, so an import inside `build_app` leaves an unresolvable ForwardRef
 # and route registration fails outright.
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 
 from app.backend.store import Store
+from app.backend.stream import Reader, comment, frame
 from app.backend.upstream import Upstream
 
 #: A phone photograph is a few megabytes and 25 is generous for one. Not abuse protection - that is
@@ -156,20 +171,7 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
 
     @app.post("/predict", summary="One page photograph. Stored under a new id.")
     async def predict(image: UploadFile = File(...)) -> JSONResponse:
-        filename = image.filename or "upload.png"
-        suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
-        if suffix not in ALLOWED_SUFFIXES:
-            raise HTTPException(
-                status_code=415,
-                detail=f"unsupported file type {suffix or '(none)'}; expected one of "
-                f"{', '.join(ALLOWED_SUFFIXES)}",
-            )
-        body = await image.read(MAX_UPLOAD_BYTES + 1)
-        if len(body) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail=f"image exceeds {MAX_UPLOAD_BYTES} bytes")
-        if not body:
-            raise HTTPException(status_code=400, detail="empty upload")
-
+        filename, body = await _accept(image)
         reply = model.predict(body, filename, _content_type(filename, image.content_type))
         if not reply.ok:
             # The upstream's own status, already classified by `Upstream`. Its detail is returned
@@ -187,6 +189,47 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
             upstream_seconds=round(reply.seconds, 3),
         )
         return JSONResponse(_public(record))
+
+    @app.post(
+        "/predict/stream",
+        summary="The same answer, streamed stage by stage (16.1.2).",
+        response_class=StreamingResponse,
+        responses={
+            200: {
+                "content": {"text/event-stream": {}},
+                "description": "`upload`, then the model server's own `run_started`, "
+                "`stage_started`/`stage_finished` and `run_finished` frames relayed unchanged, "
+                "then one `result` frame carrying what `/predict` returns plus its new `id`.",
+            }
+        },
+    )
+    async def predict_stream(image: UploadFile = File(...)) -> StreamingResponse:
+        filename, body = await _accept(image)
+        content_type = _content_type(filename, image.content_type)
+
+        # Probed before the stream opens, so the commonest failure in this architecture - nothing
+        # listening on MODEL_URL - is still a real 503 with a status line, not a frame the client
+        # has to parse out of a 200. Once the first byte is sent that option is gone, which is why
+        # it is taken here.
+        probe = model.health()
+        if not probe.get("reachable"):
+            raise HTTPException(
+                status_code=503,
+                detail=f"the model server at {model.url} is not reachable: "
+                f"{probe.get('detail') or probe.get('status')}",
+            )
+
+        return StreamingResponse(
+            _relay(state, model, body, filename, content_type),
+            media_type="text/event-stream",
+            headers={
+                # Without this an nginx or a CDN in front of this service buffers the response and
+                # delivers every frame at once at the end - a working implementation of exactly the
+                # thing this row exists to prevent.
+                "X-Accel-Buffering": "no",
+                "Cache-Control": "no-cache",
+            },
+        )
 
     @app.get("/predict/{record_id}", summary="A stored prediction, in full.")
     def stored(record_id: str) -> dict[str, Any]:
@@ -280,6 +323,88 @@ def build_app(*, store: Store | None = None, upstream: Upstream | None = None) -
         return {"id": record_id, "count": len(events), "corrections": events}
 
     return app
+
+
+async def _accept(image: UploadFile) -> tuple[str, bytes]:
+    """One upload, checked. Shared by `/predict` and `/predict/stream`.
+
+    Factored out when the second route arrived rather than copied into it: three checks that must
+    give the same answer on both routes is the code that drifts, and a streaming route that forgot
+    the size cap would be a hole in one endpoint whose symptom points nowhere near the omission.
+
+    The content *sniff* is deliberately not here - the model server does it, and its 415 passes
+    straight through. Two implementations of "are these bytes really a PNG" is one more than this
+    architecture needs, and the one that matters is the one next to the decoder.
+    """
+    filename = image.filename or "upload.png"
+    suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
+    if suffix not in ALLOWED_SUFFIXES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"unsupported file type {suffix or '(none)'}; expected one of "
+            f"{', '.join(ALLOWED_SUFFIXES)}",
+        )
+    body = await image.read(MAX_UPLOAD_BYTES + 1)
+    if len(body) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"image exceeds {MAX_UPLOAD_BYTES} bytes")
+    if not body:
+        raise HTTPException(status_code=400, detail="empty upload")
+    return filename, body
+
+
+async def _relay(
+    state: Store, model: Upstream, body: bytes, filename: str, content_type: str
+) -> AsyncIterator[str]:
+    """Relay the model server's progress, add the two frames that are this backend's, store the
+    result.
+
+    The order of the last two things matters. The `result` frame is emitted **after** the record is
+    written, because it carries the id and an id a client can see before the file exists is an id
+    whose `GET /ir/{id}` races the write. The store's write is atomic, so once the frame is out the
+    read cannot see half a record.
+
+    A page is still stored when the client has gone. The generator keeps running to completion on a
+    disconnect in every server that closes the response lazily, and a person whose train entered a
+    tunnel after the detector finished should be able to reload and find their page by its id rather
+    than photograph the whiteboard again - which by then has been wiped.
+    """
+    reader = Reader()
+    yield frame("upload", {"event": "upload", "filename": filename, "bytes_in": len(body)})
+
+    async for line in model.stream(body, filename, content_type):
+        if line.startswith(":"):
+            # Relayed, not swallowed. The proxy that would time this connection out sits between
+            # the client and this process as often as between this process and the model server.
+            yield comment(line[1:].strip() or "ping")
+            continue
+        event = reader.feed(line)
+        if event is None:
+            continue
+        name, payload = event
+        if name != "result":
+            # Relayed unchanged. These are the model server's observations of its own stages and
+            # this backend has nothing true to add to them.
+            yield frame(name, payload)
+            continue
+        record = state.put(
+            payload,
+            filename=filename,
+            bytes_in=len(body),
+            upstream_seconds=payload.get("seconds"),
+        )
+        yield frame("result", _public(record))
+
+    trailing = reader.flush()
+    if trailing is not None:
+        # A stream that ended without its final blank line still delivered its last frame, and
+        # dropping it because the socket closed a byte early would lose the answer.
+        name, payload = trailing
+        if name == "result":
+            yield frame(
+                "result", _public(state.put(payload, filename=filename, bytes_in=len(body)))
+            )
+        else:
+            yield frame(name, payload)
 
 
 def _require(state: Store, record_id: str) -> dict[str, Any]:
