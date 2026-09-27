@@ -801,3 +801,124 @@ def test_the_icons_are_generated_from_the_mark_the_favicon_draws():
     # The favicon's path, in the script that renders it, so the two cannot drift.
     assert "M9 9h8a7 7 0 0 1 0 14H9z" in source
     assert "M9 9h8a7 7 0 0 1 0 14H9z" in read("index.html")
+
+
+# == 16.3.4: the privacy note ===================================================================
+#
+# Three descriptions of one set of facts - `docs/privacy.md`, the in-app screen, and the code that
+# makes them true - and three descriptions of anything drift. A privacy note that has drifted is
+# worse than none: it is a specific false promise about somebody else's photograph.
+
+
+def privacy_doc() -> str:
+    return (ROOT / "docs" / "privacy.md").read_text(encoding="utf-8")
+
+
+def privacy_screen() -> str:
+    return read("src/screens/Privacy.tsx")
+
+
+def test_the_privacy_note_is_reachable_from_the_app_without_a_network():
+    """The app is installable and works offline, so a link to github.com is a link that fails in
+    exactly the situation this app was built to survive. The statement is in the bundle."""
+    assert (FRONTEND / "src" / "screens" / "Privacy.tsx").is_file()
+    assert '"privacy"' in without_comments(read("src/lib/route.ts"))
+    assert "<Privacy />" in read("src/App.tsx")
+    # And the canonical document is linked from it, which is what the row asks for.
+    assert "docs/privacy.md" in privacy_screen()
+
+
+def test_the_link_is_on_the_screen_where_the_decision_is_made():
+    """Above the camera button, not on an About screen. A privacy note reached only from About is
+    read after the photograph has gone."""
+    capture = without_comments(read("src/screens/Capture.tsx"))
+    assert 'href="#/privacy"' in capture
+    assert "uploaded to the server" in capture
+    assert 'href="#/privacy"' in without_comments(read("src/screens/About.tsx"))
+
+
+def test_the_retention_numbers_in_the_note_are_the_stores_own():
+    """500 is `MAX_RECORDS`. A note that says a different number is a false promise about how long
+    somebody's whiteboard is kept."""
+    from app.backend.store import MAX_RECORDS
+
+    assert str(MAX_RECORDS) in privacy_doc()
+    assert str(MAX_RECORDS) in privacy_screen()
+
+
+def test_the_note_and_the_screen_agree_on_what_is_stored():
+    """The picture is not kept and the reading is. Both places say so, in their own words."""
+    for text in (privacy_doc(), privacy_screen()):
+        lowered = text.lower()
+        assert "uploaded" in lowered
+        assert "correction" in lowered
+        # The one fact that outlives everything else, said in both.
+        assert "for ever" in lowered or "permanently" in lowered
+
+
+def test_the_note_states_the_exif_gap_rather_than_leaving_it_to_be_discovered():
+    """A photograph *chosen* from the library is uploaded byte for byte, metadata included.
+
+    `pick.ts` hands the original `File` to the uploader; a camera capture goes through a canvas and
+    comes out with no EXIF at all. Most phones put GPS coordinates in EXIF, so the difference
+    between the two buttons is whether a location leaves the device - which nobody would guess, and
+    which is precisely the kind of thing this row exists to state.
+    """
+    for text in (privacy_doc(), privacy_screen()):
+        assert "EXIF" in text
+    assert "GPS" in privacy_doc()
+    # And the claim about the camera path is true: the capture is re-encoded through a canvas.
+    camera = without_comments(read("src/lib/camera.ts"))
+    assert "toBlob" in camera and "image/jpeg" in read("src/lib/camera.ts")
+    # ...while the picker passes the file through untouched.
+    pick = without_comments(read("src/lib/pick.ts"))
+    assert "file" in pick and "toBlob" not in pick
+
+
+def test_the_note_mentions_the_cache_that_is_not_temporary():
+    """`src/pipeline/cache.py` keeps every stage's output keyed by a hash of the image, with no
+    expiry and no size limit. It is the retention nobody expects, so it is named."""
+    doc = privacy_doc()
+    assert "pipeline_cache" in doc or "stage cache" in doc.lower()
+    assert "no expiry" in doc or "no eviction" in doc
+    from src.pipeline import cache as cache_module
+
+    # The claim is checked against the module: nothing evicts automatically.
+    source = (ROOT / "src" / "pipeline" / "cache.py").read_text(encoding="utf-8")
+    assert "def clear" in source
+    assert cache_module.CACHE_DIR_ENV in doc, "the note does not say how to move it"
+
+
+def test_the_note_says_a_result_link_is_not_secret():
+    """There is no authentication anywhere in this project. An unguessable id is not a protected
+    one, and someone sharing a link deserves to know which of the two it is."""
+    for text in (privacy_doc(), privacy_screen()):
+        assert "secret" in text.lower()
+
+
+def test_the_only_browser_storage_named_is_the_only_one_used():
+    """One key. A note that missed a second would be a note that is wrong about the device."""
+    theme = read("src/lib/theme.ts")
+    key = re.search(r'const KEY = "([^"]+)"', theme)
+    assert key, "no storage key in theme.ts"
+    assert key.group(1) in privacy_doc()
+    # Nothing else in the client touches storage.
+    users = [
+        path.name
+        for path in (FRONTEND / "src").rglob("*.ts*")
+        if "localStorage" in without_comments(path.read_text(encoding="utf-8"))
+    ]
+    assert users == ["theme.ts"], users
+
+
+def test_the_client_still_makes_no_third_party_request():
+    """The note promises no font, no CDN, no pixel. Checked rather than promised."""
+    for path in ("index.html",):
+        assert "https://" not in without_comments(read(path)), path
+    for path in (FRONTEND / "src").rglob("*.ts*"):
+        source = without_comments(path.read_text(encoding="utf-8"))
+        # The canonical link on the privacy screen is the one external URL, and it is a link a
+        # person taps rather than a request the page makes.
+        if path.name == "Privacy.tsx":
+            continue
+        assert "https://" not in source, path.name

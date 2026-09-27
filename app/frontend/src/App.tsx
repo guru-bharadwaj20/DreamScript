@@ -28,6 +28,7 @@ import { About } from "./screens/About";
 import { Camera } from "./screens/Camera";
 import { Capture } from "./screens/Capture";
 import { Gallery } from "./screens/Gallery";
+import { Privacy } from "./screens/Privacy";
 import { Result } from "./screens/Result";
 import { Button, Mark } from "./ui";
 import "./styles/tokens.css";
@@ -137,6 +138,8 @@ export default function App() {
           <Camera key={staged ? "staged" : "live"} initial={staged} />
         ) : route.view === "gallery" ? (
           <Gallery onStaged={setStaged} />
+        ) : route.view === "privacy" ? (
+          <Privacy />
         ) : route.view === "about" ? (
           <About theme={theme} onTheme={setTheme} />
         ) : (

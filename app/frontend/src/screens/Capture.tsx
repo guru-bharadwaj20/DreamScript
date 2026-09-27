@@ -192,9 +192,11 @@ export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void })
 
         {rejected ? <Rejected error={rejected} onDismiss={() => setRejected(null)} /> : null}
 
+        {/* 16.3.4, and it is above the fold rather than below it: a privacy note reachable only
+            from an About screen is one that is read after the photograph has gone. */}
         <p className="dim" style={{ fontSize: 12.5, textAlign: "center" }}>
           Your photograph is uploaded to the server that runs the models.{" "}
-          <a href="#/about">What is kept, and for how long.</a>
+          <a href="#/privacy">What is kept, and for how long.</a>
         </p>
       </div>
     </div>

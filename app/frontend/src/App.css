@@ -417,3 +417,28 @@
   color: var(--gold-text);
   font-variant-numeric: tabular-nums;
 }
+
+/* 16.3.4: the privacy statement's label/value pairs.
+ *
+ * A description list rather than a table, because each of these is one fact with one name and a
+ * table would give it a column it does not need. Two columns at phone width would put four words
+ * on the left and a paragraph on the right; stacked, the label reads as a heading for the sentence
+ * under it, which is what it is. */
+.facts {
+  margin: 0;
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.facts dt {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}

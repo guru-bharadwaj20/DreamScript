@@ -49,9 +49,9 @@ export function About({ theme, onTheme }: { theme: Theme; onTheme: (next: Theme)
             correct are kept permanently, because corrections are the training data that makes the
             reader better.
           </p>
-          <p className="dim" style={{ fontSize: 13 }}>
-            The full statement is in <code>docs/privacy.md</code>.
-          </p>
+          <a href="#/privacy" className="btn btn-block">
+            What is kept, and for how long
+          </a>
         </Card>
 
         <Card style={{ padding: "var(--sp-5)" }} className="stack-sm">

@@ -22,7 +22,8 @@ export type Route =
   | { view: "progress" }
   | { view: "result"; id: string }
   | { view: "gallery" }
-  | { view: "about" };
+  | { view: "about" }
+  | { view: "privacy" };
 
 const ID = /^[0-9a-f]{1,64}$/;
 
@@ -32,6 +33,7 @@ export function parse(hash: string): Route {
   if (path === "progress") return { view: "progress" };
   if (path === "gallery") return { view: "gallery" };
   if (path === "about") return { view: "about" };
+  if (path === "privacy") return { view: "privacy" };
   const result = /^r\/([^/]+)$/.exec(path);
   // The id is shaped-checked here as well as at the store. A malformed one in the address bar
   // should land on capture rather than issue a request that can only 404.
@@ -49,6 +51,8 @@ export function href(route: Route): string {
       return "#/gallery";
     case "about":
       return "#/about";
+    case "privacy":
+      return "#/privacy";
     case "result":
       return `#/r/${route.id}`;
     default:
