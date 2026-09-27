@@ -75,6 +75,20 @@ function isApi(url) {
   return NEVER_CACHE.some((route) => url.pathname === route || url.pathname.startsWith(`${route}/`));
 }
 
+/**
+ * This file, which must never end up in the cache.
+ *
+ * It is already left out of `PRECACHE` - a worker that precaches itself serves its own previous
+ * version out of its own cache and can never be replaced. That was not enough: the *runtime* rule
+ * below is cache-first for anything same-origin, so a page that called `fetch("/sw.js")` put it
+ * there anyway, and the browser-served release check found exactly that (14 entries where the
+ * precache list has 13). Inert in practice, because a worker script load bypasses the fetch
+ * handler - and a stated invariant that only holds by accident is one that will stop holding.
+ */
+function isSelf(url) {
+  return url.pathname === "/sw.js" || url.pathname.endsWith("/sw.js");
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -123,7 +137,7 @@ self.addEventListener("fetch", (event) => {
   // Cross-origin is somebody else's to cache. Nothing here loads any, and a worker that started
   // storing third-party responses would be storing things it cannot reason about.
   if (url.origin !== self.location.origin) return;
-  if (isApi(url)) return;
+  if (isApi(url) || isSelf(url)) return;
 
   if (request.mode === "navigate") {
     event.respondWith(

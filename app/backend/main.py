@@ -105,9 +105,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import mimetypes
+import os
 import sys
 import time
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 
 # At module level rather than inside the factory, for the reason 15.11 records: `from __future__
@@ -146,6 +149,65 @@ FEEDBACK_KINDS = ("sub_text", "sub_type", "add_node", "del_node", "add_edge", "d
 
 #: Version of the backend contract, reported by `/health` and as the OpenAPI version.
 VERSION = "16.1"
+
+#: Where the built client lives, overridable so a release archive can be unpacked anywhere.
+#:
+#: The default is the repository's own `app/frontend/dist`, which is right for a developer with a
+#: checkout. 16.3.2's answer to "serves from the backend on a clean machine" is this variable: a
+#: machine with no node, no npm and no source tree unpacks the release zip and points this at it.
+BUNDLE_ENV = "DREAMSCRIPT_BUNDLE"
+
+#: The client's own asset paths, exempt from 16.1.4's budgets.
+#:
+#: They are file reads off local disk and cost nothing the limiter exists to protect - and a reload
+#: of the gallery is thirteen requests, so a person who reloads six times would spend most of a
+#: 120-per-minute read budget on their own stylesheet. The limiter is there for the GPU.
+BUNDLE_PREFIXES = ("/assets/", "/examples/", "/icons/")
+
+
+def bundle_dir() -> Path | None:
+    """The directory holding `index.html`, or `None` if no client has been built.
+
+    Read per call rather than bound at import, for the same reason `trusted_proxy_hops` is: a
+    module-level default is evaluated once and a process that sets the environment afterwards gets
+    the old value.
+    """
+    declared = os.environ.get(BUNDLE_ENV)
+    root = (
+        Path(declared)
+        if declared
+        else Path(__file__).resolve().parents[2] / "app" / "frontend" / "dist"
+    )
+    return root if (root / "index.html").is_file() else None
+
+
+def serve_bundle(app: FastAPI) -> Path | None:
+    """Mount the built client at `/`, if there is one.
+
+    **Mounted last, after every route**, because a mount at `/` matches everything and a route
+    registered after it would never be reached. That ordering is the whole risk of this function and
+    it is why it is a function called at the end of the factory rather than three lines inline.
+
+    `html=True` is enough for this client and it is 16.2.1's hash router paying off: every address
+    in the app is `#/something`, which a server never sees, so there is no deep path to rewrite and
+    no SPA fallback to configure. The same property is why the bundle works from `file://` and from
+    a service worker.
+
+    Nothing is mounted when there is no build. A backend that 404'd its own root on a checkout with
+    no `npm run build` would be a confusing failure; one that simply has no client is the truth.
+    """
+    root = bundle_dir()
+    if root is None:
+        return None
+    # `.webmanifest` is not in Python's table, and `mimetypes` would serve it as
+    # `application/octet-stream`. Browsers are lenient about it and the linters are not, and a
+    # manifest served as a binary is the kind of thing that works until one platform decides it
+    # does not.
+    mimetypes.add_type("application/manifest+json", ".webmanifest")
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/", StaticFiles(directory=str(root), html=True), name="client")
+    return root
 
 
 def _content_type(filename: str, declared: str | None) -> str:
@@ -209,6 +271,10 @@ def build_app(
             "version": VERSION,
             "model_url": model.url,
             "stored": len(state.ids()),
+            # 16.3.2: whether this process is also serving a built client, and from where. A
+            # deployment that answers the API and shows a blank page is otherwise diagnosed by
+            # guessing.
+            "bundle": str(getattr(app.state, "bundle", None) or "") or None,
             # 16.1.4's counters, reported rather than hidden. `scope` says `process` because that is
             # what the limit holds within, and a client reading `X-RateLimit-Limit` deserves to know
             # it is not a deployment-wide number.
@@ -496,6 +562,10 @@ def build_app(
         _require(state, record_id)
         events = state.corrections(record_id)
         return {"id": record_id, "count": len(events), "corrections": events}
+
+    # Last. See `serve_bundle`: a mount at `/` matches every path, so anything registered after it
+    # is unreachable - including the API this whole process exists to proxy.
+    app.state.bundle = serve_bundle(app)
 
     return app
 

@@ -91,6 +91,14 @@ TRUSTED_PROXY_HOPS_ENV = "DREAMSCRIPT_TRUSTED_PROXY_HOPS"
 #: restarted - which is 15.11's lesson about health checks, arriving a third time.
 EXEMPT_PATHS = ("/health", "/openapi.json", "/docs", "/redoc", "/docs/oauth2-redirect")
 
+#: 16.3.2's client assets, also exempt.
+#:
+#: They are file reads off local disk and cost nothing this limiter exists to protect. A cold load
+#: of the gallery is thirteen requests, so six reloads would spend most of a 120-per-minute read
+#: budget on the app's own stylesheet - and a 429 for a stylesheet is an app that renders without
+#: CSS, which looks like a catastrophe and is a rate limit.
+EXEMPT_PREFIXES = ("/assets/", "/examples/", "/icons/")
+
 
 def trusted_proxy_hops() -> int:
     """Read per call rather than bound at import: a module-level default is evaluated once, and a
@@ -238,7 +246,7 @@ def install(app: Any, limits: Limits | None = None) -> Limits:
     @app.middleware("http")
     async def guard(request, call_next):
         path = request.url.path
-        if path in EXEMPT_PATHS:
+        if path in EXEMPT_PATHS or path.startswith(EXEMPT_PREFIXES):
             # A 429 to a liveness probe gets the container restarted. 15.11's lesson, third outing.
             return await call_next(request)
 

@@ -339,7 +339,15 @@ def test_the_route_clamps_the_budget_at_the_schema(client, emitted):
 def test_running_an_unknown_id_is_404(client):
     api, _ = client
     assert api.post("/run/deadbeefdeadbeef").status_code == 404
-    assert api.post("/run/../../secrets").status_code in (404, 422)
+    # `..` percent-encoded, and **without** slashes. Two things were wrong with the literal
+    # `/run/../../secrets` this used to send. httpx resolves a dot segment before the request
+    # leaves, so it went out as `POST /secrets` and never reached this route; and even encoded, a
+    # value containing `/` does not match `{record_id}` at all, so the router refuses it before the
+    # store is consulted. Neither ever exercised `path_for`. This one does: the path arrives as
+    # `/run/..` and `record_id` is `..`.
+    response = api.post("/run/%2e%2e")
+    assert response.request.url.path == "/run/..", response.request.url.path
+    assert response.status_code == 404
 
 
 def test_a_saturated_service_is_503_with_a_retry_after_not_a_200_carrying_a_failure(

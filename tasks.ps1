@@ -107,6 +107,8 @@ $Tasks = [ordered]@{
                              Help = "Phase 16.3.1 - serve the bundle on 4173, where the service worker runs" }
     "icons"             = @{ Script = "scripts/make_app_icons.py";
                              Help = "Phase 16.3.1 - regenerate the home-screen icons" }
+    "release"           = @{ Script = "scripts/make_release.py";
+                             Help = "Phase 16.3.2 - package dist/ with its SHA-256 (run bundle first)" }
     "profile"           = @{ Cmd = @("-m", "src.serve", "profile");
                              Help = "Phase 16.1.5 - GPU and CPU latency for the served pipeline" }
     "serve"             = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");

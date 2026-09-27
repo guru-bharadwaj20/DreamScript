@@ -1,0 +1,111 @@
+# Installing the DreamScript app
+
+Phase 16.3.2. The client is an installable web app rather than an APK — Phase 16's
+preamble in `contributing.md` records why, and the short version is that it has to run on
+iOS too and nothing in this project can compile an Android binary.
+
+## What you are downloading
+
+| | |
+| :--- | :--- |
+| archive | `dreamscript-app-16.3.0.zip` |
+| release | `v16.3.0` |
+| SHA-256 | `51f1cd9b3012cc56860d82529b594c2895bf134a962a7510c60a0e3d75c31fe1` |
+| files | 14 |
+| unpacked | 347.9 kB |
+
+It is a static bundle: HTML, one hashed JavaScript file, one hashed stylesheet, the web
+app manifest, the service worker, four icons and the five example sketches. There is no
+installer and nothing is executed to unpack it.
+
+## Check the hash before you use it
+
+```sh
+sha256sum dreamscript-app-16.3.0.zip          # Linux, macOS
+certutil -hashfile dreamscript-app-16.3.0.zip SHA256   # Windows
+```
+
+It must print `51f1cd9b3012cc56860d82529b594c2895bf134a962a7510c60a0e3d75c31fe1`.
+
+That hash is **this note's build**. A published release carries its own `.sha256` beside
+the archive, built by `.github/workflows/release.yml` on a clean runner, and that is the
+authoritative one for the file you downloaded - a note committed to git names one
+release's hash and is stale the moment there is a second. The archive is deterministic, so
+the two agree whenever the builds do, and the workflow says in its log whether they did.
+
+**What that proves, and what it does not.** It proves the bytes you have are the bytes
+whose hash was published. It does not prove who built them: there is no signing key in
+this project, and anyone who can replace the archive on a release page can replace the
+checksum printed beside it. The hash defends against a truncated download or a corrupted
+mirror, which is the failure that actually happens.
+
+## Serving it
+
+The app talks to the backend over **same-origin paths** (`/predict`, `/ir/…`), so it has
+to be served by something that also answers those. The backend does both:
+
+```sh
+unzip dreamscript-app-16.3.0.zip
+DREAMSCRIPT_BUNDLE=./dreamscript-app \
+  python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 3000
+```
+
+`GET /health` then reports the directory it is serving under `bundle`, so a deployment
+that answers the API and shows a blank page is diagnosable rather than a guess.
+
+Serving the bundle from a plain static server works for the offline examples and nothing
+else — every photograph needs the API, and a different origin means CORS, which this
+project deliberately does not have anywhere.
+
+## What it needs
+
+- **A secure origin.** `getUserMedia` refuses anything but HTTPS or `localhost`, and so
+  does the service worker. Over a LAN address both are unavailable without a certificate.
+- **A reachable backend**, which needs a reachable model server behind it. With neither,
+  the app still opens and shows its five stored example readings, labelled as stored.
+
+## Installing it on a phone
+
+- **Android / Chrome**: open it, then use the install prompt, or the About screen's
+  *Install DreamScript* button.
+- **iOS / Safari**: Share → Add to Home Screen. iOS has no install prompt for a web app
+  and Chrome on iOS cannot do it — the About screen says so there too.
+
+Installed, it opens full screen with no browser chrome over the viewfinder, and the shell
+loads with no network.
+
+## Your photographs leave the device
+
+The models do not run in the browser. This is not a detail of the deployment — it is what
+the app is, and the landing screen says so before the shutter is pressed. Every photograph
+is uploaded to the backend, which passes it to the model server. What the server keeps is
+the *result* — the shapes, the arrows, the code — under a short id, so the app can show it
+again without a second upload; it holds the most recent 500 and drops the oldest. Labels
+you correct are kept permanently, because corrections are training data.
+
+The full statement is `docs/privacy.md` (16.3.4). It is stated here as well rather than
+only linked, because an install page that defers the one thing a person should know before
+installing has not told them.
+
+## Contents
+
+| File | Bytes |
+| :--- | ---: |
+| `dreamscript-app/assets/index-DK6qgkeZ.css` | 26667 |
+| `dreamscript-app/assets/index-DWMJznSb.js` | 244166 |
+| `dreamscript-app/examples/circuit.png` | 2749 |
+| `dreamscript-app/examples/er_diagram.png` | 3144 |
+| `dreamscript-app/examples/flowchart.png` | 2901 |
+| `dreamscript-app/examples/state_machine.png` | 3190 |
+| `dreamscript-app/examples/wireframe.png` | 3171 |
+| `dreamscript-app/icons/apple-touch-icon.png` | 3884 |
+| `dreamscript-app/icons/icon-192.png` | 9888 |
+| `dreamscript-app/icons/icon-512.png` | 34056 |
+| `dreamscript-app/icons/icon-maskable-512.png` | 9136 |
+| `dreamscript-app/index.html` | 3730 |
+| `dreamscript-app/manifest.webmanifest` | 1296 |
+| `dreamscript-app/sw.js` | 8269 |
+
+Generated by `scripts/make_release.py`. The archive is deterministic: every entry is
+written with a fixed timestamp and fixed permissions in sorted order, so the same build
+always produces the same hash.

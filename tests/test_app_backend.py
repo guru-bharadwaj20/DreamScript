@@ -300,10 +300,40 @@ def test_an_unknown_id_is_404_on_every_read(wired):
 # -- an id from a URL path is not a filesystem path --------------------------------------------
 
 
-@pytest.mark.parametrize("bad", ["..", "../../etc/passwd", "..%2f..%2fsecrets", "zzzz", "a" * 80])
+#: Ids that actually arrive at the server as written.
+#:
+#: The literal `..` and `../../etc/passwd` used to be in this list and they were never tests of this
+#: server. **httpx resolves a dot segment before the request leaves**, so `/ir/..` went out as `/`
+#: and `/ir/../../etc/passwd` as `/etc/passwd` - neither route existed, both answered 404, and the
+#: test passed for a reason with nothing to do with the store.
+#:
+#: 16.3.2 is what exposed it: mounting the built client gave `/` a handler, so the first of those
+#: became a 200 and a passing test started failing without any change to what it claimed to check.
+#: The percent-encoded forms are the ones a server receives intact, and they are what is asserted.
+#: Single-segment ids, which are the ones that reach `{record_id}` and therefore reach `path_for`.
+#: A value containing `/` - encoded or not - does not match a path parameter, so the router refuses
+#: it before the store is asked, which is a second and earlier defence rather than this one.
+TRAVERSAL_IDS = ["%2e%2e", "%2e", "zzzz", "a" * 80, "0" * 15 + "g"]
+
+
+@pytest.mark.parametrize("bad", TRAVERSAL_IDS)
 def test_an_id_that_is_not_the_shape_ids_are_minted_in_is_refused(wired, bad):
     client, _, _ = wired
-    assert client.get(f"/ir/{bad}").status_code in (404, 422)
+    response = client.get(f"/ir/{bad}")
+    # The path the request actually carried, so a normalisation that swallowed the case cannot
+    # make this pass quietly a second time.
+    assert response.request.url.path.startswith("/ir/"), response.request.url.path
+    assert response.status_code in (404, 422)
+
+
+def test_a_multi_segment_id_is_refused_by_the_router_before_the_store_is_asked(wired):
+    """`/ir/../../secrets` does not match `/ir/{record_id}` - a path parameter never spans `/`."""
+    client, _, _ = wired
+    response = client.get("/ir/%2e%2e%2f%2e%2e%2fsecrets")
+    assert response.request.url.path == "/ir/../../secrets"
+    # 404 here, and it would be 405 for a POST once 16.3.2 mounts the client at `/`: either way it
+    # is "no route matched", which is the point.
+    assert response.status_code in (404, 405)
 
 
 def test_the_store_refuses_a_traversal_id_at_the_store_rather_than_the_route(tmp_path):
