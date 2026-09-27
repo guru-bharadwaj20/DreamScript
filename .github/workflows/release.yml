@@ -1,0 +1,168 @@
+# Phase 16.3.3 - build the client on a tag and attach it to the release.
+#
+# Separate from `ci.yml` rather than a job inside it, and the reason is what each is for. CI answers
+# "does this commit work" on every push and pull request; this answers "here is a thing to download"
+# exactly once per tag. Folding them together would mean a release job that is skipped on 99% of
+# runs and a `if: startsWith(github.ref, 'refs/tags/')` on every step of it.
+#
+# ## What the runner has that this machine does not, and the other way round
+#
+# It has a clean checkout. That is the whole value: the archive published here is built from what is
+# in git, by a machine with no node_modules cached from six months ago, no stray global package, and
+# no `dist/` left over from a build nobody remembers running. A release built on a developer's
+# machine is a release whose provenance is that developer's `~`.
+#
+# It does not have the model server, the GPU or the corpus - which is fine, because this builds a
+# static bundle. Nothing here runs the pipeline.
+#
+# ## The tag and the version have to agree
+#
+# `v16.3.0` must package `16.3.0`. A tag that disagrees with `package.json` produces an archive
+# whose name says one thing and whose release says another, and nothing downstream would notice -
+# so it is checked first and the job fails before anything is built.
+#
+# ## The hash that matters is the one built here
+#
+# `docs/install.md` is generated on whichever machine ran `make release`, so its hash is that
+# machine's build. The authoritative one for a published release is the `.sha256` attached beside
+# the archive, and this job regenerates the note so the two agree. It also *reports* whether the
+# committed note matched, because a match is a reproducibility result worth seeing: the archive is
+# deterministic by construction, so a difference means the build itself differed between machines.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  # So the job can be exercised without minting a tag. It builds and verifies; it publishes
+  # nothing, because there is no release to publish to.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  bundle:
+    name: build the bundle and attach it to the tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: the tag and the client's version agree
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="v$(node -p "require('./app/frontend/package.json').version")"
+          echo "tag=$tag  package.json=$version"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag $tag does not match the client version $version"
+            exit 1
+          fi
+
+      # `npm ci`, not `npm install`: exactly the committed lockfile, and a failure if the lockfile
+      # and the manifest disagree. A release built from a resolved-today dependency tree is a
+      # release nobody can reproduce.
+      - run: npm ci
+        working-directory: app/frontend
+
+      # `tsc --noEmit && vite build`. The typecheck matters here too - esbuild strips types without
+      # reading them, so `vite build` alone would happily ship a type error into a release.
+      - run: npm run build
+        working-directory: app/frontend
+
+      # The client suite, because a release is the worst place to find out the SSE reader broke.
+      - run: npm test
+        working-directory: app/frontend
+
+      - name: package it, and require the archive to be deterministic
+        run: python scripts/make_release.py --verify
+
+      - name: report whether this matches the committed install note
+        run: |
+          # Informational, not a gate. The archive is deterministic given one `dist/`, so a
+          # difference here means the *build* differed between this runner and whoever last ran
+          # `make release` - a different node, a different platform - which is worth seeing rather
+          # than failing on.
+          published=$(cut -d' ' -f1 release/*.sha256)
+          echo "built here: $published"
+          if grep -q "$published" docs/install.md; then
+            echo "reproducible: the committed install note names this exact archive"
+          else
+            echo "::warning::the committed docs/install.md names a different build"
+            echo "the release's own .sha256 is the authoritative one"
+          fi
+
+      - name: what is in it
+        run: |
+          ls -l release/
+          unzip -l release/*.zip
+
+      # Kept for 90 days whether or not this is a tag, so `workflow_dispatch` produces something
+      # inspectable and a tag has a second copy independent of the release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dreamscript-app
+          path: |
+            release/*.zip
+            release/*.sha256
+            docs/install.md
+          if-no-files-found: error
+
+      # `gh` rather than a third-party action. It is on every runner, it needs no pinning to a
+      # commit sha to be trustworthy, and what it does here is one command.
+      - name: attach it to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(cut -d' ' -f1 release/*.sha256)
+          zip=$(basename release/*.zip)
+          {
+            echo "The installable web app for \`${GITHUB_REF_NAME}\`, built by this workflow from"
+            echo "the tagged commit."
+            echo
+            echo "| | |"
+            echo "| :--- | :--- |"
+            echo "| archive | \`$zip\` |"
+            echo "| SHA-256 | \`$sha\` |"
+            echo
+            echo "Check it before you use it:"
+            echo
+            echo '```sh'
+            echo "sha256sum $zip"
+            echo '```'
+            echo
+            echo "That proves the bytes are the ones whose hash is published here. It does not"
+            echo "prove who built them - there is no signing key in this project, and anyone who"
+            echo "can replace this archive can replace this line. It defends against a truncated"
+            echo "download, which is the failure that actually happens."
+            echo
+            echo "Unpack it and serve it with the backend, which answers the API on the same"
+            echo "origin - the app has no base URL and this project has no CORS anywhere:"
+            echo
+            echo '```sh'
+            echo "unzip $zip"
+            echo "DREAMSCRIPT_BUNDLE=./dreamscript-app \\"
+            echo "  python -m uvicorn app.backend.main:app --port 3000"
+            echo '```'
+            echo
+            echo "Full instructions, including what it needs and what leaves your device:"
+            echo "\`docs/install.md\`."
+          } > release-notes.md
+          gh release create "${GITHUB_REF_NAME}" \
+            release/*.zip release/*.sha256 docs/install.md \
+            --title "DreamScript app ${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md

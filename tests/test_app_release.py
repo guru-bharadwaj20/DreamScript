@@ -22,6 +22,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytest.importorskip("fastapi")
 
@@ -235,3 +236,132 @@ def test_the_mount_is_the_last_thing_the_factory_does():
     assert body.index("    return app", mount) > mount
     # Nothing registers a route after it.
     assert "@app." not in body[mount:], "a route is declared after the mount and is unreachable"
+
+
+# == 16.3.3: the release workflow ===============================================================
+#
+# A workflow is a description of a machine nobody has, and every claim in it is unverifiable until
+# it runs. What *is* checkable here is that it says what the rest of the repository says: the same
+# node version, the same install command, the same packaging script - because a release built from
+# a resolved-today dependency tree, or by a job that quietly skipped the typecheck, is a release
+# nobody can reproduce and nobody would know to distrust.
+
+
+def release_workflow() -> dict:
+    return yaml.safe_load((ROOT / ".github" / "workflows" / "release.yml").read_text("utf-8"))
+
+
+def release_steps() -> list[dict]:
+    return release_workflow()["jobs"]["bundle"]["steps"]
+
+
+def test_the_release_workflow_fires_on_a_tag_and_nothing_else():
+    """On every push it would build a release archive nobody asked for, on every PR twice."""
+    triggers = release_workflow()[True]  # `on:` is parsed as the boolean True by yaml 1.1
+    assert list(triggers["push"]["tags"]) == ["v*"]
+    assert "pull_request" not in triggers
+    # `workflow_dispatch` so the job can be exercised without minting a tag it cannot un-mint.
+    assert "workflow_dispatch" in triggers
+
+
+def test_the_workflow_may_write_contents_and_nothing_more():
+    """`gh release create` needs `contents: write`. Nothing here needs packages, pages or id-token,
+    and a token with more scope than the job uses is scope somebody else's action inherits."""
+    assert release_workflow()["permissions"] == {"contents": "write"}
+
+
+def test_the_tag_and_the_clients_version_have_to_agree():
+    """`v16.3.0` must package `16.3.0`.
+
+    A tag that disagrees produces an archive whose name says one thing and whose release says
+    another, and nothing downstream would notice - so it fails before anything is built.
+    """
+    steps = release_steps()
+    check = next((s for s in steps if "version" in (s.get("name") or "")), None)
+    assert check, "nothing compares the tag against package.json"
+    assert "package.json" in check["run"]
+    assert "exit 1" in check["run"]
+    # First, so a mismatch costs no build.
+    assert steps.index(check) < min(
+        index for index, step in enumerate(steps) if "npm ci" in (step.get("run") or "")
+    )
+
+
+def test_the_release_is_built_from_the_committed_lockfile():
+    """`npm ci`, not `npm install`. The lockfile is what pins the build, which is the whole reason
+    it is in git - and a release is the one artefact where that matters most."""
+    runs = " ".join(step.get("run") or "" for step in release_steps())
+    assert "npm ci" in runs
+    assert "npm install" not in runs
+
+
+def test_the_release_job_runs_the_typecheck_and_the_client_suite():
+    """esbuild strips types without reading them, so `vite build` alone ships type errors.
+
+    `npm run build` is `tsc --noEmit && vite build`, and `npm test` is the suite whose SSE
+    chunk-boundary sweep is the reason a release is a bad place to find out the reader broke.
+    """
+    runs = " ".join(step.get("run") or "" for step in release_steps())
+    assert "npm run build" in runs
+    assert "npm test" in runs
+
+
+def test_the_release_job_requires_the_archive_to_be_deterministic():
+    """`--verify` packs twice and compares. Without it, a published hash means nothing."""
+    runs = " ".join(step.get("run") or "" for step in release_steps())
+    assert "scripts/make_release.py --verify" in runs
+
+
+def test_the_node_version_is_the_one_ci_already_uses():
+    """Two workflows building the same client on two runtimes is two builds to explain."""
+    ci = yaml.safe_load((ROOT / ".github" / "workflows" / "ci.yml").read_text("utf-8"))
+    ci_node = next(
+        step["with"]["node-version"]
+        for step in ci["jobs"]["client"]["steps"]
+        if "setup-node" in (step.get("uses") or "")
+    )
+    release_node = next(
+        step["with"]["node-version"]
+        for step in release_steps()
+        if "setup-node" in (step.get("uses") or "")
+    )
+    assert ci_node == release_node
+
+
+def test_the_assets_attached_are_the_archive_its_hash_and_the_instructions():
+    """Three files, and the second is useless without being beside the first."""
+    publish = next(s for s in release_steps() if "gh release create" in (s.get("run") or ""))
+    for asset in ("release/*.zip", "release/*.sha256", "docs/install.md"):
+        assert asset in publish["run"], asset
+    # Only on a tag: `workflow_dispatch` has no release to publish to.
+    assert "startsWith(github.ref, 'refs/tags/')" in publish["if"]
+
+
+def test_the_release_body_carries_the_same_caveat_the_install_note_does():
+    """The hash is most likely to be read on the release page, so the caveat belongs there too.
+
+    A checksum published with no caveat invites the reading it cannot support - that it proves who
+    built the file.
+    """
+    publish = next(s for s in release_steps() if "gh release create" in (s.get("run") or ""))
+    assert "does not" in publish["run"] and "prove who built them" in publish["run"]
+
+
+def test_publishing_uses_gh_rather_than_a_third_party_action():
+    """`gh` is on every runner and needs no pinning to a commit sha to be trustworthy.
+
+    A third-party action in a job holding a `contents: write` token is a supply chain in the one
+    workflow that produces the thing people download.
+    """
+    steps = release_steps()
+    allowed = {
+        "actions/checkout",
+        "actions/setup-node",
+        "actions/setup-python",
+        "actions/upload-artifact",
+    }
+    for step in steps:
+        uses = step.get("uses")
+        if not uses:
+            continue
+        assert uses.split("@")[0] in allowed, uses
