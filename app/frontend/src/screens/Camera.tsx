@@ -44,6 +44,7 @@ import {
   ready,
 } from "../lib/camera";
 import type { Detection } from "../lib/dewarp";
+import { looksOffline } from "../lib/offline";
 import { replace } from "../lib/route";
 import { hold } from "../lib/held";
 import { predictStream } from "../lib/stream";
@@ -53,7 +54,22 @@ import "./Camera.css";
 type Phase =
   | { kind: "viewfinder" }
   | { kind: "running"; preview: string }
-  | { kind: "failed"; preview: string; status: number; detail: string; retryAfter: number | null };
+  | {
+      kind: "failed";
+      preview: string;
+      status: number;
+      detail: string;
+      retryAfter: number | null;
+      /**
+       * 16.2.10: the request never left the device.
+       *
+       * Separate from `status === 0`, which is what this screen used before and is not the same
+       * question. A capture can fail at zero because the frame could not be read, because the stream
+       * died mid-run, or because there is no network - and only the last of those has "try again"
+       * as the wrong suggestion and the gallery as the right one.
+       */
+      offline?: boolean;
+    };
 
 interface Progress {
   stages: string[];
@@ -252,6 +268,7 @@ export function Camera({ initial }: { initial?: Blob | null }) {
             replace({ view: "result", id: prediction.id });
           },
           onError: (status, detail) =>
+            // A frame arrived saying it failed, so the server is there: never offline.
             setPhase({ kind: "failed", preview, status, detail, retryAfter: null }),
         },
         controller.signal,
@@ -262,7 +279,17 @@ export function Camera({ initial }: { initial?: Blob | null }) {
       const detail =
         error instanceof ApiError ? error.message : "The server could not be reached.";
       const retryAfter = error instanceof ApiError ? error.retryAfter : null;
-      setPhase({ kind: "failed", preview, status, detail, retryAfter });
+      const offline = looksOffline(error);
+      setPhase({
+        kind: "failed",
+        preview,
+        status,
+        detail: offline
+          ? "The photograph never left this device — there is no network."
+          : detail,
+        retryAfter,
+        offline,
+      });
     } finally {
       abort.current = null;
     }
@@ -477,7 +504,11 @@ function StageRow({
 }
 
 function Failed({ phase }: { phase: Extract<Phase, { kind: "failed" }> }) {
-  const retryable = phase.status === 0 || phase.status >= 500 || phase.status === 429;
+  // Offline is retryable in principle and not in the next second, which is the only span a button
+  // labelled "Try again" covers. Offering it would hand someone a control that reloads the page into
+  // the same failure; the stored examples are the thing that actually works.
+  const retryable =
+    !phase.offline && (phase.status === 0 || phase.status >= 500 || phase.status === 429);
   return (
     <div className="page stack">
       {phase.preview ? (
@@ -488,24 +519,40 @@ function Failed({ phase }: { phase: Extract<Phase, { kind: "failed" }> }) {
       <Card
         style={{
           padding: "var(--sp-5)",
-          borderColor: "color-mix(in srgb, var(--stopped) 30%, transparent)",
+          borderColor: phase.offline
+            ? "color-mix(in srgb, var(--degraded) 32%, transparent)"
+            : "color-mix(in srgb, var(--stopped) 30%, transparent)",
         }}
         className="stack-sm"
       >
-        <span className="eyebrow" style={{ color: "var(--stopped)" }}>
-          {phase.status ? `error ${phase.status}` : "no answer"}
+        <span
+          className="eyebrow"
+          style={{ color: phase.offline ? "var(--degraded)" : "var(--stopped)" }}
+        >
+          {phase.offline ? "no network" : phase.status ? `error ${phase.status}` : "no answer"}
         </span>
         <p>{phase.detail}</p>
+        {phase.offline ? (
+          <p className="muted" style={{ fontSize: 13 }}>
+            The models run on a server, so a photograph has to reach one. Nothing was uploaded and
+            nothing was kept.
+          </p>
+        ) : null}
         {phase.retryAfter ? (
           <p className="dim" style={{ fontSize: 13 }}>
             The server asked for {phase.retryAfter} seconds before the next try.
           </p>
         ) : null}
       </Card>
-      <div className="row" style={{ gap: "var(--sp-2)" }}>
+      <div className="row wrap" style={{ gap: "var(--sp-2)" }}>
         {retryable ? (
           <a href="#/camera" className="btn btn-primary grow" onClick={() => window.location.reload()}>
             Try again
+          </a>
+        ) : null}
+        {phase.offline ? (
+          <a href="#/gallery" className="btn btn-primary grow">
+            See the stored examples
           </a>
         ) : null}
         <a href="#/" className="btn grow">

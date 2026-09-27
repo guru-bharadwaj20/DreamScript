@@ -424,3 +424,173 @@ def test_the_client_talks_to_the_same_origin_so_there_is_no_cors_to_get_wrong():
     assert "http://localhost:3000" not in api
     assert "VITE_API" not in api
     assert "proxy" in read("vite.config.ts")
+
+
+# == 16.2.10: the offline bundle ===============================================================
+#
+# The claim this section defends is provenance. `src/lib/offline.data.json` is the one payload in
+# this repository that a person sees on a screen without a pipeline having run to produce it, which
+# makes it the easiest place in the project to ship a fabricated answer and the hardest place to
+# notice one - a hand-written example looks exactly like the product working perfectly.
+
+
+def offline_bundle() -> dict:
+    return json.loads(read("src/lib/offline.data.json"))
+
+
+def test_the_offline_bundle_holds_one_answer_per_bundled_example():
+    """Three descriptions of one set: the fixtures, the copies the gallery shows, and the answers.
+
+    A gallery card with no stored answer is a card that does nothing when the network is gone, and
+    a stored answer for a file the gallery does not offer is dead weight in the bundle.
+    """
+    files = [entry["file"] for entry in offline_bundle()["examples"]]
+    assert len(files) == 5, files
+    for file in files:
+        assert (ROOT / "tests" / "fixtures" / file).is_file(), f"{file} is not a committed fixture"
+        assert (FRONTEND / "public" / "examples" / file).is_file(), f"{file} is not shipped"
+
+    # And the gallery's own list is the same set, in the same order, so the screen cannot offer a
+    # sixth example that has no answer behind it.
+    gallery = without_comments(read("src/screens/Gallery.tsx"))
+    listed = re.findall(r'file:\s*"([^"]+\.png)"', gallery)
+    assert listed == files, (listed, files)
+
+
+def test_every_offline_id_is_one_the_store_and_the_router_would_accept():
+    """A non-hex id would make its card land on the capture screen instead of the answer.
+
+    `route.ts` only parses `[0-9a-f]{1,64}` and `store.py`'s `path_for` validates the same shape.
+    An id that fails either is an example that is dead in exactly the situation it exists for.
+    """
+    ids = [entry["id"] for entry in offline_bundle()["examples"]]
+    assert len(set(ids)) == len(ids), ids
+    for value in ids:
+        assert re.fullmatch(r"[0-9a-f]{1,64}", value), value
+
+
+def test_the_offline_answers_were_captured_with_the_stage_cache_cold():
+    """The first capture was taken warm and every stage came back `cached: true` at 0.06 s a page.
+
+    Real, and a lie about the product: an offline screen whose header reads `0.06s` teaches a person
+    that this pipeline is instant. Checked on this side as well as in vitest, because a regeneration
+    is a Python script and this is the suite that runs in CI without npm.
+    """
+    for entry in offline_bundle()["examples"]:
+        prediction = entry["prediction"]
+        stages = prediction["stages"]
+        assert [stage["stage"] for stage in stages] == [
+            "detect",
+            "classify",
+            "assemble",
+            "traverse",
+            "serialise",
+            "generate",
+            "verify",
+        ], entry["file"]
+        assert not any(stage["cached"] for stage in stages), f"{entry['file']} was captured warm"
+        assert prediction["seconds"] > 0.05, entry["file"]
+
+
+def test_the_offline_answers_carry_the_degradation_fields_unflattened():
+    """13.4's rule at the last hop it can be broken at.
+
+    A summary with `ok` and nothing else would be the one payload in this project that dropped the
+    fields every other hop goes to trouble to pass through.
+    """
+    for entry in offline_bundle()["examples"]:
+        prediction = entry["prediction"]
+        for field in ("ok", "degraded", "stopped_at", "needs_confirmation", "diagram_type", "ir"):
+            assert field in prediction, (entry["file"], field)
+        assert isinstance(prediction["ok"], bool)
+        assert isinstance(prediction["stages"], list)
+
+
+def test_the_offline_answers_keep_the_readings_that_are_wrong():
+    """Three of five come back as flowcharts, and the bundle keeps it.
+
+    `tests/fixtures/manifest.json` names each fixture after its own diagram type, so the mismatch is
+    measurable rather than a matter of opinion. A bundle where all five were right would be the
+    signal that someone had tidied the demo - which is the failure this whole section is about.
+    """
+    wrong = [
+        entry["file"]
+        for entry in offline_bundle()["examples"]
+        if entry["prediction"]["diagram_type"] != entry["file"].removesuffix(".png")
+    ]
+    assert wrong == ["er_diagram.png", "wireframe.png", "circuit.png"], wrong
+
+
+def test_the_gallery_does_not_assert_the_misread_count_in_words():
+    """The count is computed from the bundle, and it used to be written by hand - wrongly.
+
+    The panel said "two of these are read as the wrong kind" for as long as it existed; capturing
+    the answers for the offline cache showed the count is three. A number in prose next to a number
+    in data is a number that will be stale, so the prose one is gone and this keeps it gone.
+    """
+    gallery = without_comments(read("src/screens/Gallery.tsx"))
+    for claim in ("Two of these", "two of these", "reads as a flowchart"):
+        assert claim not in gallery, claim
+    assert "misread()" in gallery, "the count is no longer derived"
+
+
+def test_the_offline_bundle_stays_small_enough_to_be_worth_shipping():
+    """It is in the JS bundle, not in `public/`, so its size is the offline shell's size.
+
+    In the bundle on purpose: a file under `public/` is a separate request, which is exactly the
+    thing that is unavailable when this data is needed. The cost of that choice is that it is bytes
+    every visitor downloads, so there is a ceiling on it.
+    """
+    size = (FRONTEND / "src" / "lib" / "offline.data.json").stat().st_size
+    assert size < 64 * 1024, f"the offline bundle is {size / 1024:.1f} kB"
+
+
+def test_the_cache_is_never_consulted_before_the_server():
+    """A stored answer that pre-empted a request would show a reading from before a correction.
+
+    The order is the rule, and it is visible in the source: `cachedFor` is called inside the
+    `catch`, never in the `then` and never before the request.
+    """
+    result = without_comments(read("src/screens/Result.tsx"))
+    before, _, after = result.partition(".catch(")
+    assert "cachedFor(" not in before, "the cache is consulted before the request fails"
+    assert "cachedFor(" in after
+
+
+def test_the_two_controls_that_need_a_server_are_disabled_for_a_stored_answer():
+    """Run and correct both reach the backend, and a live-looking button that answers with a network
+    error is the failure this row exists to remove."""
+    code = without_comments(read("src/ui/Code.tsx"))
+    assert "stored" in code and "disabled" in code
+    result = without_comments(read("src/screens/Result.tsx"))
+    assert "stored={!!stored}" in result
+
+
+def test_navigator_online_is_only_trusted_in_the_false_direction():
+    """`true` means an interface is up, not that a server is reachable - a captive portal reports it.
+
+    So nothing in this client may read `navigator.onLine` as permission to claim reachability. The
+    one accessor is `definitelyOffline`, and every screen goes through it.
+    """
+    offline = read("src/lib/offline.ts")
+    assert "navigator.onLine === false" in offline
+    for path in (
+        "src/App.tsx",
+        "src/screens/Capture.tsx",
+        "src/screens/Camera.tsx",
+        "src/screens/Gallery.tsx",
+        "src/screens/Result.tsx",
+    ):
+        source = without_comments(read(path))
+        assert "navigator.onLine" not in source, f"{path} reads onLine directly"
+
+
+def test_the_offline_bundle_is_regenerable_and_says_so():
+    """A committed payload with no generator is a payload nobody can refresh or verify."""
+    script = ROOT / "scripts" / "make_offline_examples.py"
+    assert script.is_file()
+    text = script.read_text(encoding="utf-8")
+    assert "offline.data.json" in text
+    bundle = offline_bundle()
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", bundle["generated"]), bundle["generated"]
+    assert bundle["backend"], "no backend version recorded"

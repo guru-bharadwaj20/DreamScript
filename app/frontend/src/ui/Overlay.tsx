@@ -71,15 +71,28 @@ export function Overlay({
   const wrap = useRef<HTMLDivElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [layout, setLayout] = useState<Layout | null>(null);
+  /**
+   * A `src` that was given and could not be loaded.
+   *
+   * Added in 16.2.10, and it is a hole this component had from the start: with only an `onload`
+   * handler, an image that fails leaves `image` at `null` forever and the canvas is **blank with no
+   * explanation** - indistinguishable from a reading that found nothing. Two ways in: 16.2.10 can
+   * now pass `examples/<file>.png`, which is a real request that a real lack of network can refuse;
+   * and a held object URL can be revoked under a screen that is still mounted.
+   */
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!src) {
       setImage(null);
+      setFailed(false);
       return;
     }
     const element = new Image();
     let live = true;
+    setFailed(false);
     element.onload = () => live && setImage(element);
+    element.onerror = () => live && setFailed(true);
     element.src = src;
     return () => {
       live = false;
@@ -209,6 +222,21 @@ export function Overlay({
     },
     [ir, layout, onSelect],
   );
+
+  if (failed) {
+    return (
+      <div className="overlay-absent">
+        <p>
+          <strong>The picture could not be loaded.</strong>
+        </p>
+        <p className="muted">
+          The reading itself is here — the graph and the code views show the same answer without it.
+          With no network a bundled example&apos;s image has to come out of the cache, and this one
+          did not.
+        </p>
+      </div>
+    );
+  }
 
   if (!src) {
     return (

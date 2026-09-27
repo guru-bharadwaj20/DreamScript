@@ -31,7 +31,20 @@ import { type Token, highlight, languageOf } from "../lib/highlight";
 import { Button, Card, Pill } from "../ui";
 import "./Code.css";
 
-export function Code({ prediction }: { prediction: Prediction }) {
+export function Code({
+  prediction,
+  stored = false,
+}: {
+  prediction: Prediction;
+  /**
+   * 16.2.10: this reading came out of the offline bundle, so there is no server behind it.
+   *
+   * Copy and share are untouched by it - they are the browser's, the text is already on screen, and
+   * a person offline still wants the program. **Run** is the server's, and it is the one control
+   * here that would otherwise offer a sandbox that cannot be reached.
+   */
+  stored?: boolean;
+}) {
   const language = languageOf(prediction.language);
   const lines = useMemo(
     () => (prediction.code && language ? highlight(prediction.code, language) : null),
@@ -155,10 +168,28 @@ export function Code({ prediction }: { prediction: Prediction }) {
         </pre>
       </Card>
 
-      <Button variant="primary" block onClick={run} disabled={running}>
-        {running ? "Running…" : "Run it"}
-        {running ? null : <Glyph d="M6 4.5v15l13-7.5-13-7.5Z" size={16} />}
-      </Button>
+      {stored ? (
+        // Shown and switched off rather than removed. A missing button leaves a person wondering
+        // whether this build can run code at all; a disabled one with a sentence says the feature
+        // exists and what it needs. The sentence also says *where* it would have run, because
+        // "offline" does not explain why printing a program needs a network - the sandbox is
+        // 16.1.3's, on the server, and never this browser.
+        <div className="stack-sm">
+          <Button variant="primary" block disabled>
+            Run it
+            <Glyph d="M6 4.5v15l13-7.5-13-7.5Z" size={16} />
+          </Button>
+          <p className="dim" style={{ fontSize: 12 }}>
+            The program runs in a sandbox on the server, not in this browser — so with no network
+            there is nothing to run it in. The code above is complete and copyable as it is.
+          </p>
+        </div>
+      ) : (
+        <Button variant="primary" block onClick={run} disabled={running}>
+          {running ? "Running…" : "Run it"}
+          {running ? null : <Glyph d="M6 4.5v15l13-7.5-13-7.5Z" size={16} />}
+        </Button>
+      )}
 
       {runError ? (
         <Card

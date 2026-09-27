@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 
 import { type Prediction, ApiError, api } from "../lib/api";
 import { heldFor } from "../lib/held";
+import { type Cached, CAPTURED, CAPTURED_BY, cachedFor, looksOffline } from "../lib/offline";
 import { Button, Card, Pill, Segmented, TrustPill } from "../ui";
 import { Code } from "../ui/Code";
 import { Correct } from "../ui/Correct";
@@ -27,15 +28,23 @@ type Tab = "overlay" | "graph" | "code";
 
 type Load =
   | { state: "loading" }
-  | { state: "ready"; prediction: Prediction }
-  | { state: "missing"; detail: string };
+  /**
+   * `stored` is set only when this reading came out of 16.2.10's bundle instead of the server.
+   *
+   * It is on the *ready* state rather than a fourth state on purpose: a stored answer is a real
+   * reading of a real page and every panel below should render it exactly as it renders a live one.
+   * What changes is one banner and the two controls that need a server - and a separate state would
+   * have meant a second copy of this screen, which is how the copies drift apart.
+   */
+  | { state: "ready"; prediction: Prediction; stored?: Cached }
+  | { state: "missing"; detail: string; offline: boolean };
 
 export function Result({ id }: { id: string }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
   const [tab, setTab] = useState<Tab>("code");
   const [selected, setSelected] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
-  const photograph = heldFor(id);
+  const held = heldFor(id);
 
   useEffect(() => {
     let live = true;
@@ -47,17 +56,31 @@ export function Result({ id }: { id: string }) {
         setLoad({ state: "ready", prediction });
         // The photograph is the most legible answer to "did it read my page", so it leads when
         // this session still has it. On a reload there is nothing to draw on and the code does.
+        //
+        // Deliberately not extended to 16.2.10's stored answers, whose bundled image is a request
+        // that a lack of network can refuse: landing on an explained-but-empty canvas is a worse
+        // first screen than landing on the program, and the Photo tab is one tap away.
         if (heldFor(id)) setTab("overlay");
       })
       .catch((error: unknown) => {
         if (!live) return;
+        // 16.2.10, and the order is the rule: the server was asked first and failed. A stored
+        // answer that pre-empted the request would show a reading from before a correction someone
+        // had just made, silently, on the screen whose job is saying how much to trust it.
+        const stored = cachedFor(id);
+        if (stored) {
+          setLoad({ state: "ready", prediction: stored.prediction, stored });
+          return;
+        }
         const detail =
           error instanceof ApiError && error.status === 404
             ? "This page is no longer held. The server keeps the most recent 500 and this one has aged out — photograph it again."
             : error instanceof ApiError
               ? error.message
-              : "The server did not answer.";
-        setLoad({ state: "missing", detail });
+              : looksOffline(error)
+                ? "There is no network, and this reading is not one of the stored examples — it only ever existed on the server."
+                : "The server did not answer.";
+        setLoad({ state: "missing", detail, offline: looksOffline(error) });
       });
     return () => {
       live = false;
@@ -81,20 +104,40 @@ export function Result({ id }: { id: string }) {
         <Card style={{ padding: "var(--sp-5)" }} className="stack-sm">
           <span className="eyebrow">Not here</span>
           <p className="muted">{load.detail}</p>
-          <a href="#/" className="btn btn-primary btn-block">
-            Take another photograph
-          </a>
+          {load.offline ? (
+            // Offering "take another photograph" with no network would send someone to a camera
+            // whose shutter cannot reach anything. The examples are what is left.
+            <a href="#/gallery" className="btn btn-primary btn-block">
+              See the stored examples
+            </a>
+          ) : (
+            <a href="#/" className="btn btn-primary btn-block">
+              Take another photograph
+            </a>
+          )}
         </Card>
       </div>
     );
   }
 
   const p = load.prediction;
+  const stored = load.stored;
+  /**
+   * What the overlay draws on.
+   *
+   * `heldFor` first - that is this session's own photograph and the only one that is certainly
+   * right. For a stored example there is a second candidate: the bundled PNG the answer was
+   * computed from, which is a real request and can fail with no network. It is *offered* rather than
+   * promised, and `Overlay` now reports a src it could not load instead of leaving a blank canvas.
+   * After 16.3.1 precaches `examples/`, this stops being a gamble.
+   */
+  const photograph = held ?? (stored ? `examples/${stored.file}` : null);
 
   return (
     <div className="scroll">
       <div className="page stack">
         <header className="stack-sm">
+          {stored ? <Stored cached={stored} /> : null}
           <div className="row wrap" style={{ gap: "var(--sp-2)" }}>
             <TrustPill
               ok={p.ok}
@@ -179,17 +222,27 @@ export function Result({ id }: { id: string }) {
                     <i /> reading order
                   </span>
                 </div>
-                <Selected prediction={p} id={selected} onCorrect={() => setCorrecting(true)} />
+                <Selected
+                  prediction={p}
+                  id={selected}
+                  stored={!!stored}
+                  onCorrect={() => setCorrecting(true)}
+                />
               </>
             ) : null}
           </div>
         ) : tab === "graph" ? (
           <div className="stack-sm">
             <Graph ir={p.ir} traversal={p.traversal} selected={selected} onSelect={setSelected} />
-            <Selected prediction={p} id={selected} onCorrect={() => setCorrecting(true)} />
+            <Selected
+              prediction={p}
+              id={selected}
+              stored={!!stored}
+              onCorrect={() => setCorrecting(true)}
+            />
           </div>
         ) : (
-          <Code prediction={p} />
+          <Code prediction={p} stored={!!stored} />
         )}
 
         <Doubts
@@ -216,6 +269,51 @@ export function Result({ id }: { id: string }) {
   );
 }
 
+/**
+ * Phase 16.2.10 - "this came out of the bundle", above everything else on the screen.
+ *
+ * Above the trust pill, which is the only place it can go. Every other panel here answers *how much
+ * to trust this reading*, and all of them are meaningless if the reader does not first know that the
+ * reading is not of anything they did. A stored answer mistaken for a live one is the app claiming
+ * to have read a page it never saw.
+ *
+ * It names the date and the backend version because a cache with no provenance is worse than no
+ * cache: "an example" invites the question "of what, and when", and the answer is in the bundle
+ * already - `scripts/make_offline_examples.py` records both.
+ */
+function Stored({ cached }: { cached: Cached }) {
+  return (
+    <Card
+      style={{
+        padding: "var(--sp-4)",
+        borderColor: "color-mix(in srgb, var(--degraded) 34%, transparent)",
+        background: "var(--degraded-soft)",
+      }}
+      className="stack-sm"
+    >
+      <div className="row" style={{ gap: "var(--sp-2)" }}>
+        <Pill tone="degraded">stored answer</Pill>
+        <span className="grow" />
+        <span className="dim num" style={{ fontSize: 11.5 }}>
+          {CAPTURED}
+        </span>
+      </div>
+      <strong style={{ fontSize: 14 }}>
+        Nothing was read just now — this is the bundled {cached.name.toLowerCase()} example.
+      </strong>
+      <p className="muted" style={{ fontSize: 13.5 }}>
+        The server could not be reached, so the app is showing the answer it shipped with. It is a
+        real run of the real pipeline over <span className="mono">{cached.file}</span> on {CAPTURED},
+        against backend {CAPTURED_BY} — including the parts it got wrong, which are not tidied up
+        here.
+      </p>
+      <p className="dim" style={{ fontSize: 12.5 }}>
+        Running the program and correcting a label both need the server and are switched off below.
+      </p>
+    </Card>
+  );
+}
+
 /** The last stage that reported a reason - which for a stopped run is the one that stopped it. */
 function reasonFor(prediction: Prediction): string | null {
   const withReason = [...prediction.stages].reverse().find((stage) => stage.reason);
@@ -232,10 +330,13 @@ function reasonFor(prediction: Prediction): string | null {
 function Selected({
   prediction,
   id,
+  stored,
   onCorrect,
 }: {
   prediction: Prediction;
   id: string | null;
+  /** 16.2.10: this reading came from the bundle, so there is no server to send a correction to. */
+  stored?: boolean;
   onCorrect: () => void;
 }) {
   if (!id) {
@@ -278,9 +379,23 @@ function Selected({
           ? "No arrows touch this shape."
           : `${edges.length} arrow${edges.length === 1 ? " touches" : "s touch"} this shape.`}
       </p>
-      <Button block onClick={onCorrect}>
-        {node.text ? "Fix this label" : "Say what is here"}
-      </Button>
+      {stored ? (
+        // Disabled *and* explained. A live-looking button that answers with a network error is the
+        // failure this row exists to remove, and a button that silently does nothing is worse.
+        <>
+          <Button block disabled>
+            {node.text ? "Fix this label" : "Say what is here"}
+          </Button>
+          <p className="dim" style={{ fontSize: 12 }}>
+            A correction is written to the server&apos;s log (16.1.5) and the code is re-emitted
+            there, so there is nothing to send this to while it is offline.
+          </p>
+        </>
+      ) : (
+        <Button block onClick={onCorrect}>
+          {node.text ? "Fix this label" : "Say what is here"}
+        </Button>
+      )}
     </Card>
   );
 }

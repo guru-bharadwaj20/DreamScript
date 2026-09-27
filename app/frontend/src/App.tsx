@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { definitelyOffline, watchOnline } from "./lib/offline";
 import { type Route, parse, watch } from "./lib/route";
 import {
   type Theme,
@@ -45,8 +46,22 @@ export default function App() {
    * the alternative is stashing megabytes in IndexedDB to survive a gesture nobody made.
    */
   const [staged, setStaged] = useState<Blob | null>(null);
+  /**
+   * 16.2.10: whether the operating system says there is no route.
+   *
+   * Global because it changes what *every* screen can honestly offer, not because it is
+   * convenient - this client holds no model, so with no network there is no product, only the five
+   * stored answers. A strip at the top is the one place that fact belongs: the alternative is each
+   * screen discovering it separately by watching a request fail, which is a spinner first and an
+   * explanation second.
+   *
+   * Read in the `false` direction only. See `lib/offline.ts` - `navigator.onLine === true` says an
+   * interface is up and nothing more.
+   */
+  const [offline, setOffline] = useState(definitelyOffline);
 
   useEffect(() => watch(setRoute), []);
+  useEffect(() => watchOnline((online) => setOffline(!online)), []);
 
   useEffect(() => {
     // Cleared on the way out. Without this, tapping the camera later re-sends the photograph that
@@ -73,6 +88,9 @@ export default function App() {
 
   return (
     <>
+      {/* Above the bar, and drawn in the camera view too - a capture that cannot be uploaded is
+          exactly where someone needs to be told, and that screen has no bar to hang it under. */}
+      {offline ? <OfflineStrip inCamera={bare} /> : null}
       {bare ? null : (
       <header className="bar safe-top safe-x">
         <a href="#/" className="row" style={{ textDecoration: "none", gap: "var(--sp-2)" }}>
@@ -110,6 +128,32 @@ export default function App() {
         )}
       </main>
     </>
+  );
+}
+
+/**
+ * Phase 16.2.10 - one line, the moment the network goes.
+ *
+ * It says what is gone and what is left, in that order, and the second half is a link rather than a
+ * consolation: with no network the five stored examples are the entire remaining app, so the strip
+ * that reports the loss is also the way to the only thing still working.
+ *
+ * Orange - `--degraded` - and not rose. The app has not stopped and nothing failed; it is running on
+ * a lower rung, which is precisely what that colour means everywhere else in this client. Using the
+ * `stopped` rose here would make "no wifi" look like "the pipeline died".
+ */
+function OfflineStrip({ inCamera }: { inCamera: boolean }) {
+  return (
+    <div className={`offline-strip${inCamera ? " is-over" : ""} safe-top safe-x`} role="status">
+      <Glyph d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 13a9 9 0 0 1 3.2-2.1m7.6.1A9 9 0 0 1 19 13M2 8.8A15 15 0 0 1 8 5.4m8 .1a15 15 0 0 1 6 3.3M12 20h.01" size={16} />
+      <span className="grow">
+        <strong>No network.</strong> Nothing can be read while this is showing — this app holds no
+        models of its own.
+      </span>
+      <a href="#/gallery" className="offline-strip-go">
+        Stored examples
+      </a>
+    </div>
   );
 }
 

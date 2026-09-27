@@ -72,3 +72,25 @@
   place-items: center;
   width: 24px;
 }
+
+/* 16.2.10: the thumbnail that is not in the cache.
+ *
+ * The same box, the same corner radius, the same place in the row - so a card whose picture is
+ * missing is still a composed card rather than a fault. Chrome's broken-image icon in this slot was
+ * the first offline screenshot's worst moment: five of them, with the alt text spilling out, on the
+ * one screen that is meant to still work. The answer behind each card was perfectly intact.
+ *
+ * Deliberately *not* white like the loaded thumbnail. A white rectangle with a faint glyph reads as
+ * a picture that has not finished loading and invites waiting; this reads as a slot with nothing in
+ * it, which is what it is. */
+.example-thumb.is-missing {
+  width: 92px;
+  height: 69px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink-3);
+}

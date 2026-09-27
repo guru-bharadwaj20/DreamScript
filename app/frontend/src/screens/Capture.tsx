@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Glyph } from "../App";
 import { type Health, ApiError, api } from "../lib/api";
+import { definitelyOffline, looksOffline, watchOnline } from "../lib/offline";
 import { type PickError, accept, explainPick, isPicked } from "../lib/pick";
 import { go } from "../lib/route";
 import { Card, Pill } from "../ui";
@@ -27,7 +28,14 @@ import { Card, Pill } from "../ui";
 type Probe =
   | { state: "checking" }
   | { state: "up"; health: Health }
-  | { state: "down"; detail: string };
+  /**
+   * 16.2.10 splits this in two, because the two have different fixes and different sentences.
+   *
+   * `offline` means nothing reached anything: the answer is a network, and the only thing this app
+   * can still do is show the stored examples. Without the flag, a phone in a lift got "is it running
+   * on port 3000?" - a sentence that sends someone to check a server that is perfectly fine.
+   */
+  | { state: "down"; detail: string; offline: boolean };
 
 export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void }) {
   const [probe, setProbe] = useState<Probe>({ state: "checking" });
@@ -53,23 +61,46 @@ export function Capture({ onStaged }: { onStaged: (blob: Blob | null) => void })
     [onStaged],
   );
 
+  /**
+   * The probe, re-run when the browser says the network came back.
+   *
+   * `nonce` rather than a function called from two places: the effect already owns the `live` flag
+   * that stops a late answer overwriting a newer one, and a second caller would need its own copy of
+   * that. Bumping a number re-runs the effect and the existing guard covers the race.
+   */
+  const [nonce, setNonce] = useState(0);
+  useEffect(() => watchOnline((online) => online && setNonce((n) => n + 1)), []);
+
   useEffect(() => {
+    // Skipped when the operating system says there is no route: the request cannot succeed, and
+    // spending a second on it before saying so is a spinner in place of an answer.
+    if (definitelyOffline()) {
+      setProbe({
+        state: "down",
+        offline: true,
+        detail: "there is no network connection",
+      });
+      return;
+    }
     let live = true;
     api
       .health(true)
       .then((health) => live && setProbe({ state: "up", health }))
       .catch((error: unknown) => {
         if (!live) return;
+        const offline = looksOffline(error);
         const detail =
           error instanceof ApiError
             ? error.message
-            : "the app backend did not answer - is it running on port 3000?";
-        setProbe({ state: "down", detail });
+            : offline
+              ? "nothing answered - the request did not leave this device"
+              : "the app backend did not answer - is it running on port 3000?";
+        setProbe({ state: "down", detail, offline });
       });
     return () => {
       live = false;
     };
-  }, []);
+  }, [nonce]);
 
   return (
     <div className="scroll">
@@ -191,15 +222,40 @@ function ServerStatus({ probe }: { probe: Probe }) {
 
   if (probe.state === "down") {
     return (
-      <Card className="status" style={{ borderColor: "color-mix(in srgb, var(--stopped) 30%, transparent)" }}>
-        <span className="status-dot" data-state="down" />
-        <span className="grow">
-          <strong>The app backend is not answering.</strong>
-          <br />
-          <span className="dim mono" style={{ fontSize: 12 }}>
-            {probe.detail}
+      <Card
+        className="stack-sm"
+        style={{
+          padding: "var(--sp-4)",
+          borderColor: probe.offline
+            ? "color-mix(in srgb, var(--degraded) 32%, transparent)"
+            : "color-mix(in srgb, var(--stopped) 30%, transparent)",
+        }}
+      >
+        <div className="row">
+          <span className="status-dot" data-state="down" />
+          <span className="grow">
+            <strong>
+              {probe.offline
+                ? "There is no network, so nothing can be read."
+                : "The app backend is not answering."}
+            </strong>
+            <br />
+            <span className="dim mono" style={{ fontSize: 12 }}>
+              {probe.detail}
+            </span>
           </span>
-        </span>
+        </div>
+        {probe.offline ? (
+          <>
+            <p className="muted" style={{ fontSize: 13 }}>
+              The models run on a server and this app holds none of them, so the camera has nowhere
+              to send a photograph. Five answers are bundled and readable as they are.
+            </p>
+            <a href="#/gallery" className="btn btn-primary btn-block">
+              See the stored examples
+            </a>
+          </>
+        ) : null}
       </Card>
     );
   }

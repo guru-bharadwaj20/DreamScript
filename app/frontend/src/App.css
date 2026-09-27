@@ -291,3 +291,70 @@
   background: var(--gold-soft);
   color: var(--gold-text);
 }
+
+/* -- 16.2.10: the offline strip ----------------------------------------------------------------
+ *
+ * Sticky rather than fixed. Fixed would sit over the content and need a matching body offset, which
+ * is one more number to keep in step with a strip that is sometimes not there at all; sticky takes
+ * its own space when it exists and none when it does not.
+ *
+ * `--degraded` and not `--stopped`: the app is running on a lower rung, which is what orange means
+ * everywhere else in this client. Rose would make "no wifi" read as "the pipeline died".
+ */
+.offline-strip {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-bar) + 1);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  /* 48 rather than 40, because the link inside it has to clear the 44px tap floor the screenshot
+     harness enforces - a 36px control on a thin strip is the same defect the segmented control was
+     caught with twice in 16.2.1. The strip is transient; four pixels of it are not worth a control
+     a thumb misses. */
+  min-height: 48px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--degraded);
+  background: var(--degraded-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--degraded) 28%, transparent);
+}
+
+.offline-strip svg {
+  flex: none;
+}
+
+.offline-strip strong {
+  color: var(--text);
+}
+
+/* Over the viewfinder, where there is no bar to sit under and the video is behind it. The preview
+   is dark whatever the theme, so the strip gets its own opaque ground rather than a soft tint that
+   would leave orange text on a photograph. */
+.offline-strip.is-over {
+  position: fixed;
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--degraded) 18%, #0b0b0d);
+  border-bottom-color: color-mix(in srgb, var(--degraded) 45%, transparent);
+}
+
+.offline-strip.is-over strong,
+.offline-strip.is-over .offline-strip-go {
+  color: #fff;
+}
+
+.offline-strip-go {
+  flex: none;
+  /* 44px of height on a 40px strip would grow it; the tap floor is met by the strip's own padding
+     plus this, and the whole strip is not a control - the link is. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--sp-3);
+  border-radius: var(--r-sm);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--degraded);
+  border: 1px solid color-mix(in srgb, var(--degraded) 40%, transparent);
+}
