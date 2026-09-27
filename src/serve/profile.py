@@ -343,7 +343,9 @@ def compare(arms: dict[str, dict[str, Any]]) -> dict[str, Any]:
     gpu, cpu = arms.get("gpu"), arms.get("cpu")
     if not (gpu and cpu and gpu.get("ok") and cpu.get("ok")):
         return {"available": False, "detail": "both arms must have run to be compared"}
-    ratios = {}
+    # Annotated: a stage the GPU arm finished in under a millisecond gets `None` rather than a
+    # number, so the value type is not what the first assignment suggests.
+    ratios: dict[str, float | None] = {}
     for stage, cpu_stats in (cpu.get("stages") or {}).items():
         gpu_stats = (gpu.get("stages") or {}).get(stage)
         if not gpu_stats or not gpu_stats["median"]:
