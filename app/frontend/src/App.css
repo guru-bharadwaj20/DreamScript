@@ -325,7 +325,7 @@
 }
 
 .offline-strip strong {
-  color: var(--text);
+  color: var(--ink);
 }
 
 /* Over the viewfinder, where there is no bar to sit under and the video is behind it. The preview
@@ -357,4 +357,63 @@
   text-decoration: none;
   color: var(--degraded);
   border: 1px solid color-mix(in srgb, var(--degraded) 40%, transparent);
+}
+
+/* -- 16.3.1: a newer shell is cached and waiting ------------------------------------------------
+ *
+ * Gold, not one of the four trust colours. Those four mean something specific about a reading and
+ * spending one of them on "there is an update" would blunt all four; gold is the brand, and an
+ * update is the app talking about itself rather than about a page. */
+.update-strip {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--z-bar) + 1);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--gold-text);
+  background: var(--gold-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--gold) 30%, transparent);
+}
+
+.update-strip svg {
+  flex: none;
+}
+
+.update-strip strong {
+  color: var(--ink);
+}
+
+.update-strip-go {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  /* The same 44px floor the screenshot harness enforces everywhere else. */
+  min-height: 44px;
+  padding-inline: var(--sp-3);
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-weight: 600;
+  color: var(--gold-text);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  cursor: pointer;
+}
+
+/* 16.3.1: the iOS install gesture, which is the feature on the one platform with no install API. */
+.steps {
+  margin: 0;
+  padding-left: 1.25em;
+  display: grid;
+  gap: var(--sp-2);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.steps li::marker {
+  color: var(--gold-text);
+  font-variant-numeric: tabular-nums;
 }

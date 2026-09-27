@@ -40,10 +40,14 @@ DECLARED: dict[str, str] = {
 
 def producers() -> dict[str, list[str]]:
     """`report name -> the modules that write it`, by searching for the filename."""
+    # This file is excluded from its own search. It writes exactly one report - `README.md`, which
+    # is in `DECLARED` - and every other filename in it is an example in a comment, so leaving it in
+    # makes it a claimed producer of whatever it happens to discuss.
     sources = {
         path: path.read_text(encoding="utf-8", errors="ignore")
         for base in ("src", "scripts")
         for path in sorted((ROOT / base).rglob("*.py"))
+        if path != Path(__file__).resolve()
     }
     found: dict[str, list[str]] = {}
     for report in sorted(REPORTS.rglob("*")):
@@ -51,10 +55,27 @@ def producers() -> dict[str, list[str]]:
             continue
         name = report.relative_to(REPORTS).as_posix()
         stem = report.name
+
+        def module(path: Path) -> str:
+            return path.relative_to(ROOT).as_posix().removesuffix(".py").replace("/", ".")
+
+        # A module that writes `reports/drift.json` names the whole filename. That is the reliable
+        # signal and it is taken first.
+        named = [module(path) for path, text in sources.items() if stem in text]
+        if named:
+            found[name] = named
+            continue
+
+        # Only when nothing names the file: a bare-stem match, for a module that builds the path
+        # from a stem and a suffix. It is a wide net - **any prose containing the word** matches -
+        # and it used to run alongside the precise one rather than behind it, which is how
+        # `scripts/make_app_icons.py` came to be listed as the producer of `reports/drift.json` for
+        # saying that two things "cannot drift". Behind the precise match it only ever fires where
+        # the alternative is "no producer", and there it is better than nothing.
         found[name] = [
-            path.relative_to(ROOT).as_posix().removesuffix(".py").replace("/", ".")
+            module(path)
             for path, text in sources.items()
-            if stem in text or (report.stem in text and report.suffix in (".md", ".json"))
+            if report.stem in text and report.suffix in (".md", ".json")
         ]
     return found
 

@@ -33,6 +33,16 @@
       content="Photograph a hand-drawn diagram and get the program it describes. Flowcharts, state machines, ER diagrams, wireframes and circuits."
     />
 
+    <!--
+      16.3.1. `crossorigin` is absent on purpose: the manifest is same-origin and adding it turns
+      the request into a CORS one that a plain static server answers without the headers it then
+      needs. `apple-touch-icon` is here and not only in the manifest because iOS reads this element
+      and ignores the manifest's icons for Add to Home Screen - the same split as the `apple-*` meta
+      tags above.
+    -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
     <!-- An inline SVG favicon, so there is no second request and no binary in the tree. -->
     <link
       rel="icon"

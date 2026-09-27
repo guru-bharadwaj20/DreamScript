@@ -26,7 +26,7 @@ OVERRIDES ?=
 # `make verify-classical` was 'No rule to make target'), and `dummy-run` had a rule and was
 # not declared. tests/test_task_targets.py compares the two sets now.
 .PHONY: app backend clean clean-experiments dag data detect determinism dummy-run env eval features \
-        finetune format frontend help hooks lint ocr parse preprocess profile push repro rl serve stages store test test-fast typecheck \
+        finetune format frontend help hooks icons lint ocr parse preprocess preview profile push repro rl serve stages store test test-fast typecheck bundle \
         train-clf train-ens train-nn verify verify-classical verify-cv verify-genai verify-gpu
 
 ## -- environment -------------------------------------------------------------
@@ -164,6 +164,15 @@ backend:  ## Phase 16.1 - run the app backend (proxies the model server, holds n
 
 frontend:  ## Phase 16.2 - run the client (proxies to the backend on 3000)
 	cd app/frontend && npm run dev
+
+bundle:  ## Phase 16.3.1 - build the installable bundle (hashed assets + the offline shell)
+	cd app/frontend && npm run build
+
+preview:  ## Phase 16.3.1 - serve that bundle on 4173, which is the only place the service worker runs
+	cd app/frontend && npm run preview
+
+icons:  ## Phase 16.3.1 - regenerate the home-screen icons from the favicon's own mark
+	$(PY) scripts/make_app_icons.py
 
 profile:  ## Phase 16.1.5 - GPU and CPU latency for the served pipeline, into reports/
 	$(PY) -m src.serve profile

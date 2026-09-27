@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { definitelyOffline, watchOnline } from "./lib/offline";
+import { registerShell } from "./lib/pwa";
 import { type Route, parse, watch } from "./lib/route";
 import {
   type Theme,
@@ -59,9 +60,23 @@ export default function App() {
    * interface is up and nothing more.
    */
   const [offline, setOffline] = useState(definitelyOffline);
+  /**
+   * 16.3.1: a newer shell has installed and is waiting for this page to stand aside.
+   *
+   * Offered rather than taken. `sw.js` deliberately does not `skipWaiting` on its own, because a
+   * worker that takes over immediately swaps the asset cache under a page that is already running -
+   * and the running page then requests a chunk from a build that has just been deleted, which is a
+   * 404 from its own origin on a screen that was working a second ago.
+   */
+  const [update, setUpdate] = useState(false);
 
   useEffect(() => watch(setRoute), []);
   useEffect(() => watchOnline((online) => setOffline(!online)), []);
+
+  // Registered once, for the life of the document. The handle is kept in a ref-like closure rather
+  // than in state because nothing renders from it - only from the boolean it sets.
+  const [shell] = useState(registerShell);
+  useEffect(() => shell.onUpdate(() => setUpdate(true)), [shell]);
 
   useEffect(() => {
     // Cleared on the way out. Without this, tapping the camera later re-sends the photograph that
@@ -91,6 +106,7 @@ export default function App() {
       {/* Above the bar, and drawn in the camera view too - a capture that cannot be uploaded is
           exactly where someone needs to be told, and that screen has no bar to hang it under. */}
       {offline ? <OfflineStrip inCamera={bare} /> : null}
+      {update ? <UpdateStrip onUpdate={() => shell.update()} /> : null}
       {bare ? null : (
       <header className="bar safe-top safe-x">
         <a href="#/" className="row" style={{ textDecoration: "none", gap: "var(--sp-2)" }}>
@@ -153,6 +169,30 @@ function OfflineStrip({ inCamera }: { inCamera: boolean }) {
       <a href="#/gallery" className="offline-strip-go">
         Stored examples
       </a>
+    </div>
+  );
+}
+
+/**
+ * Phase 16.3.1 - a newer version is cached and one tap takes it.
+ *
+ * Gold rather than orange, because this is not a degradation and nothing is wrong: the four
+ * trust colours mean something specific in this app and spending one of them on "there is an
+ * update" would blunt all four. Gold is the brand, and an update is the app talking about itself.
+ *
+ * It does not reload on its own. An app that reloads underneath someone is an app that throws away
+ * the correction they were half way through typing.
+ */
+function UpdateStrip({ onUpdate }: { onUpdate: () => void }) {
+  return (
+    <div className="update-strip safe-x" role="status">
+      <Glyph d="M4 12a8 8 0 0 1 13.7-5.6L20 8m0-4v4h-4m4 4a8 8 0 0 1-13.7 5.6L4 16m0 4v-4h4" size={16} />
+      <span className="grow">
+        <strong>A newer version is ready.</strong> It will load when you reload.
+      </span>
+      <button className="update-strip-go" onClick={onUpdate}>
+        Reload
+      </button>
     </div>
   );
 }

@@ -1,0 +1,50 @@
+{
+  "name": "DreamScript — sketch to code",
+  "short_name": "DreamScript",
+  "description": "Photograph a hand-drawn diagram and get the program it describes. Flowcharts, state machines, ER diagrams, wireframes and circuits.",
+  "id": "/",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#08080a",
+  "theme_color": "#08080a",
+  "categories": ["productivity", "developer", "utilities"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Photograph a sketch",
+      "short_name": "Camera",
+      "url": "#/camera",
+      "description": "Open the viewfinder straight away"
+    },
+    {
+      "name": "Bundled examples",
+      "short_name": "Examples",
+      "url": "#/gallery",
+      "description": "Five sketches that work without a network"
+    }
+  ]
+}

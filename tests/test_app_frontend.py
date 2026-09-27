@@ -594,3 +594,210 @@ def test_the_offline_bundle_is_regenerable_and_says_so():
     bundle = offline_bundle()
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", bundle["generated"]), bundle["generated"]
     assert bundle["backend"], "no backend version recorded"
+
+
+# == 16.3.1: the installable build =============================================================
+#
+# A service worker is the one piece of a web app that can make a site permanently broken for a
+# person who already visited it - a bad cache outlives the deploy that caused it - so the claims
+# about it are checked here rather than left to a browser pass that only runs when somebody
+# remembers. What a browser has to answer (does it install, does it start with no network) is
+# verified against `vite preview` and recorded in the plan; what is checkable as text is here.
+
+
+def manifest() -> dict:
+    return json.loads(read("public/manifest.webmanifest"))
+
+
+def png_size(path) -> tuple[int, int]:
+    """Width and height from a PNG's IHDR, without decoding it or importing an image library."""
+    header = path.read_bytes()[:24]
+    assert header[:8] == b"\x89PNG\r\n\x1a\n", f"{path} is not a PNG"
+    return (
+        int.from_bytes(header[16:20], "big"),
+        int.from_bytes(header[20:24], "big"),
+    )
+
+
+def test_the_manifest_carries_what_chrome_requires_to_offer_an_install():
+    """Name, display, start_url, and a 192 and a 512.
+
+    Chrome's installability bar, in the fields a JSON file can hold. Whether the browser actually
+    offers the prompt is a browser question and is answered in one - `beforeinstallprompt` fires on
+    the built bundle - but a manifest that fails these cannot pass that no matter what else is true.
+    """
+    document = manifest()
+    assert document["name"] and document["short_name"]
+    assert document["display"] == "standalone"
+    assert document["start_url"] and document["scope"]
+    sizes = {icon["sizes"] for icon in document["icons"]}
+    assert {"192x192", "512x512"} <= sizes, sizes
+
+
+def test_the_manifest_paths_are_relative_so_the_app_can_be_served_from_a_subpath():
+    """`start_url` and `scope` are resolved against the manifest's own URL.
+
+    16.3.2 serves this bundle from the backend, which may not be at the root of an origin. An
+    absolute `/` here would send an installed app to the wrong place the first time it is mounted
+    anywhere else, and the person would have no way to tell why.
+    """
+    document = manifest()
+    for field in ("start_url", "scope"):
+        assert not document[field].startswith("/"), f"{field} is absolute"
+    for icon in document["icons"]:
+        assert not icon["src"].startswith("/"), icon["src"]
+
+
+def test_there_is_a_maskable_icon_and_it_is_not_the_same_file_as_the_square_one():
+    """Android applies its own mask, and a maskable icon drawn like a normal one loses its edges.
+
+    Declaring one file as `purpose: "any maskable"` is the usual shortcut and it is the bug: the
+    mark has to be smaller in the maskable one to survive a circle, and it must not be smaller in
+    the square one or that comes out mostly empty.
+    """
+    document = manifest()
+    maskable = [icon for icon in document["icons"] if "maskable" in icon.get("purpose", "")]
+    assert maskable, "no maskable icon"
+    plain = {icon["src"] for icon in document["icons"] if icon.get("purpose") == "any"}
+    assert not (plain & {icon["src"] for icon in maskable}), "one file declared as both purposes"
+
+
+def test_every_declared_icon_exists_at_the_size_it_claims():
+    """A manifest that names a 512 and ships a 192 fails installability with no visible symptom."""
+    for icon in manifest()["icons"]:
+        path = FRONTEND / "public" / icon["src"]
+        assert path.is_file(), icon["src"]
+        width, height = png_size(path)
+        assert f"{width}x{height}" == icon["sizes"], f"{icon['src']} is {width}x{height}"
+
+
+def test_the_apple_touch_icon_is_square_and_linked_from_the_document():
+    """iOS reads the `<link>` and ignores the manifest's icons for Add to Home Screen.
+
+    It also applies its own squircle, so this one is deliberately *not* pre-rounded - a rounded PNG
+    under an iOS mask shows black corners inside the rounded shape iOS then draws.
+    """
+    path = FRONTEND / "public" / "icons" / "apple-touch-icon.png"
+    assert png_size(path) == (180, 180)
+    assert 'rel="apple-touch-icon"' in read("index.html")
+    assert 'rel="manifest"' in read("index.html")
+
+
+def test_the_service_worker_never_caches_a_route_the_client_calls():
+    """The most important line in `sw.js`, joined to the two other descriptions of the same set.
+
+    A cached `GET /predict/{id}` would serve the reading from before a correction somebody had just
+    made - silently, one layer below any screen that could label it, which is exactly what 16.2.10
+    refused when it put the offline cache *after* the request rather than in front of it.
+    """
+    worker = read("public/sw.js")
+    never = re.search(r"const NEVER_CACHE = \[(.*?)\];", worker, re.S)
+    assert never, "no NEVER_CACHE list in sw.js"
+    listed = set(re.findall(r'"(/[^"]*)"', never.group(1)))
+
+    proxied = set(
+        re.findall(
+            r'"(/[^"]*)"',
+            re.search(r"const ROUTES = \[(.*?)\];", read("vite.config.ts"), re.S).group(1),
+        )
+    )
+    assert listed == proxied, listed ^ proxied
+
+    # And every path `api.ts` actually fetches is covered by one of them.
+    for path in re.findall(
+        r'fetch\(\s*[`"](/[a-z0-9_.]+)', without_comments(read("src/lib/api.ts"))
+    ):
+        assert any(path == route or path.startswith(route + "/") for route in listed), path
+
+
+def test_the_worker_does_not_take_over_on_its_own():
+    """A worker that calls `skipWaiting` on install swaps the asset cache under a running page.
+
+    The page then requests a chunk from a build that has just been deleted: a 404 from its own
+    origin, on a screen that was working a second ago. It happens only on a deploy, which is to say
+    only to people who are already using it.
+    """
+    worker = without_comments(read("public/sw.js"))
+    assert "skipWaiting" in worker, "no update path at all"
+    # The only call site is behind the message from the page.
+    for line in worker.splitlines():
+        if "skipWaiting" in line:
+            assert "event.data" in line, f"unconditional skipWaiting: {line.strip()}"
+
+
+def test_the_precache_list_is_filled_in_from_what_was_actually_built():
+    """A committed list of asset names cannot include a content hash decided by the build.
+
+    The plugin substitutes it, and fails the build if the placeholders are gone - a silent no-op
+    there ships a worker that precaches one file, which is an offline shell that is not one.
+    """
+    worker = read("public/sw.js")
+    assert 'const BUILD = "dev";' in worker
+    assert 'const PRECACHE = ["index.html"];' in worker
+    config = read("vite.config.ts")
+    assert "offlineShell()" in config
+    assert "did not contain the BUILD/PRECACHE placeholders" in config
+    # Source maps are 700 kB and are for a developer with a network; the worker must not cache
+    # itself, or it serves its own previous version out of its own cache forever.
+    assert '.endsWith(".map")' in config
+    assert '"sw.js"' in config
+
+
+def test_the_build_id_is_taken_from_the_files_contents_and_not_only_their_names():
+    """A build that changed `index.html` and nothing else produced a byte-identical `sw.js`.
+
+    Vite's asset names are content hashes, so a changed module gets a new name - but `index.html`
+    keeps its name forever, and a build id derived from names alone did not move. A byte-identical
+    worker is not an update as far as the browser is concerned, so that generation would never have
+    activated. Caught by running two real builds against an open page.
+    """
+    config = read("vite.config.ts")
+    plugin = config[config.index("function offlineShell()") :]
+    assert "readFileSync(join(out, file))" in plugin, "the build id ignores file contents"
+
+
+def test_the_worker_is_only_registered_in_a_production_build():
+    """A service worker in front of Vite's dev server caches a module graph it is rewriting.
+
+    The symptom is an edit that does not appear, sometimes, on one machine - which costs far more
+    than the worker is worth in development, where there are no hashed assets to precache anyway.
+    """
+    pwa = without_comments(read("src/lib/pwa.ts"))
+    assert "import.meta.env.PROD" in pwa
+    assert 'navigator.serviceWorker\n      .register("sw.js"' in pwa or '.register("sw.js"' in pwa
+
+
+def test_registration_survives_a_load_event_that_has_already_fired():
+    """The bug the browser pass found: the worker was never registered in the built app.
+
+    `createRoot().render()` does not render synchronously - React 18 schedules the initial render -
+    so `registerShell()` can first run from a task that executes *after* the document has finished
+    loading. A bare `addEventListener("load", ...)` then subscribes to an event that has already
+    happened, silently and permanently.
+    """
+    pwa = without_comments(read("src/lib/pwa.ts"))
+    assert 'document.readyState === "complete"' in pwa
+
+
+def test_the_reload_after_an_update_is_guarded_against_looping():
+    """`controllerchange` can fire more than once, and an unguarded reload in it is a reload loop.
+
+    Which is one of the very few faults a web page can have that a person genuinely cannot get out
+    of - every attempt to read the page starts the reload again.
+    """
+    pwa = without_comments(read("src/lib/pwa.ts"))
+    assert "refreshing" in pwa and "controllerchange" in pwa
+
+
+def test_the_icons_are_generated_from_the_mark_the_favicon_draws():
+    """One mark, everywhere: the tab, the install prompt and the home screen.
+
+    A brand that differs between the tab and the home screen is one a person cannot recognise in
+    either place - and hand-drawn icons in a repository are the files nobody can regenerate.
+    """
+    script = ROOT / "scripts" / "make_app_icons.py"
+    assert script.is_file()
+    source = script.read_text(encoding="utf-8")
+    # The favicon's path, in the script that renders it, so the two cannot drift.
+    assert "M9 9h8a7 7 0 0 1 0 14H9z" in source
+    assert "M9 9h8a7 7 0 0 1 0 14H9z" in read("index.html")

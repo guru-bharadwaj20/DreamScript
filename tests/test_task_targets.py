@@ -12,7 +12,9 @@ module or the package command on the other end is real - without running any of 
 
 from __future__ import annotations
 
+import io
 import re
+import tokenize
 from pathlib import Path
 
 import pytest
@@ -137,6 +139,24 @@ def test_the_app_readme_describes_the_tree_that_is_actually_there():
         assert f"app/{child}" in text, f"app/{child} exists and the README does not mention it"
 
 
+def _code_only(source: str) -> str:
+    """Python source with its comments and string literals removed.
+
+    `tokenize` rather than a regular expression, because the thing being stripped is a docstring -
+    a string literal that spans lines and contains quotes - and a regex over those is the classic
+    way to delete half a file by accident.
+    """
+    out: list[str] = []
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(source).readline):
+            if token.type in (tokenize.COMMENT, tokenize.STRING):
+                continue
+            out.append(token.string)
+    except (tokenize.TokenError, IndentationError):  # pragma: no cover - a file that will not parse
+        return source
+    return " ".join(out)
+
+
 def test_the_backend_holds_no_model():
     """The architecture claim, checked as text rather than trusted.
 
@@ -145,7 +165,12 @@ def test_the_backend_holds_no_model():
     torch` in this tree would make that false while every test still passed.
     """
     for path in sorted((ROOT / "app").rglob("*.py")):
-        source = path.read_text(encoding="utf-8")
+        # Comments and docstrings stripped first. This test failed against `app/backend/correct.py`,
+        # whose module docstring *explains* that there is "no torch, no transformers, no
+        # ultralytics, no cv2" in it - so the file was failing a check by stating the very fact the
+        # check exists to enforce. The same lesson 16.2.1 learned twice on the client side: a test a
+        # well-documented file cannot pass is a test that punishes documentation.
+        source = _code_only(path.read_text(encoding="utf-8"))
         for banned in ("import torch", "from torch", "ultralytics", "transformers"):
             assert banned not in source, f"{path.relative_to(ROOT)} imports {banned}"
 

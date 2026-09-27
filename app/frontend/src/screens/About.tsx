@@ -11,6 +11,10 @@
  * grid usually is.
  */
 
+import { useCallback, useEffect, useState } from "react";
+
+import { CACHED, CAPTURED } from "../lib/offline";
+import { type Install, install, installability, watchInstall } from "../lib/pwa";
 import { type Theme, resolvedTheme } from "../lib/theme";
 import { Button, Card, Mark, Pill, TrustPill } from "../ui";
 
@@ -64,6 +68,8 @@ export function About({ theme, onTheme }: { theme: Theme; onTheme: (next: Theme)
             <TrustPill ok={false} degraded={false} stoppedAt={null} needsConfirmation />
           </div>
         </Card>
+
+        <InstallCard />
 
         <Card style={{ padding: "var(--sp-5)" }} className="stack-sm">
           <span className="eyebrow">Appearance</span>
@@ -120,12 +126,107 @@ export function About({ theme, onTheme }: { theme: Theme; onTheme: (next: Theme)
         </Card>
 
         <div className="row" style={{ justifyContent: "center", paddingTop: "var(--sp-2)" }}>
-          <Pill tone="plain">app 16.2</Pill>
+          <Pill tone="plain">app 16.3</Pill>
           <a href="#/" className="btn btn-quiet">
             Back
           </a>
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Phase 16.3.1 - put it on the home screen, and the three different things that means.
+ *
+ * The button is only shown when the browser has actually offered a prompt, because `prompt()` can
+ * only be called on a saved `beforeinstallprompt` and a button that does nothing is worse than no
+ * button. On iOS there is never such an event and never will be, so that platform gets the gesture
+ * written out instead - which is the case most people reading this screen on a phone will be in.
+ *
+ * The card also says what installing *gets* you, because "install" on a web app is a word people
+ * have learned to ignore. Here it is concrete: full screen with no browser chrome over the
+ * viewfinder, and the five examples readable with no network at all.
+ */
+function InstallCard() {
+  const [state, setState] = useState<Install>(installability);
+  const [outcome, setOutcome] = useState<string | null>(null);
+
+  useEffect(() => watchInstall(() => setState(installability())), []);
+
+  const ask = useCallback(async () => {
+    const answer = await install();
+    setState(installability());
+    setOutcome(
+      answer === "accepted"
+        ? "Installed. Look for the gold D on your home screen."
+        : answer === "dismissed"
+          ? "Not installed — the browser will offer again later."
+          : null,
+    );
+  }, []);
+
+  if (state.state === "installed") {
+    return (
+      <Card style={{ padding: "var(--sp-5)" }} className="stack-sm">
+        <span className="eyebrow">Installed</span>
+        <p className="muted" style={{ fontSize: 14 }}>
+          This is running from your home screen, full screen, with no browser chrome over the
+          viewfinder. The shell is cached, so it opens whether or not there is a network.
+        </p>
+        <p className="dim" style={{ fontSize: 12.5 }}>
+          {CACHED.length} stored example readings are bundled with it, captured on {CAPTURED}.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card style={{ padding: "var(--sp-5)" }} className="stack-sm">
+      <span className="eyebrow">Put it on your home screen</span>
+      <p className="muted" style={{ fontSize: 14 }}>
+        It opens full screen, so nothing sits over the viewfinder, and the app itself loads with no
+        network — the {CACHED.length} bundled examples are readable in flight mode. Photographing a
+        page still needs a server; that part cannot be cached.
+      </p>
+
+      {state.state === "ready" ? (
+        <Button variant="primary" block onClick={ask}>
+          Install DreamScript
+        </Button>
+      ) : state.state === "manual" ? (
+        <>
+          {/* Safari fires no `beforeinstallprompt` and there is no API to ask. The gesture is the
+              feature on this platform, so it is written out rather than hinted at. */}
+          <ol className="steps">
+            <li>
+              Tap <strong>Share</strong> in Safari&apos;s toolbar
+            </li>
+            <li>
+              Choose <strong>Add to Home Screen</strong>
+            </li>
+            <li>
+              Tap <strong>Add</strong>
+            </li>
+          </ol>
+          <p className="dim" style={{ fontSize: 12.5 }}>
+            iOS has no install button for a web app — only this gesture. It has to be Safari;
+            Chrome on iOS cannot do it.
+          </p>
+        </>
+      ) : (
+        <p className="dim" style={{ fontSize: 12.5 }}>
+          Your browser has not offered an install prompt for this page. On Android, Chrome offers
+          one after a visit or two; on a desktop it is usually an icon at the right-hand end of the
+          address bar.
+        </p>
+      )}
+
+      {outcome ? (
+        <p className="dim" style={{ fontSize: 12.5 }}>
+          {outcome}
+        </p>
+      ) : null}
+    </Card>
   );
 }

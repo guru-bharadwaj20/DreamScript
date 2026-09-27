@@ -101,6 +101,12 @@ $Tasks = [ordered]@{
                                        @("-m", "src.eval", "master"));
                              Help = "Phase 14 - the master table and everything it reads" }
     "frontend"          = @{ Npm = "app/frontend";      Help = "Phase 16.2 - run the client (Vite, port 5173)" }
+    "bundle"            = @{ Npm = "app/frontend"; NpmScript = "build";
+                             Help = "Phase 16.3.1 - build the installable bundle (hashed assets + offline shell)" }
+    "preview"           = @{ Npm = "app/frontend"; NpmScript = "preview";
+                             Help = "Phase 16.3.1 - serve the bundle on 4173, where the service worker runs" }
+    "icons"             = @{ Script = "scripts/make_app_icons.py";
+                             Help = "Phase 16.3.1 - regenerate the home-screen icons" }
     "profile"           = @{ Cmd = @("-m", "src.serve", "profile");
                              Help = "Phase 16.1.5 - GPU and CPU latency for the served pipeline" }
     "serve"             = @{ Cmd = @("-m", "uvicorn", "src.serve.api:app", "--host", "127.0.0.1", "--port", "8000");
@@ -184,9 +190,18 @@ if ($spec.CleanRuns) {
 }
 
 if ($spec.Npm) {
-    # The client is a node project; `$Py` has nothing to do with it. `npm run dev` in its directory.
-    Write-Host "> npm run dev  ($($spec.Npm))" -ForegroundColor DarkGray
-    if (-not $DryRun) { Push-Location $spec.Npm; try { & npm run dev } finally { Pop-Location } }
+    # The client is a node project; `$Py` has nothing to do with it. An npm script in its directory.
+    # 16.3.1 added two more than `dev`, so the script is named rather than assumed.
+    $script = if ($spec.NpmScript) { $spec.NpmScript } else { "dev" }
+    Write-Host "> npm run $script  ($($spec.Npm))" -ForegroundColor DarkGray
+    if (-not $DryRun) { Push-Location $spec.Npm; try { & npm run $script } finally { Pop-Location } }
+    exit 0
+}
+
+if ($spec.Script) {
+    # A standalone script under scripts/, run with the project interpreter.
+    Write-Host "> $Py $($spec.Script)" -ForegroundColor DarkGray
+    if (-not $DryRun) { & $Py $spec.Script }
     exit 0
 }
 
