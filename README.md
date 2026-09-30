@@ -2,6 +2,33 @@
 
 Converting rough hand-drawn diagrams into executable, runnable code.
 
+## Download the app
+
+**[⬇ dreamscript-app-16.3.0.zip](https://github.com/guru-bharadwaj20/DreamScript/releases/download/v16.3.0/dreamscript-app-16.3.0.zip)**
+(158 kB) · [SHA-256](https://github.com/guru-bharadwaj20/DreamScript/releases/download/v16.3.0/dreamscript-app-16.3.0.zip.sha256)
+· [all releases](https://github.com/guru-bharadwaj20/DreamScript/releases/latest)
+· [install guide](docs/install.md) · [what happens to your photo](docs/privacy.md)
+
+It is an installable web app (a PWA), not an APK, so the same download runs on Android, iOS and a
+desktop browser. Choose "Install" or "Add to Home Screen" and it opens full-screen like a native app.
+
+**It needs a server to read photographs.** The models are 1.3 GB and run in Python, so the app
+uploads the photo to a DreamScript backend and shows what comes back. With no backend it still
+opens and shows five stored example readings, labelled as stored. To run the whole thing on one machine:
+
+```bash
+# in a clone of this repository, after `make env` (see Getting started)
+uvicorn src.serve.api:app --port 8000                       # the model server
+unzip dreamscript-app-16.3.0.zip
+DREAMSCRIPT_BUNDLE=./dreamscript-app python -m uvicorn app.backend.main:app --port 3000
+# then open http://localhost:3000
+```
+
+The phone camera only works over HTTPS or on `localhost`, so a phone on the LAN needs the
+backend behind HTTPS. [docs/install.md](docs/install.md) covers that.
+
+---
+
 Photograph a messy hand-drawn diagram — flowchart, UI wireframe, state machine, ER diagram, or
 circuit — and DreamScript classifies the diagram type, detects its components despite bad
 handwriting and broken arrows, parses it into a semantic graph, and generates runnable code:
@@ -15,6 +42,45 @@ curl -F "image=@page.png" localhost:8000/predict
 **Author:** Guru Bharadwaj
 
 ---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["app/frontend: installable web app (Phase 16)"]
+        CAM["camera / photo picker"] --> DW["dewarp and crop<br/>(in the browser)"]
+    end
+    DW -- "POST /predict/stream<br/>(one upload)" --> BE
+    subgraph Backend["app/backend (16.1)"]
+        BE["id store, SSE relay,<br/>sandboxed /run, /feedback"]
+    end
+    BE -- HTTP --> API
+    subgraph Server["src.serve model server (15.11)"]
+        API["POST /predict"] --> P
+        subgraph P["src.pipeline: eight stages (Phase 13)"]
+            direction LR
+            L[load] --> D["detect<br/>YOLOv8 + arrow pose (9)"]
+            D --> C["classify<br/>type prior, gate at 0.60 (13.3/13.5)"]
+            C --> A["assemble<br/>tracer + TrOCR + HMM roles (10, 9.3, 7.3)"]
+            A --> T["traverse<br/>reading-order DFS / Q-learning (11)"]
+            T --> S["serialise<br/>compact IR text (12.1)"]
+            S --> G["generate<br/>QLoRA 7B or emitter (12)"]
+            G --> V["verify<br/>parse / sandbox (12.3)"]
+        end
+    end
+    V -- "code + IR + per-stage timings" --> BE
+    subgraph Offline["offline, training-time (Phases 1-8, 14, 15)"]
+        DATA["corpus + DVC (1-3)"] --> FEAT["features (4)"] --> CLF["classical / SVM / ensemble<br/>classifiers (5-7)"]
+        DATA --> CLU["clustering (8)"]
+        EVAL["evaluation (14)"]
+        OPS["MLflow, registry, drift (15)"]
+    end
+```
+
+A photograph is uploaded once. Each stage returns either a value or a reason, and the run stops at
+the first stage that has no value (`stopped_at`). Every stage is timed, and the timings stream back
+to the phone as they finish. Below a 0.60 type probability the pipeline asks the user to confirm the
+diagram type instead of generating code.
 
 ## Getting started
 

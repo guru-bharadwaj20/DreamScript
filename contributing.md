@@ -688,7 +688,7 @@ is weaker and is said so.
 
 | # | Task | Detail | Definition of Done | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| 17.1 | Architecture diagram | Full pipeline figure | Figure in README | ❌ |
+| 17.1 | Architecture diagram | Full pipeline figure | Mermaid flowchart under **Architecture** in `README.md`: the client, the app backend and the model server as three processes, and the eight pipeline stages with the phase each one comes from. It is Mermaid rather than a PNG so it renders on GitHub and changes in the same diff as the code it describes | ✅ |
 | 17.2 | Syllabus mapping doc | Explicit Unit 1–4 → phase / file / figure mapping | `docs/syllabus_map.md` | ❌ |
 | 17.3 | Per-unit notebooks | One clean notebook per unit with results and plots | 4 notebooks | ❌ |
 | 17.4 | Model cards | One per shipped model | Complete | ❌ |
@@ -790,5 +790,5 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 14 — Evaluation | 11 | 11 | ✅ |
 | 15 — MLOps | 12 | 12 | ✅ |
 | 16 — Mobile App & Capture | 20 | 19 | ❌ |
-| 17 — Documentation | 10 | 0 | ❌ |
+| 17 — Documentation | 10 | 1 | ❌ |
 | **Total** | **308** | **295** | ❌ |
