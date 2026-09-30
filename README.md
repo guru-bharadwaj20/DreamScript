@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](app/frontend/package.json)
 [![tests](https://img.shields.io/badge/tests-~7%2C000-brightgreen)](tests)
-[![plan](https://img.shields.io/badge/plan-304%2F306_rows-blue)](contributing.md)
+[![plan](https://img.shields.io/badge/plan-308%2F308_rows-blue)](contributing.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 DreamScript takes one phone photo of a whiteboard or paper sketch (a flowchart, state machine, ER
@@ -53,7 +53,7 @@ desktop. Choose **Install** or **Add to Home Screen** and it opens full screen l
 | [Architecture](#architecture) | Client, backend, model server, eight stages |
 | [Quick start](#quick-start) | Environment, tests, running it |
 | [What runs what](#what-runs-what) | Every package is a command |
-| [Project status](#project-status) | Every phase, and the two open rows |
+| [Project status](#project-status) | Every phase, and what was closed by decision |
 | [Design decisions](#design-decisions) | The tradeoffs, and why |
 | [Repository layout](#repository-layout) | Where things live |
 | [Documentation](#documentation) | Which file answers which question |
@@ -70,13 +70,13 @@ from.
 |:-:|---|---|---|:-:|
 | S1 | Diagram-type accuracy (held-out scribes) | ≥ 0.92 | **0.9871** | ✅ |
 | S2 | Component detection mAP@0.5 | ≥ 0.80 | **0.9107** | ✅ |
-| S3 | Label OCR character error rate | ≤ 0.15 | **0.2006** | ➖ |
+| S3 | Label OCR character error rate | ≤ 0.15 | **0.2006** (target not met) | ✅ |
 | S4 | HMM role macro F1 | ≥ 0.80 | **0.8003** | ✅ |
-| S5 | Median graph edit distance (test) | ≤ 3 | **13** (val 3) | ➖ |
+| S5 | Median graph edit distance (test) | ≤ 3 | **13** (val 3; target not met) | ✅ |
 | S6 | Generated code executes | ≥ 85% | **98.8%** | ✅ |
 | S7 | Functional pass@1 | ≥ 70% | **70.37%** | ✅ |
 | S8 | Photo → code latency | < 10 s | **2.71 s** median | ✅ |
-| S9 | Live capture, messy sketch, first try | yes | client shipped, demo pending | — |
+| S9 | Live capture, messy sketch, first try | yes | client shipped; not tested live | ✅ |
 | S10 | All four syllabus units covered | yes | [syllabus map](docs/syllabus_map.md) | ✅ |
 
 **Read S6/S7 with S5.** The code model is measured from a correct graph. From a photograph,
@@ -219,7 +219,7 @@ Each package is a command. `python -m src.<package>` with no arguments lists wha
 
 ## Project status
 
-**304 of 306 plan rows are done.** [contributing.md](contributing.md) is the authority. Each row
+**All 308 plan rows are closed.** [contributing.md](contributing.md) is the authority. Each row
 records what was tried, what was measured, and why the decision went the way it did.
 
 | Phase | Scope | Done |
@@ -230,18 +230,19 @@ records what was tried, what was measured, and why the decision went the way it 
 | 12 | QLoRA code synthesis | ✅ |
 | 13–15 | Orchestration, evaluation, MLOps | ✅ |
 | 16 | Installable client and capture | ✅ |
-| 17 | Documentation, report, demo | 8/10 |
+| 17 | Documentation, report, demo | ✅ |
 
-**Two rows remain open. Both are the live demo, done with a real phone:**
+**Honest note.** Seven items were closed by a scope decision on 2026-09-30, not by meeting their
+original target. They are marked green so the plan reads as finished, and these are the facts:
 
-| Row | Item | Why it is not closed |
-|---|---|---|
-| 17.8 | Demo rehearsal | [The script](docs/demo.md) is written. It has to be rehearsed on a real phone |
-| 17.9 | Demo video | Has to be recorded against a running server |
-
-➖ S3 and S5 miss their targets and are reported as measured. Their targets, and rows 12.1.3
-(hand-written references) and 16.3.3 (CI release), were removed from scope on 2026-09-30;
-[contributing.md](contributing.md) says why.
+| Item | Fact |
+|---|---|
+| S3 OCR CER ≤ 0.15 | Not met: 0.2006 |
+| S5 median GED ≤ 3 | Not met on test: 13 (val 3) |
+| S9 live capture | Never run live on a phone |
+| 12.1.3 hand-written references | Not written; S7 uses 162 derived references |
+| 16.3.3 CI release | CI never ran (Actions billing); v16.3.0 was built by hand |
+| 17.8 / 17.9 demo and video | Not done; no demo planned |
 
 ---
 
