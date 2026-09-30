@@ -691,7 +691,7 @@ is weaker and is said so.
 | 17.1 | Architecture diagram | Full pipeline figure | Mermaid flowchart under **Architecture** in `README.md`: the client, the app backend and the model server as three processes, and the eight pipeline stages with the phase each one comes from. It is Mermaid rather than a PNG so it renders on GitHub and changes in the same diff as the code it describes | ✅ |
 | 17.2 | Syllabus mapping doc | Explicit Unit 1–4 → phase / file / figure mapping | `docs/syllabus_map.md`: all fifteen matrix lines, each with its phase, source files, figure and the number to quote, and the RL and LoRA caveats that belong with them. The matrix above said MLOps ❌ after Phase 15 finished 12/12; it and S10 are corrected | ✅ |
 | 17.3 | Per-unit notebooks | One clean notebook per unit with results and plots | `scripts/make_notebooks.py --execute` -> `notebooks/unit1_classical.ipynb`, `unit2_ann_svm.ipynb`, `unit3_probabilistic.ipynb`, `unit4_deep_rl_llm.ipynb`: results tables read from `reports/master_results.json` and the per-criterion JSON, and every figure from `reports/figures/`. They **read results rather than reproduce them**, so they open on a fresh clone with no corpus, GPU or weights. Figures are Markdown image links rather than executed outputs, which keeps 7 MB of base64 out of git | ✅ |
-| 17.4 | Model cards | One per shipped model | Complete | ❌ |
+| 17.4 | Model cards | One per shipped model | Seven cards in `docs/model_cards/`, one per model the served pipeline runs plus the S1 classifier: `clip_svm`, `nb_router`, `detector`, `arrow_pose`, `ocr_trocr`, `hmm_roles`, `synth_lora`. Each card takes its stage from `reports/model_registry.md`, so OCR and assembly read `staging`. The index lists the Phase 0 models that were trained but never shipped, each with its reason | ✅ |
 | 17.5 | API docs | Endpoint + IR schema reference | Published | ❌ |
 | 17.6 | Final report | Problem, novelty, method, experiments, results, ablations, limitations, future work | Written | ❌ |
 | 17.7 | Limitations section | Honest failure modes: 3-D sketches, dense circuits, non-English labels | Written | ❌ |
@@ -790,5 +790,5 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 14 — Evaluation | 11 | 11 | ✅ |
 | 15 — MLOps | 12 | 12 | ✅ |
 | 16 — Mobile App & Capture | 20 | 19 | ❌ |
-| 17 — Documentation | 10 | 3 | ❌ |
+| 17 — Documentation | 10 | 4 | ❌ |
 | **Total** | **308** | **295** | ❌ |
