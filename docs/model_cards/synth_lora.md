@@ -35,7 +35,8 @@ IR→code pairs from `src/llm/pairs.py`; 176 validation pairs, 162 test diagrams
 
 | Metric | Value | Split | Target |
 | :--- | ---: | :--- | ---: |
-| executes in sandbox (S6) | 99.4% | 162 test | ≥ 85% |
+| executes in sandbox (S6) | 98.77% | 162 test | ≥ 85% |
+| parses | 99.38% | 162 test | ≥ 95% |
 | functional pass@1 (S7) | 70.37% | 162 test | ≥ 70% |
 | pass@1 fa_bresler / hdbpmn | 66.67% / 71.93% | test | — |
 

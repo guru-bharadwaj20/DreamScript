@@ -693,8 +693,8 @@ is weaker and is said so.
 | 17.3 | Per-unit notebooks | One clean notebook per unit with results and plots | `scripts/make_notebooks.py --execute` -> `notebooks/unit1_classical.ipynb`, `unit2_ann_svm.ipynb`, `unit3_probabilistic.ipynb`, `unit4_deep_rl_llm.ipynb`: results tables read from `reports/master_results.json` and the per-criterion JSON, and every figure from `reports/figures/`. They **read results rather than reproduce them**, so they open on a fresh clone with no corpus, GPU or weights. Figures are Markdown image links rather than executed outputs, which keeps 7 MB of base64 out of git | ✅ |
 | 17.4 | Model cards | One per shipped model | Seven cards in `docs/model_cards/`, one per model the served pipeline runs plus the S1 classifier: `clip_svm`, `nb_router`, `detector`, `arrow_pose`, `ocr_trocr`, `hmm_roles`, `synth_lora`. Each card takes its stage from `reports/model_registry.md`, so OCR and assembly read `staging`. The index lists the Phase 0 models that were trained but never shipped, each with its reason | ✅ |
 | 17.5 | API docs | Endpoint + IR schema reference | `docs/api.md`: both services (model server and app backend), every route, the upload rules and status codes, the result object field by field, the correction body, and the IR, Node and Edge schemas with an example that validates against `schemas/ir.schema.json`. OpenAPI is also served live at `/openapi.json` and `/docs` by each service | ✅ |
-| 17.6 | Final report | Problem, novelty, method, experiments, results, ablations, limitations, future work | Written | ❌ |
-| 17.7 | Limitations section | Honest failure modes: 3-D sketches, dense circuits, non-English labels | Written | ❌ |
+| 17.6 | Final report | Problem, novelty, method, experiments, results, ablations, limitations, future work | `docs/report.md`: problem, novelty, method (the eight stages and their models), experiments, results against S1-S10, ablations and error propagation, limitations and future work. Every number is copied from `reports/master_results.md` or the report named beside it. Future work is ordered by the error-propagation table, not by interest | ✅ |
+| 17.7 | Limitations section | Honest failure modes: 3-D sketches, dense circuits, non-English labels | `docs/report.md` §7. The three failure modes the row names are covered, each stated as tested or not: **3-D sketches** (out of scope, since the IR is planar; rotation alone collapses node F1 to 0.40 at 6°), **dense circuits** (no annotated hand-drawn circuit data exists, and the unseen-type run shows circuits routed as flowcharts with confidence 1.0), **non-English labels** (TrOCR fine-tuned on English only). Also listed: 21/24 unseen-type pages producing confident wrong code, the S3 and S5 misses, and S1 source confounding | ✅ |
 | 17.8 | Demo script | 3-minute run of show: draw → snap → run, with a deliberately messy sketch | Rehearsed | ❌ |
 | 17.9 | Demo video | Recorded fallback for a failed live demo | Recorded | ❌ |
 | 17.10 | Viva prep | Q&A on HMM math, SVM kernels, CNN parameters, the Q-learning update, LoRA rank | `docs/viva.md` | ❌ |
@@ -767,6 +767,8 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | S9 | Live camera capture succeeds on a first-try messy sketch | Yes | ❌ not reached (Phase 16). **Restated 2026-09-20 from "live webcam demo" to live capture on the Android client**, which is where Phase 16 now lives; the criterion is unchanged in substance - one photograph of a messy sketch, first try, to running code - and the surface it is judged on is a phone rather than a laptop webcam. |
 | S10 | All four syllabus units demonstrably covered | Yes | ✅ All fifteen lines of the matrix above are implemented and evaluated, MLOps included (Phase 15, 12/12). `docs/syllabus_map.md` maps each to its code, figure and number, and `notebooks/` has one notebook per unit. RL and LoRA carry the caveats stated under the matrix. |
 
+**Current values, 2026-09-30 (17.6).** Some rows above record the value at the time they were written, and later re-measurements moved it. The authoritative figures are in `reports/master_results.md`, which reads them from the artefacts: **S3 CER 0.2006** (not 0.257), **S5 test median GED 13** (not 22.5), and **S6 executes 98.77%, parses 99.38%**. `docs/report.md` quotes these.
+
 ---
 
 ## Overall Progress
@@ -790,5 +792,5 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 14 — Evaluation | 11 | 11 | ✅ |
 | 15 — MLOps | 12 | 12 | ✅ |
 | 16 — Mobile App & Capture | 20 | 19 | ❌ |
-| 17 — Documentation | 10 | 5 | ❌ |
+| 17 — Documentation | 10 | 7 | ❌ |
 | **Total** | **308** | **295** | ❌ |
