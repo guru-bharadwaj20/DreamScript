@@ -793,4 +793,4 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 15 — MLOps | 12 | 12 | ✅ |
 | 16 — Mobile App & Capture | 20 | 19 | ❌ |
 | 17 — Documentation | 10 | 8 | ❌ |
-| **Total** | **308** | **295** | ❌ |
+| **Total** | **308** | **303** | ❌ |
