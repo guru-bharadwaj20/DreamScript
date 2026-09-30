@@ -2,19 +2,28 @@
 
 One card per model that reaches the pipeline or the report. `TEMPLATE.md` is the form.
 
-| Model | Card | Stage | Owning phase | Status |
+Phase 17.4 filled one card for each model the served pipeline runs, plus the S1 classifier that
+the headline classification number refers to. The stage in each card comes from the registry
+(`reports/model_registry.md`), which derives it from whether the model meets its criterion.
+
+| Model | Card | Stage | Phase | Registry |
 | :--- | :--- | :--- | :--- | :---: |
-| Classical diagram-type classifier (DT / KNN / LogReg) | `classical_clf.md` | classification | 5 | ❌ |
-| MLP on image embeddings | `mlp_embed.md` | classification | 6.2 | ❌ |
-| SVM (polynomial kernel) | `svm_poly.md` | classification | 6.3 | ❌ |
-| Ensemble (RF / gradient boosting) | `ensemble_clf.md` | classification | 7.1 | ❌ |
-| Naive Bayes text-stat prior | `nb_prior.md` | classification | 7.2 | ❌ |
-| HMM role decoder | `hmm_roles.md` | parsing | 7.3 | ❌ |
-| GMM shape vocabulary | `gmm_shapes.md` | parsing | 7.4 | ❌ |
-| Component detector (CNN) | `detector.md` | detection | 9.1 | ❌ |
-| Handwriting OCR (CRNN+CTC) | `ocr_crnn.md` | OCR | 9.3 | ❌ |
-| Q-learning traversal agent | `rl_traversal.md` | traversal | 11 | ❌ |
-| QLoRA code synthesizer (7B) | `synth_lora.md` | synthesis | 12 | ❌ |
+| CLIP ViT-B/32 + RBF SVM (S1) | [`clip_svm.md`](clip_svm.md) | classification | 5–6 | prod |
+| Naive Bayes router | [`nb_router.md`](nb_router.md) | classification (served) | 7.2, 13.3 | — |
+| YOLOv8n component detector (S2) | [`detector.md`](detector.md) | detection | 9.1 | prod |
+| YOLOv8m-pose arrow model | [`arrow_pose.md`](arrow_pose.md) | assembly | 10.1.6 | staging (with S5) |
+| TrOCR-large label OCR (S3) | [`ocr_trocr.md`](ocr_trocr.md) | OCR | 9.3 | staging |
+| HMM role decoder (S4) | [`hmm_roles.md`](hmm_roles.md) | parsing | 7.3 | prod |
+| Qwen2.5-Coder-7B QLoRA (S6, S7) | [`synth_lora.md`](synth_lora.md) | synthesis | 12 | prod |
+
+### Planned in Phase 0, not shipped
+
+These were trained and evaluated in their phases. The pipeline does not run them, so they get no
+card, and the evidence for each is in its `contributing.md` row:
+the classical DT/KNN/LogReg (5), the MLP (6.2), the polynomial SVM (6.3), the RF/boosting ensemble
+(7.1), the GMM shape vocabulary (7.4) and the Q-learning traversal agent (11). The pipeline orders
+nodes with a reading-order DFS because 11.2.10 measured that RL adds nothing to executability.
+The CRNN+CTC OCR (9.3) was replaced by TrOCR.
 
 ## Rule
 
