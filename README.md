@@ -20,10 +20,10 @@ was trained. Each one is scored on writers the models never saw, and the two tha
 reported as misses.
 
 <p align="center">
-  <img src="reports/figures/gallery/hdbpmn__ex07_writer0088.jpg" height="330" alt="A real input: a hand-drawn process diagram photographed on a desk" />
+  <img src="docs/screenshots/app_home.png" height="330" alt="The DreamScript app home screen, connected to the backend" />
   <img src="reports/figures/p9_detection.png" height="330" alt="Detection precision-recall and per-class AP" />
 </p>
-<p align="center"><sub>Left: a real input from the held-out set, photographed on a desk. Right: the detector on the validation split, where the arrowhead is the one weak class.</sub></p>
+<p align="center"><sub>Left: the app's home screen, connected to the backend. Right: the detector on the validation split, where the arrowhead is the one weak class.</sub></p>
 
 ---
 
