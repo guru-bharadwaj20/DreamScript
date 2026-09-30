@@ -138,6 +138,7 @@ result.code, result.diagram_type, result.timing_table()
 | [docs/conventions.md](docs/conventions.md) | naming, run directories, git, code and config rules |
 | [docs/data_remote.md](docs/data_remote.md) | why `dvc pull` works on one machine |
 | [docs/data_losses.md](docs/data_losses.md) | the four raw sources whose content exists nowhere |
+| [docs/api.md](docs/api.md) | the HTTP API of both services and the IR schema |
 | [docs/hardware.md](docs/hardware.md) | what this was measured on |
 | [docs/risks.md](docs/risks.md) | what could make the results wrong |
 | [models/README.md](models/README.md) | downloaded weights vs. the ones produced here |
