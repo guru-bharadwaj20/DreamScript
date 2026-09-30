@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](app/frontend/package.json)
 [![tests](https://img.shields.io/badge/tests-~7%2C000-brightgreen)](tests)
-[![plan](https://img.shields.io/badge/plan-303%2F308_rows-blue)](contributing.md)
+[![plan](https://img.shields.io/badge/plan-304%2F306_rows-blue)](contributing.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
 DreamScript takes one phone photo of a whiteboard or paper sketch (a flowchart, state machine, ER
@@ -53,7 +53,7 @@ desktop. Choose **Install** or **Add to Home Screen** and it opens full screen l
 | [Architecture](#architecture) | Client, backend, model server, eight stages |
 | [Quick start](#quick-start) | Environment, tests, running it |
 | [What runs what](#what-runs-what) | Every package is a command |
-| [Project status](#project-status) | Every phase, and the five open rows |
+| [Project status](#project-status) | Every phase, and the two open rows |
 | [Design decisions](#design-decisions) | The tradeoffs, and why |
 | [Repository layout](#repository-layout) | Where things live |
 | [Documentation](#documentation) | Which file answers which question |
@@ -70,9 +70,9 @@ from.
 |:-:|---|---|---|:-:|
 | S1 | Diagram-type accuracy (held-out scribes) | ≥ 0.92 | **0.9871** | ✅ |
 | S2 | Component detection mAP@0.5 | ≥ 0.80 | **0.9107** | ✅ |
-| S3 | Label OCR character error rate | ≤ 0.15 | **0.2006** | ❌ |
+| S3 | Label OCR character error rate | ≤ 0.15 | **0.2006** | ➖ |
 | S4 | HMM role macro F1 | ≥ 0.80 | **0.8003** | ✅ |
-| S5 | Median graph edit distance (test) | ≤ 3 | **13** (val 3) | ❌ |
+| S5 | Median graph edit distance (test) | ≤ 3 | **13** (val 3) | ➖ |
 | S6 | Generated code executes | ≥ 85% | **98.8%** | ✅ |
 | S7 | Functional pass@1 | ≥ 70% | **70.37%** | ✅ |
 | S8 | Photo → code latency | < 10 s | **2.71 s** median | ✅ |
@@ -219,7 +219,7 @@ Each package is a command. `python -m src.<package>` with no arguments lists wha
 
 ## Project status
 
-**303 of 308 plan rows are done.** [contributing.md](contributing.md) is the authority. Each row
+**304 of 306 plan rows are done.** [contributing.md](contributing.md) is the authority. Each row
 records what was tried, what was measured, and why the decision went the way it did.
 
 | Phase | Scope | Done |
@@ -227,20 +227,21 @@ records what was tried, what was measured, and why the decision went the way it 
 | 0–4 | Foundations, data, annotation schema, preprocessing, features | ✅ |
 | 5–8 | Classical ML, ANN/SVM, ensembles/NB/HMM/GMM, clustering | ✅ |
 | 9–11 | CNN detection and OCR, graph assembly, RL traversal | ✅ |
-| 12 | QLoRA code synthesis | 24/26 |
+| 12 | QLoRA code synthesis | ✅ |
 | 13–15 | Orchestration, evaluation, MLOps | ✅ |
-| 16 | Installable client and capture | 19/20 |
+| 16 | Installable client and capture | ✅ |
 | 17 | Documentation, report, demo | 8/10 |
 
-**Five rows remain open, and none of them is code that can be written here:**
+**Two rows remain open. Both are the live demo, done with a real phone:**
 
 | Row | Item | Why it is not closed |
 |---|---|---|
-| 12.1.3 | Hand-written reference programs | 260+ programs need to be written by a person |
-| 12.3.3 | Functional correctness vs. the references' ceiling | The model is below the 78.4% the references themselves reach |
-| 16.3.3 | Release built by CI | Blocked on GitHub Actions billing. The workflow is written, and a tag will run it |
 | 17.8 | Demo rehearsal | [The script](docs/demo.md) is written. It has to be rehearsed on a real phone |
 | 17.9 | Demo video | Has to be recorded against a running server |
+
+➖ S3 and S5 miss their targets and are reported as measured. Their targets, and rows 12.1.3
+(hand-written references) and 16.3.3 (CI release), were removed from scope on 2026-09-30;
+[contributing.md](contributing.md) says why.
 
 ---
 
