@@ -138,6 +138,9 @@ result.code, result.diagram_type, result.timing_table()
 | [docs/conventions.md](docs/conventions.md) | naming, run directories, git, code and config rules |
 | [docs/data_remote.md](docs/data_remote.md) | why `dvc pull` works on one machine |
 | [docs/data_losses.md](docs/data_losses.md) | the four raw sources whose content exists nowhere |
+| [docs/report.md](docs/report.md) | the final report: method, results, ablations, limitations |
+| [docs/syllabus_map.md](docs/syllabus_map.md) | syllabus units → phase, code, figure, number; notebooks in `notebooks/` |
+| [docs/demo.md](docs/demo.md), [docs/viva.md](docs/viva.md) | demo run of show and viva preparation |
 | [docs/api.md](docs/api.md) | the HTTP API of both services and the IR schema |
 | [docs/hardware.md](docs/hardware.md) | what this was measured on |
 | [docs/risks.md](docs/risks.md) | what could make the results wrong |

@@ -695,9 +695,9 @@ is weaker and is said so.
 | 17.5 | API docs | Endpoint + IR schema reference | `docs/api.md`: both services (model server and app backend), every route, the upload rules and status codes, the result object field by field, the correction body, and the IR, Node and Edge schemas with an example that validates against `schemas/ir.schema.json`. OpenAPI is also served live at `/openapi.json` and `/docs` by each service | ✅ |
 | 17.6 | Final report | Problem, novelty, method, experiments, results, ablations, limitations, future work | `docs/report.md`: problem, novelty, method (the eight stages and their models), experiments, results against S1-S10, ablations and error propagation, limitations and future work. Every number is copied from `reports/master_results.md` or the report named beside it. Future work is ordered by the error-propagation table, not by interest | ✅ |
 | 17.7 | Limitations section | Honest failure modes: 3-D sketches, dense circuits, non-English labels | `docs/report.md` §7. The three failure modes the row names are covered, each stated as tested or not: **3-D sketches** (out of scope, since the IR is planar; rotation alone collapses node F1 to 0.40 at 6°), **dense circuits** (no annotated hand-drawn circuit data exists, and the unseen-type run shows circuits routed as flowcharts with confidence 1.0), **non-English labels** (TrOCR fine-tuned on English only). Also listed: 21/24 unseen-type pages producing confident wrong code, the S3 and S5 misses, and S1 source confounding | ✅ |
-| 17.8 | Demo script | 3-minute run of show: draw → snap → run, with a deliberately messy sketch | Rehearsed | ❌ |
-| 17.9 | Demo video | Recorded fallback for a failed live demo | Recorded | ❌ |
-| 17.10 | Viva prep | Q&A on HMM math, SVM kernels, CNN parameters, the Q-learning update, LoRA rank | `docs/viva.md` | ❌ |
+| 17.8 | Demo script | 3-minute run of show: draw → snap → run, with a deliberately messy sketch | **Written, not yet rehearsed.** `docs/demo.md`: the pre-flight checklist (warm model server, backend with bundle, HTTPS to the phone, installed app), the sketch to draw and why it is messy on purpose, a timed 3-minute script with what to say and do, recovery lines for each failure the pipeline can return, and a warning not to demo the three types it cannot read. The rehearsal has to happen on the real phone | ❌ |
+| 17.9 | Demo video | Recorded fallback for a failed live demo | **Not recorded.** It needs the real phone against the running server, which cannot be done from this repository. `docs/demo.md` § fallback says how to record it and where it goes (a release asset, not git) | ❌ |
+| 17.10 | Viva prep | Q&A on HMM math, SVM kernels, CNN parameters, the Q-learning update, LoRA rank | `docs/viva.md`: HMM (model, Viterbi and Baum-Welch derivations, per-component decoding), SVM (primal/dual, polynomial and RBF kernels, one-vs-one), CNN parameters (layer by layer to 372,183, with the bias-free-before-BN point), the Q-learning update with our α/γ/ε, off-policy vs SARSA and shaping, LoRA/QLoRA and the rank sweep. Each answer comes with this project's number, and the hard questions (end-to-end accuracy, unseen types, S1 confounding) have answers ready | ✅ |
 
 ---
 
@@ -792,5 +792,5 @@ Two cautions belong next to the RL and LLM checkmarks rather than in a footnote.
 | 14 — Evaluation | 11 | 11 | ✅ |
 | 15 — MLOps | 12 | 12 | ✅ |
 | 16 — Mobile App & Capture | 20 | 19 | ❌ |
-| 17 — Documentation | 10 | 7 | ❌ |
+| 17 — Documentation | 10 | 8 | ❌ |
 | **Total** | **308** | **295** | ❌ |
